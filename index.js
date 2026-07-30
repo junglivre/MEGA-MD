@@ -22,6 +22,8 @@ import { server, PORT } from './lib/server.js';
 import { printLog } from './lib/print.js';
 import { writeErrorLog } from './lib/logger.js';
 import { handleMessages, handleGroupParticipantUpdate, handleStatus, handleCall } from './lib/messageHandler.js';
+import { channelInfo } from './lib/messageConfig.js';
+import { rememberLidMapping } from './lib/jid.js';
 import commandHandler from './lib/commandHandler.js';
 store.readFromFile();
 setInterval(() => store.writeToFile(), config.storeWriteInterval || 10000);
@@ -257,6 +259,11 @@ async function startQasimDev() {
             return ghostMode && ghostMode.enabled;
         };
         QasimDev.ev.on('creds.update', _saveCreds);
+        QasimDev.ev.on('lid-mapping.update', (mapping) => rememberLidMapping(mapping));
+        QasimDev.ev.on('messaging-history.set', (update) => {
+            if (update?.lidPnMappings)
+                rememberLidMapping(update.lidPnMappings);
+        });
         store.bind(QasimDev.ev);
         QasimDev.ev.on('messages.upsert', async (chatUpdate) => {
             try {
@@ -288,15 +295,7 @@ async function startQasimDev() {
                     if (mek.key && mek.key.remoteJid) {
                         await QasimDev.sendMessage(mek.key.remoteJid, {
                             text: '❌ An error occurred while processing your message.',
-                            contextInfo: {
-                                forwardingScore: 1,
-                                isForwarded: true,
-                                forwardedNewsletterMessageInfo: {
-                                    newsletterJid: '120363319098372999@newsletter',
-                                    newsletterName: 'GlobalTechInc',
-                                    serverMessageId: -1
-                                }
-                            }
+                            ...channelInfo
                         }).catch(console.error);
                     }
                 }
@@ -443,15 +442,7 @@ async function startQasimDev() {
                     const ghostStatus = (ghostMode && ghostMode.enabled) ? '\n👻 Stealth Mode: ACTIVE' : '';
                     await QasimDev.sendMessage(botNumber, {
                         text: `🤖 Bot Connected Successfully!\n\n⏰ Time: ${new Date().toLocaleString()}\n✅ Status: Online and Ready!${ghostStatus}\n\n✅Make sure to join below channel`,
-                        contextInfo: {
-                            forwardingScore: 1,
-                            isForwarded: true,
-                            forwardedNewsletterMessageInfo: {
-                                newsletterJid: '120363319098372999@newsletter',
-                                newsletterName: 'GlobalTechInc',
-                                serverMessageId: -1
-                            }
-                        }
+                            ...channelInfo
                     });
                 }
                 catch (error) {

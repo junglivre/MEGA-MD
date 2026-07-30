@@ -43,6 +43,34 @@
 
 ---
 
+## 🛠️ Junglivre fork modifications
+
+This fork is maintained and modified by **junglivre**. The original MEGA-MD project and its original authors remain credited below.
+
+### Internationalization (i18n)
+
+- Portuguese (Brazil) is the default language through `DEFAULT_LANGUAGE=pt-BR`.
+- English (`en`) and Spanish (`es`) are also available.
+- Users can change their own preference with `.idioma pt-br`, `.idioma en`, or `.idioma es` (also available as `.language` and `.lang`).
+- Preferences are stored per WhatsApp user/JID in the configured database, or in `data/userLanguage.json` when using JSON storage.
+- The main menu, command details, core permission/error messages, and AI chatbot instructions use the selected language.
+
+### Newsletter forwarding metadata
+
+Newsletter branding is optional and configurable through:
+
+```env
+NEWSLETTER_JID=
+NEWSLETTER_NAME=
+NEWSLETTER_SERVER_MESSAGE_ID=-1
+```
+
+When `NEWSLETTER_JID` or `NEWSLETTER_NAME` is empty, outgoing messages use `isForwarded: false` and do not include newsletter metadata. This removes the previous hardcoded channel identity from the bot responses.
+
+### Baileys 7 LID compatibility
+
+The message pipeline keeps WhatsApp LIDs as the canonical user identity and treats `participantAlt`/`remoteJidAlt` as alternate PN identifiers. Owner, admin, sudo, and ban checks can match known LID↔PN mappings without replacing the persisted LID key. The implementation also listens for Baileys LID mapping and history-sync mapping events.
+
 ## 📋 Table of Contents
 
 - [✨ Features](#-features)
@@ -119,6 +147,10 @@ cp sample.env .env
 # Edit .env → add SESSION_ID and OWNER_NUMBER
 npm start
 ```
+
+### Language preferences
+
+Set the default language with `DEFAULT_LANGUAGE=pt-BR` (supported values: `pt-BR`, `en`, and `es`). Each user can override it with `.idioma pt-br`, `.idioma en`, or `.idioma es`; the preference is saved per user in the configured database, or in `data/userLanguage.json` when using JSON storage.
 
 ---
 

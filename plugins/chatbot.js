@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { dataFile } from '../lib/paths.js';
 import store from '../lib/lightweight_store.js';
+import { createTranslator, getUserLanguage, languageLabel } from '../lib/i18n.js';
 const MONGO_URL = process.env.MONGO_URL;
 const POSTGRES_URL = process.env.POSTGRES_URL;
 const MYSQL_URL = process.env.MYSQL_URL;
@@ -154,13 +155,20 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
             messages.shift();
         chatMemory.messages.set(senderId, messages);
         await showTyping(sock, chatId);
+        const language = await getUserLanguage(senderId);
+        const t = createTranslator(language);
         const response = await getAIResponse(cleanedMessage, {
             messages: chatMemory.messages.get(senderId),
-            userInfo: chatMemory.userInfo.get(senderId)
+            userInfo: chatMemory.userInfo.get(senderId),
+            language
         });
         if (!response) {
             await sock.sendMessage(chatId, {
-                text: "Hmm, let me think about that... 🤔\nI'm having trouble processing your request right now.",
+                text: language === 'pt-BR'
+                    ? 'Hmm, deixa eu pensar... 🤔\nEstou com dificuldade para processar seu pedido agora.'
+                    : language === 'es'
+                        ? 'Hmm, déjame pensar... 🤔\nTengo problemas para procesar tu solicitud ahora.'
+                        : "Hmm, let me think about that... 🤔\nI'm having trouble processing your request right now.",
                 quoted: message
             });
             return;
@@ -176,7 +184,7 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         }
         try {
             await sock.sendMessage(chatId, {
-                text: "Oops! 😅 I got a bit confused there. Could you try asking that again?",
+                text: t('chatbotError'),
                 quoted: message
             });
         }
@@ -186,11 +194,12 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
     }
 }
 async function getAIResponse(userMessage, userContext) {
+    const replyLanguage = languageLabel(userContext.language);
     const prompt = `
-You are a casual, friendly human chatting on WhatsApp. Always reply in English only.
+You are a casual, friendly human chatting on WhatsApp. Reply in ${replyLanguage}.
 
 RULES:
-1. Always respond in English only — no Hindi, Urdu, or any other language
+1. Always respond in ${replyLanguage}, unless the user explicitly asks for another language
 2. Keep responses short — 1-2 lines max
 3. Be casual and natural, not robotic
 4. Use emojis naturally

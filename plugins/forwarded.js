@@ -12,6 +12,7 @@
  *                 Unauthorized copying or distribution is prohibited.       *
  *                                                                           *
  *****************************************************************************/
+import { channelInfo } from '../lib/messageConfig.js';
 export default {
     command: 'forwarded',
     aliases: ['viral', 'fakeforward'],
@@ -40,10 +41,7 @@ export default {
             }
             await sock.sendMessage(chatId, {
                 text: txt,
-                contextInfo: {
-                    isForwarded: true,
-                    forwardingScore: 999
-                }
+                ...channelInfo
             });
         }
         catch (err) {

@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { dataFile } from '../lib/paths.js';
 import store from '../lib/lightweight_store.js';
+import { channelInfo } from '../lib/messageConfig.js';
 const MONGO_URL = process.env.MONGO_URL;
 const POSTGRES_URL = process.env.POSTGRES_URL;
 const MYSQL_URL = process.env.MYSQL_URL;
@@ -48,15 +49,7 @@ export async function handleAutoReply(sock, chatId, message, userMessage) {
                 const responseText = reply.response.replace(/\{name\}/gi, senderName);
                 await sock.sendMessage(chatId, {
                     text: responseText,
-                    contextInfo: {
-                        forwardingScore: 1,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363319098372999@newsletter',
-                            newsletterName: 'GlobalTechInc',
-                            serverMessageId: -1
-                        }
-                    }
+                    ...channelInfo
                 }, { quoted: message });
                 return true;
             }
