@@ -55,6 +55,7 @@ export default {
     isPrefixless: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const t = context.t || ((key) => key);
         try {
             const imagePath = path.join(process.cwd(), 'assets/thumb.png');
             const thumbnail = fs.existsSync(imagePath) ? fs.readFileSync(imagePath) : null;
@@ -67,12 +68,12 @@ export default {
             const slowEmoji = getRandomEmoji(slowEmojis);
             let menuText = `${menuEmoji} *${config.botName || 'MEGA-MD'}* ${menuEmoji}\n\n`;
             menuText += `┏━━━━━━━━━━━━━━━━┓\n`;
-            menuText += `┃ 📱 *Bot:* ${config.botName || 'MEGA-MD'}\n`;
-            menuText += `┃ 🔖 *Version:* ${config.version || '6.0.0'}\n`;
+            menuText += `┃ 📱 *${t('bot')}:* ${config.botName || 'MEGA-MD'}\n`;
+            menuText += `┃ 🔖 *${t('version')}:* ${config.version || '6.0.0'}\n`;
             menuText += `┃ 👤 *Owner:* ${config.botOwner || 'Unknown'}\n`;
-            menuText += `┃ ⏰ *Time:* ${formatTime()}\n`;
-            menuText += `┃ ℹ️ *Prefix:* ${config.prefixes ? config.prefixes.join(', ') : '.'}\n`;
-            menuText += `┃ 📊 *Plugins:* ${CommandHandler.commands.size}\n`;
+            menuText += `┃ ⏰ *${t('time')}:* ${formatTime()}\n`;
+            menuText += `┃ ℹ️ *${t('prefix')}:* ${config.prefixes ? config.prefixes.join(', ') : '.'}\n`;
+            menuText += `┃ 📊 *${t('plugins')}:* ${CommandHandler.commands.size}\n`;
             menuText += `┗━━━━━━━━━━━━━━━━┛\n\n`;
             const topCmds = stats.slice(0, 3).filter(s => s.usage > 0);
             if (topCmds.length > 0) {
