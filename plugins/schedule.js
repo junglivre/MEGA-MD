@@ -2,6 +2,7 @@ import fs from 'fs';
 import path from 'path';
 import { dataFile } from '../lib/paths.js';
 import store from '../lib/lightweight_store.js';
+import { channelInfo } from '../lib/messageConfig.js';
 const MONGO_URL = process.env.MONGO_URL;
 const POSTGRES_URL = process.env.POSTGRES_URL;
 const MYSQL_URL = process.env.MYSQL_URL;
@@ -108,15 +109,7 @@ export function startSchedulerEngine(sock) {
                     try {
                         await sock.sendMessage(item.chatId, {
                             text: item.message,
-                            contextInfo: {
-                                forwardingScore: 1,
-                                isForwarded: true,
-                                forwardedNewsletterMessageInfo: {
-                                    newsletterJid: '120363319098372999@newsletter',
-                                    newsletterName: 'MEGA MD',
-                                    serverMessageId: -1
-                                }
-                            }
+                            ...channelInfo
                         });
                         console.log(`[SCHEDULE] ✅ Sent message ID:${item.id} to ${item.chatId}`);
                     }

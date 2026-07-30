@@ -1,3 +1,5 @@
+import { channelInfo } from '../lib/messageConfig.js';
+
 export default {
     command: 'broadcastdm',
     aliases: ['bcdm', 'announcedm', 'dmall'],
@@ -18,7 +20,7 @@ export default {
         let contacts = [];
         try {
             const allContacts = Object.keys(sock.store?.contacts || {});
-            contacts = allContacts.filter(jid => jid.endsWith('@s.whatsapp.net') &&
+            contacts = allContacts.filter(jid => (jid.endsWith('@s.whatsapp.net') || jid.endsWith('@lid')) &&
                 jid !== sock.user?.id);
         }
         catch (e) {
@@ -41,15 +43,7 @@ export default {
             try {
                 await sock.sendMessage(contactJid, {
                     text: broadcastText,
-                    contextInfo: {
-                        forwardingScore: 1,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363319098372999@newsletter',
-                            newsletterName: 'GlobalTechInc',
-                            serverMessageId: -1
-                        }
-                    }
+                    ...channelInfo
                 });
                 sent++;
             }

@@ -1,5 +1,6 @@
 import { downloadMediaMessage } from '@whiskeysockets/baileys';
 import sharp from 'sharp';
+import { channelInfo } from '../lib/messageConfig.js';
 export default {
     command: 'blur',
     aliases: ['blurimg', 'blurpic'],
@@ -37,15 +38,7 @@ export default {
             await sock.sendMessage(chatId, {
                 image: blurredImage,
                 caption: '✨ *Image Blurred Successfully!*',
-                contextInfo: {
-                    forwardingScore: 1,
-                    isForwarded: true,
-                    forwardedNewsletterMessageInfo: {
-                        newsletterJid: '120363319098372999@newsletter',
-                        newsletterName: 'MEGA MD',
-                        serverMessageId: -1
-                    }
-                }
+                    ...channelInfo
             }, { quoted: message });
         }
         catch (error) {
