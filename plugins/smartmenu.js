@@ -3,6 +3,7 @@ import CommandHandler from '../lib/commandHandler.js';
 import fs from 'fs';
 import path from 'path';
 import { channelInfo } from '../lib/messageConfig.js';
+import { translateCategory } from '../lib/i18n.js';
 const menuEmojis = ['✨', '🌟', '⭐', '💫', '🎯', '🎨', '🎪', '🎭'];
 const activeEmojis = ['✅', '🟢', '💚', '✔️', '☑️'];
 const disabledEmojis = ['❌', '🔴', '⛔', '🚫', '❎'];
@@ -86,7 +87,7 @@ export default {
             }
             for (const cat of categories) {
                 const catEmoji = getCategoryEmoji(cat);
-                menuText += `${catEmoji} *${cat.toUpperCase()}*\n`;
+                menuText += `${catEmoji} *${translateCategory(context.language, cat).toUpperCase()}*\n`;
                 menuText += `┌─────────────────\n`;
                 const catCmds = CommandHandler.getCommandsByCategory(cat);
                 catCmds.forEach((cmdName, index) => {

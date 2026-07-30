@@ -14,6 +14,7 @@ import config from '../config.js';
  *                                                                           *
  *****************************************************************************/
 import commandHandler from '../lib/commandHandler.js';
+import { translateCategory, translateCommandDescription } from '../lib/i18n.js';
 import path from 'path';
 import fs from 'fs';
 function formatTime() {
@@ -175,9 +176,9 @@ export default {
 ┃ 📌 *${t('commandInfo')}*
 ┃
 ┃ ⚡ *${t('command')}:* ${prefix}${cmd.command}
-┃ 📝 *${t('description')}:* ${cmd.description || t('none')}
+┃ 📝 *${t('description')}:* ${translateCommandDescription(context.language, cmd.command, cmd.description)}
 ┃ 📖 *${t('usage')}:* ${cmd.usage || `${prefix}${cmd.command}`}
-┃ 🏷️ *${t('category')}:* ${cmd.category || 'misc'}
+┃ 🏷️ *${t('category')}:* ${translateCategory(context.language, cmd.category || 'misc')}
 ┃ 🔖 *${t('aliases')}:* ${cmd.aliases?.length ? cmd.aliases.map((a) => prefix + a).join(', ') : t('none')}
 ┃
 ╰━━━━━━━━━━━━━━⬣`;
@@ -211,6 +212,11 @@ export default {
             .replace(/\*Plugin(?:s)?\s*:/g, `*${t('plugins')}:`)
             .replace(/\*Version\s*:/g, `*${t('version')}:`)
             .replace(/\*Time\s*:/g, `*${t('time')}:`);
+        for (const category of commandHandler.categories.keys()) {
+            const translated = translateCategory(context.language, category);
+            if (translated !== category)
+                text = text.replaceAll(`*${category.toUpperCase()}*`, `*${translated.toUpperCase()}*`);
+        }
         if (fs.existsSync(imagePath)) {
             await sock.sendMessage(chatId, {
                 image: { url: imagePath },
