@@ -203,7 +203,14 @@ export default {
             },
             categories: commandHandler.categories
         });
-        text = text.replaceAll('MEGA MENU', t('menu'));
+        // Only translate labels; keep every border and decorative character
+        // identical across locales so menus have the same visual layout.
+        text = text.replaceAll('MEGA MENU', t('menu'))
+            .replace(/\*Bot\s*:/g, `*${t('bot')}:`)
+            .replace(/\*Prefix(?:es)?\s*:/g, `*${t('prefix')}:`)
+            .replace(/\*Plugin(?:s)?\s*:/g, `*${t('plugins')}:`)
+            .replace(/\*Version\s*:/g, `*${t('version')}:`)
+            .replace(/\*Time\s*:/g, `*${t('time')}:`);
         if (fs.existsSync(imagePath)) {
             await sock.sendMessage(chatId, {
                 image: { url: imagePath },

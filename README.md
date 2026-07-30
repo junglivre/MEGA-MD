@@ -51,7 +51,7 @@ This fork is maintained and modified by **junglivre**. The original MEGA-MD proj
 
 - Portuguese (Brazil) is the default language through `DEFAULT_LANGUAGE=pt-BR`.
 - English (`en`) and Spanish (`es`) are also available.
-- Users can change their own preference with `.idioma pt-br`, `.idioma en`, or `.idioma es` (also available as `.language` and `.lang`).
+- Users can change their own preference with `.idioma pt-br`, `.idioma ptbr`, `.idioma br`, `.idioma portugues brasileiro`, `.idioma en`, or `.idioma es` (also available as `.language` and `.lang`).
 - Preferences are stored per WhatsApp user/JID in the configured database, or in `data/userLanguage.json` when using JSON storage.
 - The main menu, command details, core permission/error messages, and AI chatbot instructions use the selected language.
 

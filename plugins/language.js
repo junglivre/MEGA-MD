@@ -6,7 +6,7 @@ export default {
     aliases: ['language', 'lang', 'lingua', 'língua'],
     category: 'general',
     description: 'Choose the language used by the bot',
-    usage: '.idioma [pt-br|en|es]',
+    usage: '.idioma [pt-br|en|es|br|ingles|espanhol]',
     async handler(sock, message, args, context) {
         const userId = context.senderId || message.key.participant || message.key.remoteJid;
         const chatId = context.chatId || message.key.remoteJid;
@@ -18,7 +18,7 @@ export default {
                 ...context.channelInfo
             }, { quoted: message });
         }
-        const selected = await setUserLanguage(userId, args[0]);
+        const selected = await setUserLanguage(userId, args.join(' '));
         if (!selected) {
             return sock.sendMessage(chatId, {
                 text: t('invalidLanguage', { languages: locales.join(', ') }),
