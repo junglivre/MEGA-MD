@@ -2,6 +2,7 @@ import config from '../config.js';
 import CommandHandler from '../lib/commandHandler.js';
 import fs from 'fs';
 import path from 'path';
+import { channelInfo } from '../lib/messageConfig.js';
 const menuEmojis = ['✨', '🌟', '⭐', '💫', '🎯', '🎨', '🎪', '🎭'];
 const activeEmojis = ['✅', '🟢', '💚', '✔️', '☑️'];
 const disabledEmojis = ['❌', '🔴', '⛔', '🚫', '❎'];
@@ -112,18 +113,9 @@ export default {
             menuText += `├─ ${fastEmoji} Fast Response\n`;
             menuText += `├─ ${slowEmoji} Slow Response\n`;
             menuText += `⁠└────────────────`;
-            const contextInfo = {
-                forwardingScore: 1,
-                isForwarded: true,
-                forwardedNewsletterMessageInfo: {
-                    newsletterJid: '120363319098372999@newsletter',
-                    newsletterName: 'GlobalTechInc',
-                    serverMessageId: -1
-                }
-            };
             const messageOptions = thumbnail
-                ? { image: thumbnail, caption: menuText, contextInfo }
-                : { text: menuText, contextInfo };
+                ? { image: thumbnail, caption: menuText, ...channelInfo }
+                : { text: menuText, ...channelInfo };
             await sock.sendMessage(chatId, messageOptions, { quoted: message });
         }
         catch (error) {

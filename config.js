@@ -14,6 +14,12 @@ const config = {
     prefix: _prefixes[0],
     commandMode: process.env.COMMAND_MODE || 'public',
     timeZone: process.env.TIMEZONE || 'Asia/Karachi',
+    defaultLanguage: process.env.DEFAULT_LANGUAGE || 'pt-BR',
+    newsletterJid: process.env.NEWSLETTER_JID || '',
+    newsletterName: process.env.NEWSLETTER_NAME || '',
+    newsletterServerMessageId: Number.isFinite(Number(process.env.NEWSLETTER_SERVER_MESSAGE_ID))
+        ? Number(process.env.NEWSLETTER_SERVER_MESSAGE_ID)
+        : -1,
     // Links
     channelLink: process.env.CHANNEL_LINK || 'https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07',
     updateZipUrl: process.env.UPDATE_URL || 'https://github.com/GlobalTechInfo/MEGA-MD/archive/refs/heads/main.zip',

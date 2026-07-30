@@ -155,7 +155,7 @@ export default {
     description: 'Show all commands',
     usage: '.menu [command]',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t = (key) => key } = context;
         const prefix = config.prefixes[0];
         const imagePath = path.join(process.cwd(), 'assets/thumb.png');
         if (args.length) {
@@ -167,18 +167,18 @@ export default {
             }
             if (!cmd) {
                 return sock.sendMessage(chatId, {
-                    text: `❌ Command "${args[0]}" not found.\n\nUse ${prefix}menu to see all commands.`,
+                    text: `❌ ${t('commandNotFound')}: "${args[0]}".\n\n${t('useMenu', { prefix })}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             const text = `╭━━━━━━━━━━━━━━⬣
-┃ 📌 *COMMAND INFO*
+┃ 📌 *${t('commandInfo')}*
 ┃
-┃ ⚡ *Command:* ${prefix}${cmd.command}
-┃ 📝 *Desc:* ${cmd.description || 'No description'}
-┃ 📖 *Usage:* ${cmd.usage || `${prefix}${cmd.command}`}
-┃ 🏷️ *Category:* ${cmd.category || 'misc'}
-┃ 🔖 *Aliases:* ${cmd.aliases?.length ? cmd.aliases.map((a) => prefix + a).join(', ') : 'None'}
+┃ ⚡ *${t('command')}:* ${prefix}${cmd.command}
+┃ 📝 *${t('description')}:* ${cmd.description || t('none')}
+┃ 📖 *${t('usage')}:* ${cmd.usage || `${prefix}${cmd.command}`}
+┃ 🏷️ *${t('category')}:* ${cmd.category || 'misc'}
+┃ 🔖 *${t('aliases')}:* ${cmd.aliases?.length ? cmd.aliases.map((a) => prefix + a).join(', ') : t('none')}
 ┃
 ╰━━━━━━━━━━━━━━⬣`;
             if (fs.existsSync(imagePath)) {
@@ -191,7 +191,7 @@ export default {
             return sock.sendMessage(chatId, { text, ...channelInfo }, { quoted: message });
         }
         const style = pick(menuStyles);
-        const text = style.render({
+        let text = style.render({
             title: config.botName,
             prefix,
             info: {
@@ -203,6 +203,7 @@ export default {
             },
             categories: commandHandler.categories
         });
+        text = text.replaceAll('MEGA MENU', t('menu'));
         if (fs.existsSync(imagePath)) {
             await sock.sendMessage(chatId, {
                 image: { url: imagePath },

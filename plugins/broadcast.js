@@ -1,3 +1,5 @@
+import { channelInfo } from '../lib/messageConfig.js';
+
 export default {
     command: 'broadcast',
     aliases: ['bc', 'announce'],
@@ -40,15 +42,7 @@ export default {
             try {
                 await sock.sendMessage(groupJid, {
                     text: broadcastText,
-                    contextInfo: {
-                        forwardingScore: 1,
-                        isForwarded: true,
-                        forwardedNewsletterMessageInfo: {
-                            newsletterJid: '120363319098372999@newsletter',
-                            newsletterName: 'GlobalTechInc',
-                            serverMessageId: -1
-                        }
-                    }
+                    ...channelInfo
                 });
                 sent++;
             }
