@@ -53,7 +53,7 @@ This fork is maintained and modified by **junglivre**. The original MEGA-MD proj
 - English (`en`) and Spanish (`es`) are also available.
 - Users can change their own preference with `.idioma pt-br`, `.idioma ptbr`, `.idioma br`, `.idioma portugues brasileiro`, `.idioma en`, or `.idioma es` (also available as `.language` and `.lang`).
 - Preferences are stored per WhatsApp user/JID in the configured database, or in `data/userLanguage.json` when using JSON storage.
-- The main menu, command details, core permission/error messages, and AI chatbot instructions use the selected language.
+- The main menu, translated category labels, command details, core permission/error messages, and AI chatbot instructions use the selected language. Commands without a dedicated catalog entry receive a localized fallback description.
 
 ### Newsletter forwarding metadata
 
