@@ -241,7 +241,7 @@ export default {
                     || (mediaMessage.mimetype === 'image/webp' && targetMessage.message?.stickerMessage?.isAnimated)
                     || mediaMessage.seconds > 0;
                 fs.writeFileSync(tempInput, mediaBuffer);
-                await convertToSticker(tempInput, tempOutput, shape || 'pad', isAnimated);
+                await convertToSticker(tempInput, tempOutput, shape || 'full', isAnimated);
                 if (!fs.existsSync(tempOutput) || fs.statSync(tempOutput).size === 0) {
                     throw new Error('ffmpeg produced no output');
                 }
