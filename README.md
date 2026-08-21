@@ -622,7 +622,7 @@ DB_URL=./data/baileys.db
 | `GROQ_API_KEY` | ❌ | — | Groq API key for chatbot and audio transcription |
 | `GROQ_CHAT_MODEL` | ❌ | `openai/gpt-oss-120b` | Groq chat model |
 | `GROQ_TRANSCRIPTION_MODEL` | ❌ | `whisper-large-v3-turbo` | Groq Whisper model |
-| `QUOTE_API_URL` | ❌ | `https://bot.lyo.su/quote/generate` | QuotLy-compatible quote renderer |
+| `QUOTE_API_URL` | ❌ | `https://quoapi.jung.moe/generate` | QuotLy-compatible quote renderer; `/generate` is added when omitted |
 | `LASTFM_API_KEY` | ❌ | — | Last.fm API key for `.lastfm` |
 | `LASTFM_API_URL` | ❌ | `https://ws.audioscrobbler.com/2.0/` | Last.fm API endpoint |
 | `BACKUP_ENABLED` | ❌ | `true` | Enable automatic ZIP backups |

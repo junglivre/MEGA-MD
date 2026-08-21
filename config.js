@@ -1,5 +1,7 @@
 import 'dotenv/config';
 const _prefixes = process.env.PREFIXES ? process.env.PREFIXES.split(',') : ['.', '!', '/', '#'];
+const rawQuoteApiUrl = process.env.QUOTE_API_URL || process.env.QUOAPI_URL || 'https://quoapi.jung.moe/generate';
+const quoteApiUrl = `${rawQuoteApiUrl.replace(/\/+$/, '')}${/\/generate$/i.test(rawQuoteApiUrl) ? '' : '/generate'}`;
 const config = {
     // Bot Identity
     botName: process.env.BOT_NAME || 'MEGA-MD',
@@ -38,7 +40,7 @@ const config = {
     backupDirectory: process.env.BACKUP_DIR || 'backups',
     groqChatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
     groqTranscriptionModel: process.env.GROQ_TRANSCRIPTION_MODEL || 'whisper-large-v3-turbo',
-    quoteApiUrl: process.env.QUOTE_API_URL || 'https://bot.lyo.su/quote/generate',
+    quoteApiUrl,
     lastFmApiKey: process.env.LASTFM_API_KEY || '',
     lastFmApiUrl: process.env.LASTFM_API_URL || 'https://ws.audioscrobbler.com/2.0/',
     // API Keys
