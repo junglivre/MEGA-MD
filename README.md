@@ -143,7 +143,7 @@ The message pipeline keeps WhatsApp LIDs as the canonical user identity and trea
 git clone https://github.com/GlobalTechInfo/MEGA-MD.git
 cd MEGA-MD
 npm install
-cp sample.env .env
+cp .env.example .env
 # Edit .env → add SESSION_ID and OWNER_NUMBER
 npm start
 ```
@@ -200,10 +200,10 @@ PAIRING_NUMBER=923001234567
 
 ## ⚙️ Configuration
 
-Copy `sample.env` to `.env`:
+Copy `.env.example` to `.env`:
 
 ```bash
-cp sample.env .env
+cp .env.example .env
 ```
 
 ```env
@@ -255,7 +255,7 @@ cd MEGA-MD
 npm install
 
 # 3. Configure
-cp sample.env .env
+cp .env.example .env
 nano .env
 
 # 4. Start
@@ -300,7 +300,7 @@ apt install -y git ffmpeg build-essential libvips-dev webp nodejs npm curl
 git clone https://github.com/GlobalTechInfo/MEGA-MD.git
 cd MEGA-MD
 npm install
-cp sample.env .env && nano .env
+cp .env.example .env && nano .env
 npm start
 ```
 
@@ -338,7 +338,7 @@ sudo apt install -y nodejs git ffmpeg libvips-dev libwebp-dev build-essential
 git clone https://github.com/GlobalTechInfo/MEGA-MD.git
 cd MEGA-MD
 npm install
-cp sample.env .env && nano .env
+cp .env.example .env && nano .env
 
 # Keep alive with PM2
 npm install -g pm2
@@ -370,7 +370,7 @@ sudo apt install -y nodejs git ffmpeg libvips-dev libwebp-dev build-essential
 git clone https://github.com/GlobalTechInfo/MEGA-MD.git
 cd MEGA-MD
 npm install
-cp sample.env .env && nano .env
+cp .env.example .env && nano .env
 npm start
 ```
 
