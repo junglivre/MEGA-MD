@@ -119,15 +119,20 @@ function selectSources(message, chatId, count) {
     const currentId = message.key?.id;
     const stored = (store.messages?.[chatId] || [])
         .map(sourceFromStored)
-        .filter(item => item && item.key?.id !== currentId);
+        .filter(item => item && item.key?.id !== currentId)
+        .sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0));
     if (!quoted)
         return stored.slice(-count);
     const quotedId = quotedContext.stanzaId;
     if (count <= 1 || stored.length === 0)
         return [{ key: { participant: quotedContext.participant || message.key.participant || chatId }, message: quoted }];
-    const index = stored.findIndex(item => item.key?.id === quotedId);
+    const index = stored.findIndex(item => String(item.key?.id || '') === String(quotedId || ''));
+    // Some Baileys updates contain the quoted payload but omit/mutate the
+    // stanza id. In that case the quoted message is the latest stored message
+    // before the command, so retain the requested number of messages ending
+    // at that point instead of silently returning only the quoted payload.
     if (index === -1)
-        return [{ key: { participant: quotedContext.participant || message.key.participant || chatId }, message: quoted }];
+        return stored.slice(-count);
     return stored.slice(Math.max(0, index - count + 1), index + 1);
 }
 
