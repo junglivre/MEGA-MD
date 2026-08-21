@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import webp from 'node-webpmux';
 import crypto from 'crypto';
-import { stickercropFromBuffer } from './stickercrop.js';
+import { stickercropFromBuffer } from './sticker.js';
 async function _convertBufferToStickerWebp(inputBuffer, isAnimated, cropSquare) {
     const tmpDir = path.join(process.cwd(), 'temp');
     if (!fs.existsSync(tmpDir))
