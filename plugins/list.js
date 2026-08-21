@@ -15,8 +15,6 @@ import config from '../config.js';
  *****************************************************************************/
 import commandHandler from '../lib/commandHandler.js';
 import { translateCategory, translateCommandDescription } from '../lib/i18n.js';
-import path from 'path';
-import fs from 'fs';
 function formatTime() {
     const now = new Date();
     const options = {
@@ -158,7 +156,6 @@ export default {
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t = (key) => key } = context;
         const prefix = config.prefixes[0];
-        const imagePath = path.join(process.cwd(), 'assets/thumb.png');
         if (args.length) {
             const searchTerm = args[0].toLowerCase();
             let cmd = commandHandler.commands.get(searchTerm);
@@ -182,13 +179,6 @@ export default {
 ┃ 🔖 *${t('aliases')}:* ${cmd.aliases?.length ? cmd.aliases.map((a) => prefix + a).join(', ') : t('none')}
 ┃
 ╰━━━━━━━━━━━━━━⬣`;
-            if (fs.existsSync(imagePath)) {
-                return sock.sendMessage(chatId, {
-                    image: { url: imagePath },
-                    caption: text,
-                    ...channelInfo
-                }, { quoted: message });
-            }
             return sock.sendMessage(chatId, { text, ...channelInfo }, { quoted: message });
         }
         const style = pick(menuStyles);
@@ -217,16 +207,7 @@ export default {
             if (translated !== category)
                 text = text.replaceAll(`*${category.toUpperCase()}*`, `*${translated.toUpperCase()}*`);
         }
-        if (fs.existsSync(imagePath)) {
-            await sock.sendMessage(chatId, {
-                image: { url: imagePath },
-                caption: text,
-                ...channelInfo
-            }, { quoted: message });
-        }
-        else {
-            await sock.sendMessage(chatId, { text, ...channelInfo }, { quoted: message });
-        }
+        await sock.sendMessage(chatId, { text, ...channelInfo }, { quoted: message });
     }
 };
 /*****************************************************************************
