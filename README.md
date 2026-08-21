@@ -43,7 +43,7 @@
 
 ---
 
-## 🛠️ Junglivre fork modifications
+## 🛠️ jung's fork modifications
 
 This fork is maintained and modified by **junglivre**. The original MEGA-MD project and its original authors remain credited below.
 
