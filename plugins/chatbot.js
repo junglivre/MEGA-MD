@@ -97,6 +97,10 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
     const data = await loadUserGroupData();
     if (!data.chatbot[chatId])
         return;
+    // Created up front (with a safe default locale) so the catch block below always
+    // has a working translator, even if the try block throws before resolving the
+    // sender's real language.
+    let t = createTranslator();
     try {
         const botId = sock.user.id;
         const botNumber = botId.split(':')[0];
@@ -156,7 +160,7 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         chatMemory.messages.set(senderId, messages);
         await showTyping(sock, chatId);
         const language = await getUserLanguage(senderId);
-        const t = createTranslator(language);
+        t = createTranslator(language);
         const response = await getAIResponse(cleanedMessage, {
             messages: chatMemory.messages.get(senderId),
             userInfo: chatMemory.userInfo.get(senderId),
