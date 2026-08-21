@@ -20,11 +20,16 @@ export default {
             }
             const packname = args.join(' ') || 'MEGA AI';
             try {
-                const stickerBuffer = await downloadMediaMessage({
-                    key: message.message.extendedTextMessage.contextInfo.stanzaId,
-                    message: quotedMessage,
-                    // messageType: 'stickerMessage'
-                }, 'buffer', {}, {
+                const quotedInfo = message.message.extendedTextMessage.contextInfo;
+                const quotedTarget = {
+                    key: {
+                        remoteJid: chatId,
+                        id: quotedInfo.stanzaId,
+                        participant: quotedInfo.participant
+                    },
+                    message: quotedMessage
+                };
+                const stickerBuffer = await downloadMediaMessage(quotedTarget, 'buffer', {}, {
                     logger: console,
                     reuploadRequest: sock.updateMediaMessage
                 });
