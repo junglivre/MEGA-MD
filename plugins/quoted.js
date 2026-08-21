@@ -1,89 +1,162 @@
 import axios from 'axios';
 import { Sticker, StickerTypes } from 'stickers-formatter';
+import config from '../config.js';
+
+const QUOTE_API_URL = config.quoteApiUrl;
+const DEFAULT_AVATAR = 'https://i.ibb.co/9HY4wjz/a4c0b1af253197d4837ff6760d5b81c0.jpg';
+const COLOR_NAMES = new Set(['black', 'white', 'red', 'green', 'blue', 'yellow', 'orange', 'purple', 'pink', 'gray', 'grey', 'brown', 'cyan', 'magenta', 'transparent', 'random']);
+
+function unwrapMessage(message) {
+    let current = message || {};
+    for (let i = 0; i < 4; i += 1) {
+        const wrapped = current.ephemeralMessage?.message
+            || current.viewOnceMessage?.message
+            || current.viewOnceMessageV2?.message
+            || current.documentWithCaptionMessage?.message;
+        if (!wrapped)
+            break;
+        current = wrapped;
+    }
+    return current;
+}
+
+function extractText(message, fallback) {
+    const current = unwrapMessage(message);
+    return current.conversation
+        || current.extendedTextMessage?.text
+        || current.imageMessage?.caption
+        || current.videoMessage?.caption
+        || current.documentMessage?.caption
+        || current.audioMessage?.caption
+        || current.buttonsResponseMessage?.selectedDisplayText
+        || current.listResponseMessage?.title
+        || fallback;
+}
+
+function parseOptions(args) {
+    const options = { backgroundColor: '#FFFFFF', format: 'webp', type: 'quote', scale: 2, output: 'sticker', text: [] };
+    for (const token of args) {
+        const lower = token.toLowerCase();
+        if (lower === 'img' || lower === 'image' || lower === 'jpg' || lower === 'png') {
+            options.type = 'image';
+            options.format = 'png';
+            options.output = 'image';
+        }
+        else if (lower === 'document' || lower === 'doc') {
+            options.type = 'image';
+            options.format = 'png';
+            options.output = 'document';
+        }
+        else if (/^s(?:cale)?[+-]?(?:\d*\.)?\d+$/i.test(lower)) {
+            options.scale = Number(lower.replace(/^s(?:cale)?/i, '')) || 2;
+        }
+        else if (lower === 'random' || lower === 'transparent' || COLOR_NAMES.has(lower) || /^#?[0-9a-f]{6}$/i.test(token) || /^#?[0-9a-f]{3}$/i.test(token)) {
+            options.backgroundColor = lower === 'random' ? 'random' : token;
+        }
+        else {
+            options.text.push(token);
+        }
+    }
+    options.scale = Math.min(20, Math.max(1, options.scale));
+    return options;
+}
+
+function getContactName(sock, jid, contactInfo, fallback) {
+    const contact = sock.store?.contacts?.[jid];
+    const normalized = contactInfo?.[0];
+    return contact?.name
+        || contact?.notify
+        || normalized?.name
+        || normalized?.notify
+        || (jid?.includes('@s.whatsapp.net') ? `+${jid.replace('@s.whatsapp.net', '')}` : fallback);
+}
+
+async function getSender(sock, jid, fallback) {
+    const [profile, contact] = await Promise.allSettled([
+        jid ? sock.profilePictureUrl(jid, 'image') : Promise.reject(new Error('no jid')),
+        jid ? sock.onWhatsApp(jid) : Promise.resolve(null)
+    ]);
+    return {
+        name: getContactName(sock, jid, contact.status === 'fulfilled' ? contact.value : null, fallback),
+        avatar: profile.status === 'fulfilled' ? profile.value : DEFAULT_AVATAR
+    };
+}
+
+function getQuotedContext(message) {
+    return message.message?.extendedTextMessage?.contextInfo
+        || message.message?.imageMessage?.contextInfo
+        || message.message?.videoMessage?.contextInfo
+        || message.message?.documentMessage?.contextInfo
+        || {};
+}
+
+async function renderQuote(options, sender, text) {
+    const width = options.output === 'sticker' ? 512 : 1800;
+    const height = options.output === 'sticker' ? 768 : 1200;
+    const response = await axios.post(QUOTE_API_URL, {
+        type: options.type,
+        format: options.format,
+        backgroundColor: options.backgroundColor,
+        width,
+        height,
+        scale: options.scale,
+        messages: [{
+            entities: [],
+            avatar: true,
+            from: { id: 1, name: sender.name, photo: { url: sender.avatar } },
+            text,
+            replyMessage: {}
+        }]
+    }, { headers: { 'Content-Type': 'application/json' }, timeout: 30000 });
+    const encoded = response.data?.result?.image;
+    if (!encoded)
+        throw new Error('Invalid quote renderer response');
+    return Buffer.from(encoded, 'base64');
+}
+
 export default {
     command: 'quoted',
-    aliases: ['q', 'fakereply'],
+    aliases: ['q', 'quotely', 'fakereply'],
     category: 'stickers',
-    description: 'Generate a quote sticker from text',
-    usage: '.quote <text> or reply to a message',
+    description: 'Generate a QuotLy-style quote sticker or image',
+    usage: '.q [img|png|doc|color|s2] <text> or reply to a message',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const { t } = context;
-        const ctx = message.message?.extendedTextMessage?.contextInfo;
-        let text = args.join(' ').trim();
-        if (!text) {
-            const q = ctx?.quotedMessage;
-            if (!q)
-                return sock.sendMessage(chatId, { text: t('p.quoted.missingText') }, { quoted: message });
-            text = q.conversation
-                || q.extendedTextMessage?.text
-                || q.imageMessage?.caption
-                || q.videoMessage?.caption
-                || t('p.quoted.mediaFallback');
-        }
-        const who = ctx?.participant
-            || ctx?.mentionedJid?.[0]
-            || message.key.participant
-            || message.key.remoteJid;
-        const [userPfp, contactInfo] = await Promise.allSettled([
-            sock.profilePictureUrl(who, 'image'),
-            sock.onWhatsApp(who)
-        ]);
-        const pfp = userPfp.status === 'fulfilled'
-            ? userPfp.value
-            : 'https://i.ibb.co/9HY4wjz/a4c0b1af253197d4837ff6760d5b81c0.jpg';
-        const contactValue = contactInfo.status === 'fulfilled' ? contactInfo.value : null;
-        // Try multiple sources for name
-        const storeContact = sock.store?.contacts?.[who];
-        const userName = storeContact?.name
-            || storeContact?.notify
-            || contactValue?.[0]?.notify
-            || (who.includes('@s.whatsapp.net') ? `+${ who.replace('@s.whatsapp.net', '')}` : t('p.quoted.userFallback'));
+        const quotedContext = getQuotedContext(message);
+        const quotedMessage = quotedContext.quotedMessage;
+        const options = parseOptions(args);
+        const typedText = options.text.join(' ').trim();
+        const text = typedText || extractText(quotedMessage, t('p.quoted.mediaFallback'));
+        if (!typedText && !quotedMessage)
+            return sock.sendMessage(chatId, { text: t('p.quoted.missingText') }, { quoted: message });
+
+        const who = quotedContext.participant || message.key.participant || message.key.remoteJid;
         try {
-            const res = await axios.post('https://bot.lyo.su/quote/generate', {
-                type: 'quote',
-                format: 'png',
-                backgroundColor: '#FFFFFF',
-                width: 1800,
-                height: 200,
-                scale: 2,
-                messages: [{
-                        entities: [],
-                        avatar: true,
-                        from: { id: 1, name: userName, photo: { url: pfp } },
-                        text,
-                        replyMessage: {}
-                    }]
-            }, {
-                headers: { 'Content-Type': 'application/json' },
-                timeout: 30000
-            });
-            if (!res.data?.result?.image)
-                throw new Error('Invalid API response');
-            const bufferImage = Buffer.from(res.data.result.image, 'base64');
+            const sender = await getSender(sock, who, t('p.quoted.userFallback'));
+            const bufferImage = await renderQuote(options, sender, text);
+            if (options.output === 'image')
+                return sock.sendMessage(chatId, { image: bufferImage, caption: t('p.quoted.imageCaption') }, { quoted: message });
+            if (options.output === 'document')
+                return sock.sendMessage(chatId, { document: bufferImage, mimetype: 'image/png', fileName: 'quote.png' }, { quoted: message });
             try {
                 const stickerBuffer = await new Sticker(bufferImage, {
-                    pack: 'MEGA-MD',
-                    author: userName,
-                    type: StickerTypes.FULL,
-                    categories: ['🤩', '🎉'],
-                    quality: 100,
-                    background: '#00000000'
+                    pack: 'MEGA-MD', author: sender.name, type: StickerTypes.FULL,
+                    categories: ['🤩', '🎉'], quality: 100, background: '#00000000'
                 }).toBuffer();
-                await sock.sendMessage(chatId, { sticker: stickerBuffer }, { quoted: message });
+                return sock.sendMessage(chatId, { sticker: stickerBuffer }, { quoted: message });
             }
-            catch {
-                await sock.sendMessage(chatId, { image: bufferImage, caption: t('p.quoted.stickerFallbackCaption') }, { quoted: message });
+            catch (error) {
+                console.error('[QUOTED] Sticker conversion failed:', error.message);
+                return sock.sendMessage(chatId, { image: bufferImage, caption: t('p.quoted.stickerFallbackCaption') }, { quoted: message });
             }
         }
-        catch (err) {
-            console.error('Quote plugin error:', err);
-            const msg = err.message.includes('timeout')
-                ? t('p.quoted.errorTimeout')
-                : err.message.includes('Invalid API')
-                    ? t('p.quoted.errorInvalidApi')
-                    : t('p.quoted.errorGeneric');
-            await sock.sendMessage(chatId, { text: t('p.quoted.failed', { reason: msg }) }, { quoted: message });
+        catch (error) {
+            console.error('[QUOTED] Quote generation failed:', error);
+            const messageKey = error.code === 'ECONNABORTED' || error.message?.includes('timeout')
+                ? 'p.quoted.errorTimeout'
+                : error.message?.includes('Invalid quote') ? 'p.quoted.errorInvalidApi' : 'p.quoted.errorGeneric';
+            return sock.sendMessage(chatId, { text: t('p.quoted.failed', { reason: t(messageKey) }) }, { quoted: message });
         }
     }
 };
