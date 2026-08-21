@@ -38,6 +38,8 @@ const config = {
     backupDirectory: process.env.BACKUP_DIR || 'backups',
     groqChatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
     groqTranscriptionModel: process.env.GROQ_TRANSCRIPTION_MODEL || 'whisper-large-v3-turbo',
+    lastFmApiKey: process.env.LASTFM_API_KEY || '',
+    lastFmApiUrl: process.env.LASTFM_API_URL || 'https://ws.audioscrobbler.com/2.0/',
     // API Keys
     giphyApiKey: process.env.GIPHY_API_KEY || 'qnl7ssQChTdPjsKta2Ax2LMaGXz303tq',
     removeBgKey: process.env.REMOVEBG_KEY || '',

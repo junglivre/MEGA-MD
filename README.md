@@ -111,6 +111,7 @@ The message pipeline keeps WhatsApp LIDs as the canonical user identity and trea
 | 👑 | **Role System** | Owner, Sudo, Admin, and User permission levels |
 | ⏰ | **Scheduled Messages** | Schedule messages with natural time input |
 | 🤖 | **AI Chatbot** | Per-chat AI conversation mode |
+| 🎧 | **Last.fm** | Personal scrobble card with album artwork via `.lastfm` |
 | 🔒 | **Privacy Controls** | Full WhatsApp privacy management via commands |
 | 📊 | **Polls & Voting** | Create polls with live vote tracking in groups |
 | 📡 | **Broadcast** | Bulk message all groups or all DM contacts at once |
@@ -118,6 +119,12 @@ The message pipeline keeps WhatsApp LIDs as the canonical user identity and trea
 | 🎮 | **Games** | TicTacToe and more built in |
 | ⏳ | **Disappearing Messages** | Set per-chat or default timers via commands |
 | 📱 | **Multi-Platform** | Runs on Termux, VPS, Railway, Render, Heroku, Koyeb, Fly.io, Replit |
+
+---
+
+### Last.fm
+
+Set `LASTFM_API_KEY` in `.env`, then use `.setlastfm <username>` once. Use `.lastfm` (or `.lfm`) to receive your latest scrobble card, and `.unsetlastfm` to remove the saved username.
 
 ---
 
@@ -615,6 +622,8 @@ DB_URL=./data/baileys.db
 | `GROQ_API_KEY` | ❌ | — | Groq API key for chatbot and audio transcription |
 | `GROQ_CHAT_MODEL` | ❌ | `openai/gpt-oss-120b` | Groq chat model |
 | `GROQ_TRANSCRIPTION_MODEL` | ❌ | `whisper-large-v3-turbo` | Groq Whisper model |
+| `LASTFM_API_KEY` | ❌ | — | Last.fm API key for `.lastfm` |
+| `LASTFM_API_URL` | ❌ | `https://ws.audioscrobbler.com/2.0/` | Last.fm API endpoint |
 | `BACKUP_ENABLED` | ❌ | `true` | Enable automatic ZIP backups |
 | `BACKUP_INTERVAL` | ❌ | `86400000` | Backup interval (ms) |
 | `BACKUP_RETENTION` | ❌ | `7` | Number of ZIP backups to keep |
