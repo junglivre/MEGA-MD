@@ -7,16 +7,16 @@ export default {
     usage: '.stealth <on|off>',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         const action = args[0]?.toLowerCase();
         if (!action || !['on', 'off'].includes(action)) {
             const currentState = await store.getSetting('global', 'stealthMode');
-            const status = currentState?.enabled ? 'ON' : 'OFF';
+            const status = currentState?.enabled ? t('p.stealth.on') : t('p.stealth.off');
             let autotypingWarning = '';
             try {
                 const autotypingState = await store.getSetting('global', 'autotyping');
                 if (autotypingState?.enabled && currentState?.enabled) {
-                    autotypingWarning = '\n\n⚠️ *Autotyping is enabled* but will be blocked by stealth mode.';
+                    autotypingWarning = `\n\n${t('p.stealth.autotypingWarning')}`;
                 }
             }
             catch (e) { }
@@ -24,12 +24,12 @@ export default {
             try {
                 const autoreadState = await store.getSetting('global', 'autoread');
                 if (autoreadState?.enabled && currentState?.enabled) {
-                    autoreadWarning = '\n⚠️ *Autoread is enabled* but will be blocked by stealth mode.';
+                    autoreadWarning = `\n${t('p.stealth.autoreadWarning')}`;
                 }
             }
             catch (e) { }
             return await sock.sendMessage(chatId, {
-                text: `👻 *Stealth Mode Status:* ${status}\n\n*Usage:* .stealth <on|off>\n\n*What it does:*\n• Blocks all presence updates (typing, online, last seen)\n• Makes the bot completely invisible\n\n*When enabled:*\n✓ No "typing..." indicator\n✓ No "online" status\n✓ Complete stealth mode${autotypingWarning}${autoreadWarning}`
+                text: t('p.stealth.statusView', { status, autotypingWarning, autoreadWarning })
             }, { quoted: message });
         }
         const enabled = action === 'on';
@@ -40,17 +40,21 @@ export default {
                 const autotypingState = await store.getSetting('global', 'autotyping');
                 const autoreadState = await store.getSetting('global', 'autoread');
                 if (autotypingState?.enabled || autoreadState?.enabled) {
-                    warnings = '\n\n*⚠️ Note:*\n';
+                    warnings = `\n\n${t('p.stealth.noteHeader')}\n`;
                     if (autotypingState?.enabled)
-                        warnings += '• Autotyping is enabled but will be blocked\n';
+                        warnings += `• ${t('p.stealth.autotypingBlockedLine')}\n`;
                     if (autoreadState?.enabled)
-                        warnings += '• Autoread is enabled but will be blocked\n';
+                        warnings += `• ${t('p.stealth.autoreadBlockedLine')}\n`;
                 }
             }
             catch (e) { }
         }
         await sock.sendMessage(chatId, {
-            text: `👻 Stealth mode has been turned *${enabled ? 'ON' : 'OFF'}*\n\n${enabled ? '✓ Bot is now in complete stealth mode\n✓ No presence updates\n✓ No typing indicators' : '✓ Presence updates enabled\n✓ Typing indicators enabled (if autotyping is on)'}${warnings}`
+            text: t('p.stealth.toggled', {
+                state: enabled ? t('p.stealth.on') : t('p.stealth.off'),
+                details: enabled ? t('p.stealth.enabledDetails') : t('p.stealth.disabledDetails'),
+                warnings
+            })
         }, { quoted: message });
     }
 };

@@ -8,9 +8,10 @@ export default {
     usage: '.readmore text\n.readmore text1|text2',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const text = args.join(' ').trim();
         if (!text) {
-            return await sock.sendMessage(chatId, { text: 'Usage:\n.readmore text\n.readmore text1|text2' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: t('p.readmore.usage') }, { quoted: message });
         }
         let output;
         if (text.includes('|')) {

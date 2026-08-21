@@ -81,10 +81,10 @@ export default {
     usage: '.rentbot 92305xxxxxxx',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         if (!args[0]) {
             return await sock.sendMessage(chatId, {
-                text: `*Usage:* \`.rentbot 923051391xxx\``
+                text: `*${t('p.rentbot.usage')}:* \`.rentbot 923051391xxx\``
             }, { quoted: message });
         }
         const userNumber = args[0].replace(/[^0-9]/g, '');
@@ -118,18 +118,18 @@ export default {
                 try {
                     let code = await conn.requestPairingCode(userNumber);
                     code = code?.match(/.{1,4}/g)?.join("-") || code;
-                    const pairingText = `*MEGA-MD CLONE SYSTEM*\n\n` +
-                        `Code: *${code}*\n` +
-                        `Storage: *${HAS_DB ? 'Database' : 'File System'}*\n\n` +
-                        `1. Open WhatsApp Settings\n` +
-                        `2. Tap Linked Devices > Link with Phone Number\n` +
-                        `3. Enter the code above.\n\n` +
-                        `*Tip:* If no popup appears, go to 'Link with phone number' on your phone and enter the code manually.`;
+                    const pairingText = `*${t('p.rentbot.cloneSystemTitle')}*\n\n` +
+                        `${t('p.rentbot.code')}: *${code}*\n` +
+                        `${t('p.rentbot.storage')}: *${HAS_DB ? t('p.rentbot.storageDb') : t('p.rentbot.storageFs')}*\n\n` +
+                        `${t('p.rentbot.step1')}\n` +
+                        `${t('p.rentbot.step2')}\n` +
+                        `${t('p.rentbot.step3')}\n\n` +
+                        `*${t('p.rentbot.tip')}*`;
                     await sock.sendMessage(chatId, { text: pairingText }, { quoted: message });
                 }
                 catch (err) {
                     console.error("Pairing Error:", err);
-                    await sock.sendMessage(chatId, { text: "❌ Failed to request code. Try again in 1 minute." });
+                    await sock.sendMessage(chatId, { text: `❌ ${t('p.rentbot.codeFailed')}` });
                 }
             }
             conn.ev.on('creds.update', async () => {
@@ -160,9 +160,9 @@ export default {
                         });
                     }
                     await sock.sendMessage(chatId, {
-                        text: `✅ Clone is now Online!\n\n` +
-                            `ID: ${authId}\n` +
-                            `Storage: ${HAS_DB ? 'Database' : 'File System'}`
+                        text: `✅ ${t('p.rentbot.online')}\n\n` +
+                            `${t('p.rentbot.id')}: ${authId}\n` +
+                            `${t('p.rentbot.storage')}: ${HAS_DB ? t('p.rentbot.storageDb') : t('p.rentbot.storageFs')}`
                     }, { quoted: message });
                 }
                 if (connection === 'close') {

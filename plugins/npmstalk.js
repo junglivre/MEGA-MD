@@ -7,10 +7,10 @@ export default {
     description: 'Get details about an NPM package',
     usage: '.npmstalk <package-name>',
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         if (!args[0]) {
             return await sock.sendMessage(chatId, {
-                text: `✳️ Please provide an NPM package name.\n\nExample:\n.npmstalk axios`
+                text: `✳️ ${t('p.npmstalk.noPackage')}\n\n${t('p.npmstalk.exampleLabel')}:\n.npmstalk axios`
             }, { quoted: message });
         }
         try {
@@ -19,23 +19,23 @@ export default {
                 throw new Error('Package not found or API error.');
             }
             const data = res.result;
-            const authorName = (typeof data.author === 'object') ? data.author.name : (data.author || 'Unknown');
+            const authorName = (typeof data.author === 'object') ? data.author.name : (data.author || t('p.npmstalk.unknownAuthor'));
             const versionCount = data.versions ? Object.keys(data.versions).length : 0;
-            let te = `┌──「 *NPM PACKAGE INFO* 」\n`;
-            te += `▢ *🔖Name:* ${data.name}\n`;
-            te += `▢ *🔖Creator:* ${authorName}\n`;
-            te += `▢ *👥Total Versions:* ${versionCount}\n`;
-            te += `▢ *📌Description:* ${data.description || 'No description'}\n`;
-            te += `▢ *🧩Repository:* ${data.repository?.url || 'No repository available'}\n`;
-            te += `▢ *🌍Homepage:* ${data.homepage || 'No homepage available'}\n`;
-            te += `▢ *🏷️Latest:* ${data['dist-tags']?.latest || 'N/A'}\n`;
-            te += `▢ *🔗Link:* https://npmjs.com/package/${data.name}\n`;
+            let te = `┌──「 *${t('p.npmstalk.title')}* 」\n`;
+            te += `▢ *🔖${t('p.npmstalk.nameLabel')}:* ${data.name}\n`;
+            te += `▢ *🔖${t('p.npmstalk.creatorLabel')}:* ${authorName}\n`;
+            te += `▢ *👥${t('p.npmstalk.versionsLabel')}:* ${versionCount}\n`;
+            te += `▢ *📌${t('p.npmstalk.descLabel')}:* ${data.description || t('p.npmstalk.noDescription')}\n`;
+            te += `▢ *🧩${t('p.npmstalk.repoLabel')}:* ${data.repository?.url || t('p.npmstalk.noRepo')}\n`;
+            te += `▢ *🌍${t('p.npmstalk.homepageLabel')}:* ${data.homepage || t('p.npmstalk.noHomepage')}\n`;
+            te += `▢ *🏷️${t('p.npmstalk.latestLabel')}:* ${data['dist-tags']?.latest || 'N/A'}\n`;
+            te += `▢ *🔗${t('p.npmstalk.linkLabel')}:* https://npmjs.com/package/${data.name}\n`;
             te += `└────────────`;
             await sock.sendMessage(chatId, { text: te }, { quoted: message });
         }
         catch (error) {
             console.error('NPM Stalk Error:', error);
-            await sock.sendMessage(chatId, { text: `✳️ Error: Package not found or API issue.` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `✳️ ${t('p.npmstalk.error')}` }, { quoted: message });
         }
     }
 };

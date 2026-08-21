@@ -45,7 +45,7 @@ export default {
     usage: '.delcmd <text>',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         let hash = args.join(' ');
         if (message.message?.extendedTextMessage?.contextInfo?.quotedMessage?.stickerMessage) {
             const fileSha256 = message.message.extendedTextMessage.contextInfo.quotedMessage.stickerMessage.fileSha256;
@@ -55,7 +55,7 @@ export default {
         }
         if (!hash) {
             return await sock.sendMessage(chatId, {
-                text: '✳️ Please enter the command name or reply to a sticker'
+                text: `✳️ ${t('p.delcmd.noInput')}`
             }, { quoted: message });
         }
         const stickers = await getStickerCommands();
@@ -67,18 +67,18 @@ export default {
         }
         if (stickers[hash] && stickers[hash].locked) {
             return await sock.sendMessage(chatId, {
-                text: '✳️ You cannot delete this command'
+                text: `✳️ ${t('p.delcmd.locked')}`
             }, { quoted: message });
         }
         if (!stickers[hash]) {
             return await sock.sendMessage(chatId, {
-                text: '⚠️ Command not found'
+                text: `⚠️ ${t('p.delcmd.notFound')}`
             }, { quoted: message });
         }
         delete stickers[hash];
         await saveStickerCommands(stickers);
         await sock.sendMessage(chatId, {
-            text: '✅ Command deleted'
+            text: `✅ ${t('p.delcmd.deleted')}`
         }, { quoted: message });
     }
 };

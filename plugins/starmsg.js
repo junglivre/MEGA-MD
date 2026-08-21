@@ -8,6 +8,7 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const { t } = context;
         const rawText = (context.rawText || '').toLowerCase();
         const shouldStar = !rawText.startsWith('.unstar');
         // contextInfo can be nested in any message type
@@ -22,7 +23,7 @@ export default {
             null;
         if (!contextInfo?.stanzaId) {
             return await sock.sendMessage(chatId, {
-                text: `*⭐ STAR MESSAGE*\n\n_Reply to any message with:_\n• \`.star\` — to star it\n• \`.unstar\` — to unstar it`,
+                text: `*⭐ ${t('p.star.title')}*\n\n_${t('p.star.instructions')}_\n• \`.star\` — ${t('p.star.starOption')}\n• \`.unstar\` — ${t('p.star.unstarOption')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -39,14 +40,15 @@ export default {
                 }
             }, chatId);
             await sock.sendMessage(chatId, {
-                text: shouldStar ? `⭐ *Message starred!*` : `✴️ *Message unstarred!*`,
+                text: shouldStar ? `⭐ *${t('p.star.starred')}*` : `✴️ *${t('p.star.unstarred')}*`,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (e) {
             console.error('[STARMSG] Error:', e.message);
+            const actionWord = shouldStar ? t('p.star.starAction') : t('p.star.unstarAction');
             await sock.sendMessage(chatId, {
-                text: `❌ Failed to ${shouldStar ? 'star' : 'unstar'} message: ${e.message}`,
+                text: `❌ ${t('p.star.actionFailed', { action: actionWord, error: e.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

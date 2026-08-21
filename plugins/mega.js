@@ -32,18 +32,19 @@ export default {
     usage: '.mega <mega-url>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const text = args.join(' ').trim();
         if (!text) {
-            return sock.sendMessage(chatId, { text: `*Usage:* .mega https://mega.nz/file/xxxx#xxxx` }, { quoted: message });
+            return sock.sendMessage(chatId, { text: `*${t('p.mega.usageLabel')}:* .mega https://mega.nz/file/xxxx#xxxx` }, { quoted: message });
         }
         try {
             const file = File.fromURL(text);
             await file.loadAttributes();
             if (file.size >= 500 * 1024 * 1024) {
-                return sock.sendMessage(chatId, { text: '❌ *Error:* File too large (Limit: 500MB)' }, { quoted: message });
+                return sock.sendMessage(chatId, { text: `❌ *${t('p.mega.errorLabel')}:* ${t('p.mega.fileTooLarge')}` }, { quoted: message });
             }
             const { key } = await sock.sendMessage(chatId, {
-                text: `🌩️ *MEGA DOWNLOAD*\n\n▢ *File:* ${file.name}\n▢ *Size:* ${formatBytes(file.size)}\n\n*Progress:* 0% [░░░░░░░░░░]`
+                text: `🌩️ *${t('p.mega.downloadTitle')}*\n\n▢ *${t('p.mega.fileLabel')}:* ${file.name}\n▢ *${t('p.mega.sizeLabel')}:* ${formatBytes(file.size)}\n\n*${t('p.mega.progressLabel')}:* 0% [░░░░░░░░░░]`
             }, { quoted: message });
             const stream = file.download();
             const chunks = [];
@@ -54,7 +55,7 @@ export default {
                 if (Date.now() - lastUpdate > 3000 || percentage === 100) {
                     const bar = generateBar(percentage);
                     await sock.sendMessage(chatId, {
-                        text: `🌩️ *MEGA DOWNLOAD*\n\n▢ *File:* ${file.name}\n▢ *Size:* ${formatBytes(bytesTotal)}\n\n*Progress:* ${percentage}% [${bar}]`,
+                        text: `🌩️ *${t('p.mega.downloadTitle')}*\n\n▢ *${t('p.mega.fileLabel')}:* ${file.name}\n▢ *${t('p.mega.sizeLabel')}:* ${formatBytes(bytesTotal)}\n\n*${t('p.mega.progressLabel')}:* ${percentage}% [${bar}]`,
                         edit: key
                     });
                     lastUpdate = Date.now();
@@ -68,15 +69,15 @@ export default {
                     document: buffer,
                     fileName: file.name,
                     mimetype: MIME_TYPES[ext] || 'application/octet-stream',
-                    caption: `✅ *Download Complete*\n▢ *File:* ${file.name}\n▢ *Size:* ${formatBytes(file.size)}`
+                    caption: `✅ *${t('p.mega.downloadComplete')}*\n▢ *${t('p.mega.fileLabel')}:* ${file.name}\n▢ *${t('p.mega.sizeLabel')}:* ${formatBytes(file.size)}`
                 }, { quoted: message });
             });
             stream.on('error', async (err) => {
-                await sock.sendMessage(chatId, { text: `❌ *Download Error:* ${err.message}` }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `❌ *${t('p.mega.downloadErrorLabel')}:* ${err.message}` }, { quoted: message });
             });
         }
         catch (error) {
-            await sock.sendMessage(chatId, { text: `❌ *Error:* ${error.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ *${t('p.mega.errorLabel')}:* ${error.message}` }, { quoted: message });
         }
     }
 };

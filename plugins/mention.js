@@ -329,17 +329,18 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const onoff = args[0]?.toLowerCase();
         if (!onoff || !['on', 'off'].includes(onoff)) {
             return sock.sendMessage(chatId, {
-                text: '❌ *Invalid usage*\n\nUsage: `.mention on|off`'
+                text: `❌ *${t('p.mention.invalidUsage')}*\n\nUsage: \`.mention on|off\``
             }, { quoted: message });
         }
         const state = await loadState();
         state.enabled = onoff === 'on';
         await saveState(state);
         return sock.sendMessage(chatId, {
-            text: `✅ *Mention reply ${state.enabled ? 'enabled' : 'disabled'}*\n\nStorage: ${HAS_DB ? 'Database' : 'File System'}`
+            text: `✅ *${t('p.mention.toggled', { state: state.enabled ? t('p.mention.enabled') : t('p.mention.disabled') })}*\n\n${t('p.mention.storageLabel')}: ${HAS_DB ? t('p.mention.storageDb') : t('p.mention.storageFile')}`
         }, { quoted: message });
     },
     handleMentionDetection,

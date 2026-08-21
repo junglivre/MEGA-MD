@@ -9,18 +9,11 @@ export default {
     description: 'Lookup phone number country, carrier and type',
     usage: '.siminfo <phone number with country code>\nExample: .siminfo +923001234567',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const input = args.join('').trim().replace(/\s+/g, '');
         if (!input) {
             return await sock.sendMessage(chatId, {
-                text: `📱 *SIM / Phone Info*\n\n` +
-                    `*Usage:* \`.siminfo <number>\`\n\n` +
-                    `*Examples:*\n` +
-                    `• \`.siminfo +923001234567\` — Pakistan\n` +
-                    `• \`.siminfo +14155552671\` — USA\n` +
-                    `• \`.siminfo +447911123456\` — UK\n` +
-                    `• \`.siminfo +971501234567\` — UAE\n\n` +
-                    `ℹ️ Include country code with or without +`,
+                text: t('p.siminfo.usage'),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -35,23 +28,27 @@ export default {
                 }, { quoted: message });
             }
             const validIcon = data.valid ? '✅' : '⚠️';
-            const carrierLine = data.carrier !== 'Unknown' ? `\n📶 *Carrier:* ${data.carrier}` : '';
+            const validText = data.valid ? t('p.siminfo.valid') : t('p.siminfo.invalid');
+            const carrierLine = data.carrier !== 'Unknown' ? `\n📶 *${t('p.siminfo.carrier')}:* ${data.carrier}` : '';
             await sock.sendMessage(chatId, {
-                text: `📱 *Phone Number Info*\n\n` +
-                    `🔢 *Number:* ${data.number}\n` +
-                    `${data.flag} *Country:* ${data.country}\n` +
-                    `🌍 *Region:* ${data.region}\n` +
-                    `🏷️ *Country Code:* ${data.country_code}\n` +
-                    `📞 *National Number:* ${data.national_number}\n` +
-                    `📡 *Line Type:* ${data.line_type}` +
-                    `${carrierLine}\n` +
-                    `${validIcon} *Valid:* ${data.valid ? 'Yes' : 'Possibly invalid (check length)'}`,
+                text: t('p.siminfo.result', {
+                    number: data.number,
+                    flag: data.flag,
+                    country: data.country,
+                    region: data.region,
+                    countryCode: data.country_code,
+                    nationalNumber: data.national_number,
+                    lineType: data.line_type,
+                    carrierLine,
+                    validIcon,
+                    validText
+                }),
                 ...channelInfo
             }, { quoted: message });
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ Lookup failed: ${error.message}`,
+                text: t('p.siminfo.lookupFailed', { error: error.message }),
                 ...channelInfo
             }, { quoted: message });
         }

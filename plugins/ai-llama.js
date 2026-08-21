@@ -26,11 +26,11 @@ export default {
     description: 'Ask a question to AI',
     usage: '.llama <question>',
     async handler(sock, message, args, context) {
-        const { chatId, config } = context;
+        const { chatId, config, t } = context;
         const prefix = config.prefix;
         const query = args.join(' ').trim();
         if (!query) {
-            return sock.sendMessage(chatId, { text: `🤖 *AI Assistant*\n\nUsage: \`${prefix}llama <your question>\`\nExample: \`${prefix}llama explain quantum physics\`` }, { quoted: message });
+            return sock.sendMessage(chatId, { text: `🤖 *${t('p.llama.title')}*\n\n${t('p.llama.usage', { prefix })}` }, { quoted: message });
         }
         try {
             await sock.sendMessage(chatId, { react: { text: '🤖', key: message.key } });
@@ -39,7 +39,7 @@ export default {
         }
         catch (error) {
             console.error('AI Command Error:', error.message);
-            await sock.sendMessage(chatId, { text: '❌ Failed to get AI response. Please try again later.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.llama.failed')}` }, { quoted: message });
         }
     }
 };

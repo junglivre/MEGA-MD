@@ -12,7 +12,7 @@ export default {
     usage: '.crun <c++ code>',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         // Get code from: args, quoted message, or document
         const quoted = message?.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const quotedText = quoted?.conversation || quoted?.extendedTextMessage?.text || '';
@@ -37,13 +37,13 @@ export default {
         code = code.trim();
         if (!code) {
             return await sock.sendMessage(chatId, {
-                text: `⚡ *C++ Runner*\n\n` +
-                    `*Usage:* \`.crun <code>\`\n\n` +
-                    `*Example:*\n` +
+                text: `⚡ *${t('p.crun.title')}*\n\n` +
+                    `*${t('p.crun.usageLine')}* \`.crun <code>\`\n\n` +
+                    `*${t('p.crun.exampleLabel')}*\n` +
                     `\`.crun #include<iostream>\nusing namespace std;\nint main(){cout<<"Hello World!"<<endl;return 0;}\`\n\n` +
-                    `• Max execution time: 10 seconds\n` +
-                    `• No file/network access\n` +
-                    `• Auto-wraps in main() if not present`,
+                    `• ${t('p.crun.maxTime')}\n` +
+                    `• ${t('p.crun.noAccess')}\n` +
+                    `• ${t('p.crun.autoWrap')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -58,7 +58,7 @@ export default {
             fs.mkdirSync(TEMP_DIR, { recursive: true });
             fs.writeFileSync(srcFile, code);
             await sock.sendMessage(chatId, {
-                text: '⚙️ *Compiling...*',
+                text: `⚙️ *${t('p.crun.compiling')}*`,
                 ...channelInfo
             }, { quoted: message });
             // Compile
@@ -67,7 +67,7 @@ export default {
             }
             catch (compileErr) {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ *Compilation Error:*\n\n\`\`\`\n${compileErr.stderr || compileErr.message}\n\`\`\``,
+                    text: `❌ *${t('p.crun.compileErrorLabel')}*\n\n\`\`\`\n${compileErr.stderr || compileErr.message}\n\`\`\``,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -85,7 +85,7 @@ export default {
             if (output.length > 3000)
                 output = `${output.substring(0, 3000) }\n...(truncated)`;
             await sock.sendMessage(chatId, {
-                text: `⚡ *C++ Output:*\n\n\`\`\`\n${output}\n\`\`\``,
+                text: `⚡ *${t('p.crun.outputLabel')}*\n\n\`\`\`\n${output}\n\`\`\``,
                 ...channelInfo
             }, { quoted: message });
         }

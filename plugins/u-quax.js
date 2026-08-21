@@ -9,6 +9,7 @@ export default {
     description: 'Upload to Qu.ax (anonymous)',
     usage: '.quax (reply to media or caption on media)',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const hasMedia = message.message?.imageMessage ||
@@ -17,16 +18,16 @@ export default {
                 message.message?.documentMessage;
             const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!hasMedia && !quotedMsg) {
-                await sock.sendMessage(chatId, { text: '⚠️ Please send media with caption or reply to media!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.quax.noMedia')}` }, { quoted: message });
                 return;
             }
             const mediaSource = hasMedia ? message.message : quotedMsg;
             const type = Object.keys(mediaSource).find(key => ['imageMessage', 'videoMessage', 'stickerMessage', 'documentMessage'].includes(key));
             if (!type) {
-                await sock.sendMessage(chatId, { text: '⚠️ Unsupported media type!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.quax.unsupportedType')}` }, { quoted: message });
                 return;
             }
-            await sock.sendMessage(chatId, { text: 'Uploading to Quax...' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.quax.uploading') }, { quoted: message });
             const mediaType = type === 'stickerMessage' ? 'sticker' : type.replace('Message', '');
             const stream = await downloadContentFromMessage(mediaSource[type], mediaType);
             let buffer = Buffer.from([]);
@@ -50,13 +51,13 @@ export default {
             fs.writeFileSync(tempPath, buffer);
             const result = await uploadToQuax(tempPath);
             await sock.sendMessage(chatId, {
-                text: `✅ *Qu.ax Upload Success!*\n\n🔗 ${result.url}`
+                text: `✅ *${t('p.quax.success')}*\n\n🔗 ${result.url}`
             }, { quoted: message });
             fs.unlinkSync(tempPath);
         }
         catch (error) {
             console.error('Qu.ax Error:', error);
-            await sock.sendMessage(chatId, { text: `❌ Error: ${error.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.quax.errorLabel', { error: error.message })}` }, { quoted: message });
         }
     }
 };

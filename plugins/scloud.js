@@ -7,11 +7,12 @@ export default {
     usage: '.scloud <song name>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const searchQuery = args.join(' ').trim();
         try {
             if (!searchQuery) {
                 return await sock.sendMessage(chatId, {
-                    text: "*What do you want to search on SoundCloud?*\nUsage: .soundcloud <song name>\n\nExample: .soundcloud never gonna give you up"
+                    text: `*${t('p.scloud.whatSearch')}*\nUsage: .soundcloud <song name>\n\nExample: .soundcloud never gonna give you up`
                 }, { quoted: message });
             }
             await new Promise(resolve => setTimeout(resolve, 10000));
@@ -19,7 +20,7 @@ export default {
             const response = await axios.get(searchUrl, { timeout: 30000 });
             if (!response.data?.result?.result || response.data.result.result.length === 0) {
                 return await sock.sendMessage(chatId, {
-                    text: "❌ *No results found!*\nTry a different search term."
+                    text: `❌ *${t('p.scloud.noResults')}*\n${t('p.scloud.tryDifferent')}`
                 }, { quoted: message });
             }
             const results = response.data.result.result;
@@ -27,28 +28,28 @@ export default {
             const tracks = results.filter((item) => item.kind === 'track');
             if (tracks.length === 0) {
                 return await sock.sendMessage(chatId, {
-                    text: "❌ *No tracks found!*\nOnly found user profiles. Try searching for specific songs."
+                    text: `❌ *${t('p.scloud.noTracks')}*\n${t('p.scloud.onlyProfiles')}`
                 }, { quoted: message });
             }
             const limit = Math.min(5, tracks.length);
-            let resultText = `🎵 *SoundCloud Results*\n`;
-            resultText += `📊 Found ${totalFound} results (${tracks.length} tracks)\n\n`;
+            let resultText = `🎵 *${t('p.scloud.resultsTitle')}*\n`;
+            resultText += `📊 ${t('p.scloud.foundResults', { total: totalFound, tracks: tracks.length })}\n\n`;
             for (let i = 0; i < limit; i++) {
                 const track = tracks[i];
                 const duration = Math.floor(track.duration / 1000);
                 const minutes = Math.floor(duration / 60);
                 const seconds = duration % 60;
                 resultText += `*${i + 1}. ${track.title}*\n`;
-                resultText += `👤 Artist: ${track.user_id ? 'Available' : 'Unknown'}\n`;
-                resultText += `⏱️ Duration: ${minutes}:${seconds.toString().padStart(2, '0')}\n`;
-                resultText += `👂 Plays: ${track.playback_count?.toLocaleString() || 'N/A'}\n`;
-                resultText += `❤️ Likes: ${track.likes_count?.toLocaleString() || 'N/A'}\n`;
-                resultText += `💬 Comments: ${track.comment_count?.toLocaleString() || 'N/A'}\n`;
-                resultText += `🎼 Genre: ${track.genre || 'Unknown'}\n`;
-                resultText += `🔗 Link: ${track.permalink_url}\n\n`;
+                resultText += `👤 ${t('p.scloud.artist')}: ${track.user_id ? t('p.scloud.available') : t('p.scloud.unknown')}\n`;
+                resultText += `⏱️ ${t('p.scloud.duration')}: ${minutes}:${seconds.toString().padStart(2, '0')}\n`;
+                resultText += `👂 ${t('p.scloud.plays')}: ${track.playback_count?.toLocaleString() || t('p.scloud.notAvailable')}\n`;
+                resultText += `❤️ ${t('p.scloud.likes')}: ${track.likes_count?.toLocaleString() || t('p.scloud.notAvailable')}\n`;
+                resultText += `💬 ${t('p.scloud.comments')}: ${track.comment_count?.toLocaleString() || t('p.scloud.notAvailable')}\n`;
+                resultText += `🎼 ${t('p.scloud.genre')}: ${track.genre || t('p.scloud.unknown')}\n`;
+                resultText += `🔗 ${t('p.scloud.link')}: ${track.permalink_url}\n\n`;
             }
             if (tracks.length > limit) {
-                resultText += `_+${tracks.length - limit} more tracks available_`;
+                resultText += `_${t('p.scloud.moreTracks', { count: tracks.length - limit })}_`;
             }
             const firstTrack = tracks[0];
             if (firstTrack.artwork_url) {
@@ -76,17 +77,17 @@ export default {
         }
         catch (error) {
             console.error('SoundCloud Search Error:', error);
-            let errorMsg = "❌ *Search failed!*\n\n";
+            let errorMsg = `❌ *${t('p.scloud.searchFailed')}*\n\n`;
             if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-                errorMsg += "*Reason:* Connection timeout\nThe API took too long to respond.";
+                errorMsg += `*${t('p.scloud.reason')}:* ${t('p.scloud.connTimeout')}`;
             }
             else if (error.response) {
-                errorMsg += `*Status:* ${error.response.status}\n*Error:* ${error.response.statusText}`;
+                errorMsg += `*${t('p.scloud.status')}:* ${error.response.status}\n*${t('p.scloud.error')}:* ${error.response.statusText}`;
             }
             else {
-                errorMsg += `*Error:* ${error.message}`;
+                errorMsg += `*${t('p.scloud.error')}:* ${error.message}`;
             }
-            errorMsg += "\n\nPlease try again later.";
+            errorMsg += `\n\n${t('p.scloud.tryAgainLater')}`;
             await sock.sendMessage(chatId, {
                 text: errorMsg
             }, { quoted: message });

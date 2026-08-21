@@ -8,7 +8,7 @@ const WA_LIMIT = 60000;
 function getQuoted(message) {
     return message?.message?.extendedTextMessage?.contextInfo?.quotedMessage || null;
 }
-async function sendResult(sock, chatId, channelInfo, message, text, filename) {
+async function sendResult(sock, chatId, channelInfo, message, text, filename, t) {
     if (text.length > WA_LIMIT) {
         const tmpFile = path.join(process.cwd(), 'temp', filename);
         fs.mkdirSync(path.dirname(tmpFile), { recursive: true });
@@ -17,7 +17,7 @@ async function sendResult(sock, chatId, channelInfo, message, text, filename) {
             document: fs.readFileSync(tmpFile),
             mimetype: 'text/plain',
             fileName: filename,
-            caption: '🌐 Result too large for WhatsApp, sent as file.',
+            caption: `🌐 ${t('p.urldecode.tooLarge')}`,
             ...channelInfo
         }, { quoted: message });
         try {
@@ -36,11 +36,11 @@ export default {
     description: 'Encode/decode URLs or extract all links from text/files',
     usage: '.urldecode <url>\n.urlencode <text>\n.extractlinks <text or reply to file>',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo, userMessage } = context;
+        const { chatId, channelInfo, userMessage, t } = context;
         const scriptPath = path.join(process.cwd(), 'lib', 'urltool.py');
         if (!fs.existsSync(scriptPath)) {
             return await sock.sendMessage(chatId, {
-                text: `❌ urltool.py not found in lib/.`,
+                text: `❌ ${t('p.urldecode.scriptMissing')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -73,17 +73,7 @@ export default {
         const textInput = args.join(' ').trim() || quotedText;
         if (!textInput && !hasDoc) {
             return await sock.sendMessage(chatId, {
-                text: `🌐 *URL Tools*\n\n` +
-                    `*Decode a URL:*\n` +
-                    `\`.urldecode https://example.com/path%20with%20spaces\`\n\n` +
-                    `*Encode text to URL:*\n` +
-                    `\`.urlencode hello world & more\`\n\n` +
-                    `*Extract all links from text:*\n` +
-                    `\`.extractlinks <paste text>\`\n` +
-                    `Or reply to any text message or file with \`.extractlinks\`\n\n` +
-                    `*Shortcut modes:*\n` +
-                    `\`.urldecode encode <text>\`\n` +
-                    `\`.urldecode extract <text>\``,
+                text: t('p.urldecode.help'),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -94,7 +84,7 @@ export default {
             let stdout;
             if (hasDoc && quoted && mode === 'extract') {
                 // Download and extract from file
-                await sock.sendMessage(chatId, { text: '⏳ Reading file...', ...channelInfo }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⏳ ${t('p.urldecode.readingFile')}`, ...channelInfo }, { quoted: message });
                 const msgObj = { message: { documentMessage: quoted.documentMessage } };
                 const buf = await downloadMediaMessage(msgObj, 'buffer', {});
                 const tmpFile = path.join(tempDir, `url_in_${id}.txt`);
@@ -117,58 +107,58 @@ export default {
             }
             let resultText = '';
             if (mode === 'decode') {
-                resultText = `🌐 *URL Decoder*\n\n` +
-                    `📥 *Original:*\n\`${data.original}\`\n\n` +
-                    `📤 *Decoded:*\n\`${data.decoded}\``;
+                resultText = `🌐 *${t('p.urldecode.decoderTitle')}*\n\n` +
+                    `📥 *${t('p.urldecode.original')}:*\n\`${data.original}\`\n\n` +
+                    `📤 *${t('p.urldecode.decoded')}:*\n\`${data.decoded}\``;
                 if (data.scheme)
-                    resultText += `\n\n🔍 *Breakdown:*\n• Scheme: ${data.scheme}\n• Host: ${data.host}\n• Path: ${data.path}`;
+                    resultText += `\n\n🔍 *${t('p.urldecode.breakdown')}:*\n• ${t('p.urldecode.scheme')}: ${data.scheme}\n• ${t('p.urldecode.host')}: ${data.host}\n• ${t('p.urldecode.path')}: ${data.path}`;
                 if (data.query_params) {
                     const params = Object.entries(data.query_params).map(([k, v]) => `  • ${k}: ${v}`).join('\n');
-                    resultText += `\n• Params:\n${params}`;
+                    resultText += `\n• ${t('p.urldecode.params')}:\n${params}`;
                 }
                 if (data.fragment)
-                    resultText += `\n• Fragment: ${data.fragment}`;
+                    resultText += `\n• ${t('p.urldecode.fragment')}: ${data.fragment}`;
             }
             else if (mode === 'encode') {
-                resultText = `🌐 *URL Encoder*\n\n` +
-                    `📥 *Original:*\n\`${data.original}\`\n\n` +
-                    `🔒 *Fully Encoded:*\n\`${data.fully_encoded}\`\n\n` +
-                    `🔓 *Safe Encoded:*\n\`${data.safe_encoded}\``;
+                resultText = `🌐 *${t('p.urldecode.encoderTitle')}*\n\n` +
+                    `📥 *${t('p.urldecode.original')}:*\n\`${data.original}\`\n\n` +
+                    `🔒 *${t('p.urldecode.fullyEncoded')}:*\n\`${data.fully_encoded}\`\n\n` +
+                    `🔓 *${t('p.urldecode.safeEncoded')}:*\n\`${data.safe_encoded}\``;
             }
             else {
                 // Extract
                 if (data.total === 0) {
-                    resultText = `🌐 *Link Extractor*\n\n❌ No links found in the text.`;
+                    resultText = `🌐 *${t('p.urldecode.extractorTitle')}*\n\n❌ ${t('p.urldecode.noLinksFound')}`;
                 }
                 else {
-                    const lines = [`🌐 *Link Extractor — ${data.total} links found*\n`];
+                    const lines = [`🌐 *${t('p.urldecode.extractorTitle')} — ${t('p.urldecode.linksFound', { total: data.total })}*\n`];
                     if (data.social?.length) {
-                        lines.push(`📱 *Social Media (${data.social.length}):*`);
+                        lines.push(`📱 *${t('p.urldecode.socialMedia', { count: data.social.length })}:*`);
                         data.social.forEach((u) => lines.push(`• ${u}`));
                         lines.push('');
                     }
                     if (data.media?.length) {
-                        lines.push(`🖼️ *Media Files (${data.media.length}):*`);
+                        lines.push(`🖼️ *${t('p.urldecode.mediaFiles', { count: data.media.length })}:*`);
                         data.media.forEach((u) => lines.push(`• ${u}`));
                         lines.push('');
                     }
                     if (data.documents?.length) {
-                        lines.push(`📄 *Documents (${data.documents.length}):*`);
+                        lines.push(`📄 *${t('p.urldecode.documents', { count: data.documents.length })}:*`);
                         data.documents.forEach((u) => lines.push(`• ${u}`));
                         lines.push('');
                     }
                     if (data.other?.length) {
-                        lines.push(`🔗 *Other Links (${data.other.length}):*`);
+                        lines.push(`🔗 *${t('p.urldecode.otherLinks', { count: data.other.length })}:*`);
                         data.other.forEach((u) => lines.push(`• ${u}`));
                     }
                     resultText = lines.join('\n');
                 }
             }
-            await sendResult(sock, chatId, channelInfo, message, resultText, `urls_${id}.txt`);
+            await sendResult(sock, chatId, channelInfo, message, resultText, `urls_${id}.txt`, t);
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ Failed: ${error.message}`,
+                text: `❌ ${t('p.urldecode.failed', { error: error.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

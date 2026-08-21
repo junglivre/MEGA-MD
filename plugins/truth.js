@@ -6,6 +6,7 @@ export default {
     usage: '.truth',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const shizokeys = 'shizo';
             const res = await fetch(`https://shizoapi.onrender.com/api/texts/truth?apikey=${shizokeys}`);
@@ -21,7 +22,7 @@ export default {
         catch (error) {
             console.error('Error in truth command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to get truth. Please try again later!'
+                text: `❌ ${t('p.truth.failed')}`
             }, { quoted: message });
         }
     }

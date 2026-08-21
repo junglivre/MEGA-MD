@@ -11,10 +11,11 @@ export default {
     usage: 'Reply to an image with .readqr',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quoted?.imageMessage) {
-                return await sock.sendMessage(chatId, { text: '🧾 *QR Reader*\n\n📌 Reply to an image that contains a QR code\n\nUsage:\n.readqr' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `🧾 *${t('p.readqr.title')}*\n\n📌 ${t('p.readqr.noImage')}\n\nUsage:\n.readqr` }, { quoted: message });
             }
             await sock.sendMessage(chatId, {
                 react: { text: '🔍', key: message.key }
@@ -34,9 +35,9 @@ export default {
             if (!res?.data?.status)
                 throw new Error('Decode failed');
             await sock.sendMessage(chatId, {
-                text: `✅ *QR Code Decoded*
+                text: `✅ *${t('p.readqr.decoded')}*
 
-📄 *Result:*
+📄 *${t('p.readqr.result')}:*
 \`\`\`
 ${res.data.result}
 \`\`\`
@@ -47,7 +48,7 @@ ${res.data.result}
         }
         catch (err) {
             console.error('QR Reader Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to read QR code. Please try a clearer image.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.readqr.failed')}` }, { quoted: message });
         }
     }
 };

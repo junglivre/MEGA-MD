@@ -9,14 +9,15 @@ export default {
     description: 'Upload to Freeimage.host',
     usage: '.freeimage (reply to image)',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quotedMsg?.imageMessage) {
-                await sock.sendMessage(chatId, { text: '⚠️ Please reply to an image!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.freeimage.noImage')}` }, { quoted: message });
                 return;
             }
-            await sock.sendMessage(chatId, { text: 'Uploading to Freeimage...' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.freeimage.uploading') }, { quoted: message });
             const stream = await downloadContentFromMessage(quotedMsg.imageMessage, 'image');
             let buffer = Buffer.from([]);
             for await (const chunk of stream) {
@@ -29,16 +30,16 @@ export default {
             fs.writeFileSync(tempPath, buffer);
             const result = await uploadToFreeimage(tempPath);
             await sock.sendMessage(chatId, {
-                text: `✅ *Freeimage Upload Success!*\n\n` +
-                    `🔗 *URL:* ${result.url}\n` +
-                    `🖼️ *Display:* ${result.display_url}\n` +
-                    `🗑️ *Delete:* ${result.delete_url}`
+                text: `✅ *${t('p.freeimage.success')}*\n\n` +
+                    `🔗 *${t('p.freeimage.url')}:* ${result.url}\n` +
+                    `🖼️ *${t('p.freeimage.display')}:* ${result.display_url}\n` +
+                    `🗑️ *${t('p.freeimage.delete')}:* ${result.delete_url}`
             }, { quoted: message });
             fs.unlinkSync(tempPath);
         }
         catch (error) {
             console.error('Freeimage Error:', error);
-            await sock.sendMessage(chatId, { text: `❌ Error: ${error.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.freeimage.errorLabel', { error: error.message })}` }, { quoted: message });
         }
     }
 };

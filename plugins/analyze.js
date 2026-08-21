@@ -9,7 +9,7 @@ const WA_LIMIT = 60000;
 function getQuoted(message) {
     return message?.message?.extendedTextMessage?.contextInfo?.quotedMessage || null;
 }
-async function sendResult(sock, chatId, channelInfo, message, text, filename) {
+async function sendResult(sock, chatId, channelInfo, message, text, filename, t) {
     if (text.length > WA_LIMIT) {
         const tmpFile = path.join(process.cwd(), 'temp', filename);
         fs.mkdirSync(path.dirname(tmpFile), { recursive: true });
@@ -18,7 +18,7 @@ async function sendResult(sock, chatId, channelInfo, message, text, filename) {
             document: fs.readFileSync(tmpFile),
             mimetype: 'text/plain',
             fileName: filename,
-            caption: '📈 Result too large for WhatsApp, sent as file.',
+            caption: `📈 ${t('p.analyze.resultTooLarge')}`,
             ...channelInfo
         }, { quoted: message });
         try {
@@ -37,11 +37,11 @@ export default {
     description: 'Deep text analysis: reading level, sentiment, word stats (C++ powered)',
     usage: '.analyze <text or reply to any message/file>',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const binPath = getBin('analyze');
         if (!fs.existsSync(binPath)) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Analyze binary not available on this server (g++ not installed or not yet compiled).`,
+                text: `❌ ${t('p.analyze.binaryUnavailable')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -51,21 +51,21 @@ export default {
         const textInput = args.join(' ').trim() || quotedText;
         if (!textInput && !hasDoc) {
             return await sock.sendMessage(chatId, {
-                text: `📈 *Text Analyzer*\n\n` +
-                    `*Usage:* \`.analyze <paste any text>\`\n\n` +
-                    `*Or reply to:*\n` +
-                    `• Any text message\n` +
-                    `• A .txt or document file\n\n` +
-                    `*Output includes:*\n` +
-                    `📊 Word/sentence/paragraph count\n` +
-                    `📖 Flesch Reading Ease score & level\n` +
-                    `😊 Sentiment analysis (positive/negative/neutral)\n` +
-                    `⏱️ Reading time estimate\n` +
-                    `🏆 Top 20 keywords`,
+                text: `📈 *${t('p.analyze.title')}*\n\n` +
+                    `*${t('p.analyze.usageLabel')}:* \`.analyze <paste any text>\`\n\n` +
+                    `*${t('p.analyze.orReplyTo')}:*\n` +
+                    `• ${t('p.analyze.anyTextMessage')}\n` +
+                    `• ${t('p.analyze.docFile')}\n\n` +
+                    `*${t('p.analyze.outputIncludes')}:*\n` +
+                    `📊 ${t('p.analyze.outCounts')}\n` +
+                    `📖 ${t('p.analyze.outFlesch')}\n` +
+                    `😊 ${t('p.analyze.outSentiment')}\n` +
+                    `⏱️ ${t('p.analyze.outReadingTime')}\n` +
+                    `🏆 ${t('p.analyze.outKeywords')}`,
                 ...channelInfo
             }, { quoted: message });
         }
-        await sock.sendMessage(chatId, { text: '🔍 Analyzing...', ...channelInfo }, { quoted: message });
+        await sock.sendMessage(chatId, { text: `🔍 ${t('p.analyze.analyzing')}`, ...channelInfo }, { quoted: message });
         const tempDir = path.join(process.cwd(), 'temp');
         fs.mkdirSync(tempDir, { recursive: true });
         const id = Date.now();
@@ -105,33 +105,33 @@ export default {
             const topWordsText = data.top_words?.length
                 ? data.top_words.slice(0, 15).map((w, i) => `${String(i + 1).padStart(2)}. ${w.word.padEnd(15)} ${w.count}x`).join('\n')
                 : 'N/A';
-            const resultText = `📈 *Text Analysis Report*\n\n` +
-                `━━━━━━ 📊 Counts ━━━━━━\n` +
-                `📖 *Words:* ${data.total_words?.toLocaleString()} (${data.unique_words?.toLocaleString()} unique)\n` +
-                `📝 *Characters:* ${data.total_chars?.toLocaleString()} (${data.chars_no_spaces?.toLocaleString()} no spaces)\n` +
-                `📜 *Sentences:* ${data.sentences}\n` +
-                `📄 *Paragraphs:* ${data.paragraphs}\n` +
-                `🔤 *Syllables:* ${data.syllables?.toLocaleString()}\n` +
-                `📏 *Avg word length:* ${data.avg_word_length} chars\n` +
-                `📐 *Avg sentence length:* ${data.avg_sentence_length} words\n` +
-                `🔠 *Complex words (>6 chars):* ${data.long_words}\n\n` +
-                `━━━━━━ 📖 Readability ━━━━━━\n` +
-                `📊 *Flesch Score:* ${data.flesch_score}/100\n` +
+            const resultText = `📈 *${t('p.analyze.reportTitle')}*\n\n` +
+                `━━━━━━ 📊 ${t('p.analyze.countsSection')} ━━━━━━\n` +
+                `📖 *${t('p.analyze.words')}:* ${data.total_words?.toLocaleString()} (${data.unique_words?.toLocaleString()} ${t('p.analyze.unique')})\n` +
+                `📝 *${t('p.analyze.characters')}:* ${data.total_chars?.toLocaleString()} (${data.chars_no_spaces?.toLocaleString()} ${t('p.analyze.noSpaces')})\n` +
+                `📜 *${t('p.analyze.sentences')}:* ${data.sentences}\n` +
+                `📄 *${t('p.analyze.paragraphs')}:* ${data.paragraphs}\n` +
+                `🔤 *${t('p.analyze.syllables')}:* ${data.syllables?.toLocaleString()}\n` +
+                `📏 *${t('p.analyze.avgWordLength')}:* ${data.avg_word_length} ${t('p.analyze.chars')}\n` +
+                `📐 *${t('p.analyze.avgSentenceLength')}:* ${data.avg_sentence_length} ${t('p.analyze.words2')}\n` +
+                `🔠 *${t('p.analyze.complexWords')}:* ${data.long_words}\n\n` +
+                `━━━━━━ 📖 ${t('p.analyze.readabilitySection')} ━━━━━━\n` +
+                `📊 *${t('p.analyze.fleschScore')}:* ${data.flesch_score}/100\n` +
                 `${fleschBar}\n` +
-                `🎓 *Reading Level:* ${data.reading_level}\n` +
-                `⏱️ *Reading Time:* ${data.reading_time}\n\n` +
-                `━━━━━━ 😊 Sentiment ━━━━━━\n` +
+                `🎓 *${t('p.analyze.readingLevel')}:* ${data.reading_level}\n` +
+                `⏱️ *${t('p.analyze.readingTime')}:* ${data.reading_time}\n\n` +
+                `━━━━━━ 😊 ${t('p.analyze.sentimentSection')} ━━━━━━\n` +
                 `${sentBar || '⬜⬜⬜⬜⬜'}\n` +
-                `🎭 *Overall:* ${data.sentiment}\n` +
-                `✅ *Positive words:* ${data.positive_words}\n` +
-                `❌ *Negative words:* ${data.negative_words}\n\n` +
-                `━━━━━━ 🏆 Top Keywords ━━━━━━\n` +
+                `🎭 *${t('p.analyze.overall')}:* ${data.sentiment}\n` +
+                `✅ *${t('p.analyze.positiveWords')}:* ${data.positive_words}\n` +
+                `❌ *${t('p.analyze.negativeWords')}:* ${data.negative_words}\n\n` +
+                `━━━━━━ 🏆 ${t('p.analyze.topKeywordsSection')} ━━━━━━\n` +
                 `\`\`\`\n${topWordsText}\n\`\`\``;
-            await sendResult(sock, chatId, channelInfo, message, resultText, `analysis_${id}.txt`);
+            await sendResult(sock, chatId, channelInfo, message, resultText, `analysis_${id}.txt`, t);
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ Analysis failed: ${error.message}`,
+                text: `❌ ${t('p.analyze.analysisFailed', { error: error.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

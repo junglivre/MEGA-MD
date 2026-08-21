@@ -7,21 +7,21 @@ export default {
     groupOnly: true,
     adminOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const durationInMinutes = args[0] ? parseInt(args[0], 10) : undefined;
         try {
             await sock.groupSettingUpdate(chatId, 'announcement');
             if (durationInMinutes !== undefined && durationInMinutes > 0) {
                 const durationInMilliseconds = durationInMinutes * 60 * 1000;
                 await sock.sendMessage(chatId, {
-                    text: `The group has been muted for ${durationInMinutes} minutes.`,
+                    text: t('p.mute.mutedFor', { minutes: durationInMinutes }),
                     ...channelInfo
                 }, { quoted: message });
                 setTimeout(async () => {
                     try {
                         await sock.groupSettingUpdate(chatId, 'not_announcement');
                         await sock.sendMessage(chatId, {
-                            text: 'The group has been unmuted.',
+                            text: t('p.mute.unmuted'),
                             ...channelInfo
                         });
                     }
@@ -32,7 +32,7 @@ export default {
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: 'The group has been muted.',
+                    text: t('p.mute.muted'),
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -40,7 +40,7 @@ export default {
         catch (error) {
             console.error('Error muting/unmuting the group:', error);
             await sock.sendMessage(chatId, {
-                text: 'An error occurred while muting/unmuting the group. Please try again.',
+                text: t('p.mute.error'),
                 ...channelInfo
             }, { quoted: message });
         }

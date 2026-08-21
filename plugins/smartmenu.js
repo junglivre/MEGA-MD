@@ -71,14 +71,14 @@ export default {
             menuText += `┏━━━━━━━━━━━━━━━━┓\n`;
             menuText += `┃ 📱 *${t('bot')}:* ${config.botName || 'MEGA-MD'}\n`;
             menuText += `┃ 🔖 *${t('version')}:* ${config.version || '6.0.0'}\n`;
-            menuText += `┃ 👤 *Owner:* ${config.botOwner || 'Unknown'}\n`;
+            menuText += `┃ 👤 *${t('p.smenu.ownerLabel')}:* ${config.botOwner || 'Unknown'}\n`;
             menuText += `┃ ⏰ *${t('time')}:* ${formatTime()}\n`;
             menuText += `┃ ℹ️ *${t('prefix')}:* ${config.prefixes ? config.prefixes.join(', ') : '.'}\n`;
             menuText += `┃ 📊 *${t('plugins')}:* ${CommandHandler.commands.size}\n`;
             menuText += `┗━━━━━━━━━━━━━━━━┛\n\n`;
             const topCmds = stats.slice(0, 3).filter(s => s.usage > 0);
             if (topCmds.length > 0) {
-                menuText += `🔥 *TOP COMMANDS:*\n`;
+                menuText += `🔥 *${t('p.smenu.topCommands')}:*\n`;
                 topCmds.forEach((c, i) => {
                     const rank = i === 0 ? '🥇' : i === 1 ? '🥈' : '🥉';
                     menuText += `${rank} .${c.command} • ${c.usage} uses\n`;
@@ -109,11 +109,11 @@ export default {
                 menuText += `\n`;
             }
             menuText += `┌────────────────\n`;
-            menuText += `├  💡 *LEGEND*\n`;
-            menuText += `├─ ${activeEmoji} Active Command\n`;
-            menuText += `├─ ${disabledEmoji} Disabled Command\n`;
-            menuText += `├─ ${fastEmoji} Fast Response\n`;
-            menuText += `├─ ${slowEmoji} Slow Response\n`;
+            menuText += `├  💡 *${t('p.smenu.legendTitle')}*\n`;
+            menuText += `├─ ${activeEmoji} ${t('p.smenu.activeCommand')}\n`;
+            menuText += `├─ ${disabledEmoji} ${t('p.smenu.disabledCommand')}\n`;
+            menuText += `├─ ${fastEmoji} ${t('p.smenu.fastResponse')}\n`;
+            menuText += `├─ ${slowEmoji} ${t('p.smenu.slowResponse')}\n`;
             menuText += `⁠└────────────────`;
             const messageOptions = thumbnail
                 ? { image: thumbnail, caption: menuText, ...channelInfo }
@@ -123,7 +123,7 @@ export default {
         catch (error) {
             console.error('Menu Error:', error);
             await sock.sendMessage(chatId, {
-                text: `❌ *Menu Error*\n\n${error.message}`
+                text: `❌ *${t('p.smenu.menuErrorTitle')}*\n\n${error.message}`
             }, { quoted: message });
         }
     }

@@ -8,6 +8,7 @@ export default {
     usage: '.teddy',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const sender = message.key.participant || message.key.remoteJid;
         if (teddyUsers[sender])
             return;
@@ -35,7 +36,7 @@ export default {
         catch (err) {
             console.error('Error in teddy command:', err);
             try {
-                await sock.sendMessage(chatId, { text: '❌ Something went wrong while sending teddy emojis.' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `❌ ${t('p.teddy.error')}` }, { quoted: message });
             }
             catch { }
         }

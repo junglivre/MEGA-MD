@@ -11,10 +11,11 @@ export default {
         const channelInfo = context.channelInfo || {};
         const rawText = (context.rawText || '').toLowerCase();
         const isBotAdmin = context.isBotAdmin || false;
+        const { t } = context;
         const isRevoke = rawText.startsWith('.revokeinvite') || rawText.startsWith('.resetlink') || args[0]?.toLowerCase() === 'revoke';
         if (isRevoke && !isBotAdmin) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Bot needs to be an admin to revoke the invite link.`,
+                text: `❌ ${t('p.invitelink.botNotAdmin')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -22,14 +23,14 @@ export default {
             if (isRevoke) {
                 const newCode = await sock.groupRevokeInvite(chatId);
                 return await sock.sendMessage(chatId, {
-                    text: `🔄 *Invite link reset!*\n\n*New Link:*\nhttps://chat.whatsapp.com/${newCode}`,
+                    text: `🔄 *${t('p.invitelink.reset')}*\n\n*${t('p.invitelink.newLink')}:*\nhttps://chat.whatsapp.com/${newCode}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             else {
                 const code = await sock.groupInviteCode(chatId);
                 return await sock.sendMessage(chatId, {
-                    text: `🔗 *Group Invite Link*\n\nhttps://chat.whatsapp.com/${code}\n\n_Use \`.revokeinvite\` to reset this link._`,
+                    text: `🔗 *${t('p.invitelink.title')}*\n\nhttps://chat.whatsapp.com/${code}\n\n_${t('p.invitelink.hint')}_`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -37,7 +38,7 @@ export default {
         catch (e) {
             console.error('[INVITELINK] Error:', e.message);
             await sock.sendMessage(chatId, {
-                text: `❌ Failed: ${e.message}`,
+                text: `❌ ${t('p.invitelink.failed', { error: e.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

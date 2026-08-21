@@ -244,6 +244,7 @@ export default {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
         const isBotAdmin = context.isBotAdmin || false;
+        const { t } = context;
         const config = await loadConfig();
         if (!config.groups[chatId])
             config.groups[chatId] = { ...DEFAULT_GROUP_CONFIG };
@@ -251,72 +252,72 @@ export default {
         const action = args[0]?.toLowerCase();
         if (!action || action === 'status') {
             return await sock.sendMessage(chatId, {
-                text: `*🛡️ ANTI-SPAM STATUS*\n\n` +
-                    `*Status:* ${groupConfig.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-                    `*Limit:* ${groupConfig.maxMessages} messages in ${groupConfig.windowSeconds}s\n` +
-                    `*Action:* ${groupConfig.action.toUpperCase()}\n` +
-                    `*Warn limit:* ${groupConfig.warnCount} warns before kick\n` +
-                    `*Bot is admin:* ${isBotAdmin ? '✅ Yes' : '❌ No (needed for kick/mute)'}\n\n` +
-                    `*Commands:*\n` +
+                text: `*🛡️ ${t('p.antispam.statusTitle')}*\n\n` +
+                    `*${t('p.antispam.statusLabel')}:* ${groupConfig.enabled ? `✅ ${t('p.antispam.enabled')}` : `❌ ${t('p.antispam.disabled')}`}\n` +
+                    `*${t('p.antispam.limitLabel')}:* ${t('p.antispam.msgsInSeconds', { max: groupConfig.maxMessages, seconds: groupConfig.windowSeconds })}\n` +
+                    `*${t('p.antispam.actionLabel')}:* ${groupConfig.action.toUpperCase()}\n` +
+                    `*${t('p.antispam.warnLimitLabel')}:* ${t('p.antispam.warnsBeforeKick', { count: groupConfig.warnCount })}\n` +
+                    `*${t('p.antispam.botIsAdminLabel')}:* ${isBotAdmin ? `✅ ${t('p.antispam.yes')}` : `❌ ${t('p.antispam.noKickMute')}`}\n\n` +
+                    `*${t('p.antispam.commandsLabel')}:*\n` +
                     `• \`.antispam on/off\`\n` +
-                    `• \`.antispam set 5 10\` — 5 msgs in 10s\n` +
+                    `• \`.antispam set 5 10\` — ${t('p.antispam.setExample')}\n` +
                     `• \`.antispam action warn/kick/mute\`\n` +
-                    `• \`.antispam warns 3\` — warns before kick`,
+                    `• \`.antispam warns 3\` — ${t('p.antispam.warnsExample')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         if (action === 'on' || action === 'enable') {
             if (groupConfig.enabled)
-                return await sock.sendMessage(chatId, { text: '⚠️ Anti-spam already enabled.', ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `⚠️ ${t('p.antispam.alreadyEnabled')}`, ...channelInfo }, { quoted: message });
             if (!isBotAdmin && groupConfig.action !== 'warn') {
-                await sock.sendMessage(chatId, { text: `⚠️ Bot is not admin — kick/mute won't work until bot is made admin.`, ...channelInfo }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.antispam.botNotAdmin')}`, ...channelInfo }, { quoted: message });
             }
             groupConfig.enabled = true;
             await saveConfig(config);
             return await sock.sendMessage(chatId, {
-                text: `✅ *Anti-spam enabled!*\nLimit: ${groupConfig.maxMessages} msgs in ${groupConfig.windowSeconds}s | Action: ${groupConfig.action.toUpperCase()}`,
+                text: `✅ *${t('p.antispam.enabledMsg')}*\n${t('p.antispam.limitLine', { max: groupConfig.maxMessages, seconds: groupConfig.windowSeconds, action: groupConfig.action.toUpperCase() })}`,
                 ...channelInfo
             }, { quoted: message });
         }
         if (action === 'off' || action === 'disable') {
             if (!groupConfig.enabled)
-                return await sock.sendMessage(chatId, { text: '⚠️ Anti-spam already disabled.', ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `⚠️ ${t('p.antispam.alreadyDisabled')}`, ...channelInfo }, { quoted: message });
             groupConfig.enabled = false;
             await saveConfig(config);
-            return await sock.sendMessage(chatId, { text: '❌ *Anti-spam disabled.*', ...channelInfo }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `❌ *${t('p.antispam.disabledMsg')}*`, ...channelInfo }, { quoted: message });
         }
         if (action === 'set') {
             const maxMsgs = parseInt(args[1], 10);
             const windowSec = parseInt(args[2], 10);
             if (isNaN(maxMsgs) || isNaN(windowSec) || maxMsgs < 2 || windowSec < 1) {
-                return await sock.sendMessage(chatId, { text: '❌ Usage: `.antispam set <messages> <seconds>`\nExample: `.antispam set 5 10`', ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.antispam.setUsage')}`, ...channelInfo }, { quoted: message });
             }
             groupConfig.maxMessages = maxMsgs;
             groupConfig.windowSeconds = windowSec;
             await saveConfig(config);
-            return await sock.sendMessage(chatId, { text: `✅ Limit: *${maxMsgs} msgs* in *${windowSec}s*`, ...channelInfo }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `✅ ${t('p.antispam.limitSet', { max: maxMsgs, seconds: windowSec })}`, ...channelInfo }, { quoted: message });
         }
         if (action === 'action') {
             const newAction = args[1]?.toLowerCase();
             if (!['warn', 'kick', 'mute'].includes(newAction)) {
-                return await sock.sendMessage(chatId, { text: '❌ Choose: `warn`, `kick`, or `mute`', ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.antispam.chooseAction')}`, ...channelInfo }, { quoted: message });
             }
             if (newAction !== 'warn' && !isBotAdmin) {
-                await sock.sendMessage(chatId, { text: `⚠️ Action set to *${newAction.toUpperCase()}* but bot needs admin rights to execute it.`, ...channelInfo }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.antispam.actionSetNoAdmin', { action: newAction.toUpperCase() })}`, ...channelInfo }, { quoted: message });
             }
             groupConfig.action = newAction;
             await saveConfig(config);
-            return await sock.sendMessage(chatId, { text: `✅ Action: *${newAction.toUpperCase()}*`, ...channelInfo }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `✅ ${t('p.antispam.actionLabel')}: *${newAction.toUpperCase()}*`, ...channelInfo }, { quoted: message });
         }
         if (action === 'warns') {
             const count = parseInt(args[1], 10);
             if (isNaN(count) || count < 1)
-                return await sock.sendMessage(chatId, { text: '❌ Example: `.antispam warns 3`', ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.antispam.warnsExampleUsage')}`, ...channelInfo }, { quoted: message });
             groupConfig.warnCount = count;
             await saveConfig(config);
-            return await sock.sendMessage(chatId, { text: `✅ Warn limit: *${count}* before action.`, ...channelInfo }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `✅ ${t('p.antispam.warnLimitSet', { count })}`, ...channelInfo }, { quoted: message });
         }
-        return await sock.sendMessage(chatId, { text: '❌ Unknown option. Use `.antispam status`', ...channelInfo }, { quoted: message });
+        return await sock.sendMessage(chatId, { text: `❌ ${t('p.antispam.unknownOption')}`, ...channelInfo }, { quoted: message });
     },
     handleAntiSpam,
     invalidateGroupCache

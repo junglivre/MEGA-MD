@@ -14,16 +14,17 @@ export default {
      * @param {object} context - additional context
      */
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         const text = args?.[0];
         if (!text) {
             return await sock.sendMessage(chatId, {
-                text: 'Please provide a plugin URL.\nExample: .addplugin https://gist.github.com/username/gistid'
+                text: t('p.addplugin.noUrl')
             }, { quoted: message });
         }
         const gistMatch = text.match(/(?:\/|gist\.github\.com\/)([a-fA-F0-9]+)/);
         if (!gistMatch) {
-            return await sock.sendMessage(chatId, { text: '❌ Invalid plugin URL.' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `❌ ${t('p.addplugin.invalidUrl')}` }, { quoted: message });
         }
         const gistId = gistMatch[1];
         const gistURL = `https://api.github.com/gists/${gistId}`;
@@ -31,7 +32,7 @@ export default {
             const response = await axios.get(gistURL);
             const gistData = response.data;
             if (!gistData || !gistData.files) {
-                return await sock.sendMessage(chatId, { text: '❌ No valid files found in the Gist.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.addplugin.noFiles')}` }, { quoted: message });
             }
             const pluginDir = path.join(process.cwd(), 'plugins');
             for (const file of Object.values(gistData.files)) {
@@ -39,11 +40,11 @@ export default {
                 const pluginPath = path.join(pluginDir, pluginName);
                 await fs.promises.writeFile(pluginPath, file.content);
             }
-            await sock.sendMessage(chatId, { text: '*✅ Successfully installed plugin from Gist.*' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `*✅ ${t('p.addplugin.success')}*` }, { quoted: message });
         }
         catch (error) {
             console.error('install plugin error:', error);
-            await sock.sendMessage(chatId, { text: `❌ Error fetching or saving the plugin: ${error.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.addplugin.error', { error: error.message })}` }, { quoted: message });
         }
     }
 };

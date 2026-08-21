@@ -8,36 +8,37 @@ export default {
     description: 'Search for stories on Wattpad!',
     usage: '.wattpad <query>',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         const query = args.join(' ').trim();
         if (!query) {
             return await sock.sendMessage(chatId, {
-                text: '*Please provide a query (e.g., story title, author, or tag).*' +
-                    `\nExample: .wattpad The Hunger Games`,
+                text: `*${t('p.wattpad.noQuery')}*` +
+                    `\n${t('p.wattpad.example')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         try {
             const results = await QasimAny.wattpad(query);
             if (!Array.isArray(results) || results.length === 0) {
-                throw new Error('No results found for your query.');
+                throw new Error(t('p.wattpad.noResults'));
             }
             const formattedResults = results.slice(0, 9).map((story, index) => {
-                const title = story.judul || 'No title available';
-                const reads = story.dibaca || 'No reads available';
-                const votes = story.divote || 'No votes available';
+                const title = story.judul || t('p.wattpad.noTitle');
+                const reads = story.dibaca || t('p.wattpad.noReads');
+                const votes = story.divote || t('p.wattpad.noVotes');
                 const thumb = story.thumb || '';
-                const link = story.link || 'No link available';
-                return `${index + 1}. *${title}*\n*Reads*: ${reads}\n*Votes*: ${votes}\nRead more: ${link}${thumb ? `\n${thumb}` : ''}`;
+                const link = story.link || t('p.wattpad.noLink');
+                return `${index + 1}. *${title}*\n*${t('p.wattpad.readsLabel')}*: ${reads}\n*${t('p.wattpad.votesLabel')}*: ${votes}\n${t('p.wattpad.readMore')}: ${link}${thumb ? `\n${thumb}` : ''}`;
             }).join('\n\n');
             await sock.sendMessage(chatId, {
-                text: `*Search Results For "${query}":*\n\n${formattedResults}`,
+                text: `*${t('p.wattpad.searchResultsFor', { query })}*\n\n${formattedResults}`,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ An error occurred: ${error.message || error}`,
+                text: `❌ ${t('p.wattpad.error', { message: error.message || error })}`,
                 ...channelInfo
             }, { quoted: message });
         }

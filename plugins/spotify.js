@@ -14,10 +14,11 @@ export default {
     usage: '.spotify <spotify-url>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const url = args.join(' ').trim();
         if (!url || !url.includes('spotify.com')) {
             return sock.sendMessage(chatId, {
-                text: '🎵 *Spotify Downloader*\n\nUsage: `.spotify <spotify track url>`\nExample: `.spotify https://open.spotify.com/track/4LMlVCXHJtCE9abhmn0mYo`'
+                text: `🎵 *${t('p.spotify.title')}*\n\n${t('p.spotify.usageLine')}\n${t('p.spotify.exampleLine')}`
             }, { quoted: message });
         }
         try {
@@ -32,14 +33,14 @@ export default {
             const track = data.data;
             if (!track.download) {
                 return sock.sendMessage(chatId, {
-                    text: '❌ No downloadable audio found for this track.'
+                    text: `❌ ${t('p.spotify.noAudio')}`
                 }, { quoted: message });
             }
             const caption = [
-                `🎵 *${track.title || 'Unknown Title'}*`,
+                `🎵 *${track.title || t('p.spotify.unknownTitle')}*`,
                 track.artist ? `👤 ${track.artist}` : '',
                 track.duration ? `⏱ ${formatDuration(track.duration)}` : '',
-                track.format ? `🎧 Format: ${track.format.toUpperCase()}` : ''
+                track.format ? `🎧 ${t('p.spotify.formatLabel')}: ${track.format.toUpperCase()}` : ''
             ].filter(Boolean).join('\n');
             if (track.cover) {
                 await sock.sendMessage(chatId, {
@@ -59,7 +60,7 @@ export default {
         catch (error) {
             console.error('[SPOTIFY] error:', error.message);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to download track. Please check the URL and try again.'
+                text: `❌ ${t('p.spotify.downloadFailed')}`
             }, { quoted: message });
         }
     }

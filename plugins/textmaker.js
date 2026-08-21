@@ -10,31 +10,32 @@ export default {
     category: 'menu',
     description: 'Generate styled text with various effects',
     usage: '.ephoto <type> <text>',
-    async handler(sock, message, args) {
+    async handler(sock, message, args, context) {
         const chatId = message.key.remoteJid;
+        const { t } = context;
         const type = args[0]?.toLowerCase();
         const text = args.slice(1).join(' ');
         if (!type || !allTypes.includes(type) || !text) {
-            let menuText = `✨🎨 *EPHOTO TEXT MAKER* 🎨✨
+            let menuText = `✨🎨 *${t('p.ephoto.menuTitle')}* 🎨✨
 ━━━━━━━━━━━━━━━━━━━
-🖌️ *Create stunning text styles*
-⚡ Fast • Stylish • HD Effects
+🖌️ *${t('p.ephoto.menuSubtitle')}*
+⚡ ${t('p.ephoto.menuTagline')}
 
-📌 *Usage*
+📌 *${t('p.ephoto.usageLabel')}*
 👉 *.ephoto <type> <text>*
-📖 Example:
+📖 ${t('p.ephoto.exampleLabel')}:
 👉 *.ephoto metallic Hello*
 
 ━━━━━━━━━━━━━━━━━━━
-🎭 *AVAILABLE STYLES*
+🎭 *${t('p.ephoto.availableStyles')}*
 `;
-            allTypes.forEach((t, i) => {
-                menuText += `🔹 *${i + 1}.* ${t}\n`;
+            allTypes.forEach((style, i) => {
+                menuText += `🔹 *${i + 1}.* ${style}\n`;
             });
             menuText +=
                 `━━━━━━━━━━━━━━━━━━━
-💡 *Tip:* Use short & clear text for best results
-🤖 Powered by *MEGA-MD*`;
+💡 *${t('p.ephoto.tipLabel')}:* ${t('p.ephoto.tipText')}
+🤖 ${t('p.ephoto.poweredBy')}`;
             return await sock.sendMessage(chatId, { text: menuText }, { quoted: message });
         }
         try {

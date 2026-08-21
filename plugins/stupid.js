@@ -6,6 +6,7 @@ export default {
     usage: '.stupid (reply to user, mention someone, or add text)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const sender = message.key.participant || message.key.remoteJid;
         const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const mentionedJid = message.message?.extendedTextMessage?.contextInfo?.mentionedJid;
@@ -38,7 +39,7 @@ export default {
         catch (error) {
             console.error('Stupid Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Sorry, I couldn\'t generate the stupid card. Please try again later!'
+                text: t('p.stupid.generateFailed')
             }, { quoted: message });
         }
     }

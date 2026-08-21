@@ -21,7 +21,7 @@ export default {
     groupOnly: true,
     adminOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         let targetNumber = null;
         if (message.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
             const quotedMsg = message.message.extendedTextMessage.contextInfo.quotedMessage;
@@ -57,14 +57,7 @@ export default {
         }
         if (!targetNumber) {
             return await sock.sendMessage(chatId, {
-                text: `❌ *Please provide a number to add!*
-
-*Usage:*
-• \`.add 923051234567\`
-• \`.add +923051234567\`
-• \`.add 92 305 1234567\`
-• Reply to a vcard with \`.add\`
-• Reply to a message with \`.add\``,
+                text: `❌ ${t('p.add.usage')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -72,7 +65,7 @@ export default {
             !targetNumber.startsWith('4') && !targetNumber.startsWith('5') && !targetNumber.startsWith('6') &&
             !targetNumber.startsWith('7') && !targetNumber.startsWith('8') && !targetNumber.startsWith('9')) {
             return await sock.sendMessage(chatId, {
-                text: '❌ *Invalid number format!*\n\nPlease include the country code.\nExample: 923051234567',
+                text: `❌ ${t('p.add.invalidFormat')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -82,33 +75,33 @@ export default {
             const participants = groupMetadata.participants.map((p) => p.id);
             if (participants.includes(targetJid)) {
                 return await sock.sendMessage(chatId, {
-                    text: `⚠️ *User is already in the group!*\n\n${targetNumber}`,
+                    text: `⚠️ ${t('p.add.alreadyMember', { number: targetNumber })}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             const result = await sock.groupParticipantsUpdate(chatId, [targetJid], 'add');
             if (result[0].status === '200') {
                 await sock.sendMessage(chatId, {
-                    text: `✅ *Successfully added!*\n\n@${targetNumber}`,
+                    text: `✅ ${t('p.add.success', { number: targetNumber })}`,
                     mentions: [targetJid],
                     ...channelInfo
                 }, { quoted: message });
             }
             else if (result[0].status === '403') {
                 await sock.sendMessage(chatId, {
-                    text: `❌ *Failed to add user!*\n\n*Reason:* User has privacy settings that prevent being added to groups.\n\n*Solution:* Send them the group invite link.`,
+                    text: `❌ ${t('p.add.privacyBlocked')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             else if (result[0].status === '408') {
                 await sock.sendMessage(chatId, {
-                    text: `⚠️ *Invite sent!*\n\nUser needs to accept the invitation to join.`,
+                    text: `⚠️ ${t('p.add.inviteSent')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: `❌ *Failed to add user!*\n\n*Status:* ${result[0].status}\n\nThe user may have blocked the bot or changed their privacy settings.`,
+                    text: `❌ ${t('p.add.failedStatus', { status: result[0].status })}`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -116,7 +109,7 @@ export default {
         catch (error) {
             console.error('Add command error:', error);
             await sock.sendMessage(chatId, {
-                text: `❌ *Error adding user!*\n\n${error.message}`,
+                text: `❌ ${t('p.add.error', { error: error.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

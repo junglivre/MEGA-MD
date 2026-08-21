@@ -6,6 +6,7 @@ export default {
     description: 'Re-send a view-once image or video.',
     usage: '.viewonce (reply to a view-once media)',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -35,14 +36,14 @@ export default {
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: '*Please reply to a view-once image or video.*'
+                    text: `*${t('p.viewonce.noMedia')}*`
                 }, { quoted: message });
             }
         }
         catch (error) {
             console.error('Error in viewonceCommand:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to retrieve the view-once media. Please try again later.'
+                text: `❌ ${t('p.viewonce.failed')}`
             }, { quoted: message });
         }
     }

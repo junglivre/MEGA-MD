@@ -8,12 +8,12 @@ export default {
     description: 'Change sticker pack name',
     usage: '.take <packname> (reply to sticker)',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         try {
             const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quotedMessage?.stickerMessage) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Reply to a sticker with .take <packname>',
+                    text: `❌ ${t('p.take.noSticker')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -30,7 +30,7 @@ export default {
                 });
                 if (!stickerBuffer) {
                     await sock.sendMessage(chatId, {
-                        text: '❌ Failed to download sticker',
+                        text: `❌ ${t('p.take.downloadFailed')}`,
                         ...channelInfo
                     }, { quoted: message });
                     return;
@@ -58,7 +58,7 @@ export default {
             catch (error) {
                 console.error('Sticker processing error:', error);
                 await sock.sendMessage(chatId, {
-                    text: '❌ Error processing sticker',
+                    text: `❌ ${t('p.take.processingError')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -66,7 +66,7 @@ export default {
         catch (error) {
             console.error('Error in take command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Error processing command',
+                text: `❌ ${t('p.take.commandError')}`,
                 ...channelInfo
             }, { quoted: message });
         }

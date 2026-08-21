@@ -6,6 +6,7 @@ export default {
     usage: '.quote',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const apiKey = 'shizo';
             const res = await fetch(`https://shizoapi.onrender.com/api/texts/quotes?apikey=${apiKey}`);
@@ -18,7 +19,7 @@ export default {
         catch (error) {
             console.error('Quote Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to get quote. Please try again later!'
+                text: t('p.quote.failed')
             }, { quoted: message });
         }
     }

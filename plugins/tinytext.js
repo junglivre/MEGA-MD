@@ -20,6 +20,7 @@ export default {
     usage: '.smallcaps <text> OR reply to a message',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             let txt = args?.join(' ') || "";
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -29,7 +30,7 @@ export default {
             txt = txt.replace(/^\.\w+\s*/, '').trim();
             if (!txt) {
                 return await sock.sendMessage(chatId, {
-                    text: 'Please provide text or reply to a message to convert.\nExample: `.smallcaps Hello World`'
+                    text: t('p.smallcaps.usage')
                 }, { quoted: message });
             }
             const capsMap = {
@@ -46,7 +47,7 @@ export default {
         }
         catch (err) {
             console.error('SmallCaps Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to process text.' });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.smallcaps.failed')}` });
         }
     }
 };

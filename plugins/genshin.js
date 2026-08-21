@@ -13,9 +13,10 @@ export default {
     usage: '.genshin <UID>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         if (!args.length) {
             return await sock.sendMessage(chatId, {
-                text: '*Please provide a Genshin UID.*\nExample: .genshin 826401293'
+                text: t('p.genshin.usage')
             }, { quoted: message });
         }
         const uid = args[0];
@@ -24,22 +25,24 @@ export default {
                 params: { apikey: 'guru', text: uid }
             });
             if (!data?.result) {
-                return await sock.sendMessage(chatId, { text: '❌ UID not found or invalid.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.genshin.notFound')}` }, { quoted: message });
             }
             const result = data.result;
-            const caption = `🎮 *Genshin UID Info*\n\n` +
-                `👤 Nickname: ${result.nickname || 'N/A'}\n` +
-                `🆔 UID: ${result.uid || 'N/A'}\n` +
-                `🏆 Achievements: ${result.achivement || 'N/A'}\n` +
-                `⚡ Level: ${result.level || 'N/A'}\n` +
-                `🌌 World Level: ${result.world_level || 'N/A'}\n` +
-                `🌀 Spiral Abyss: ${decodeUnicode(result.spiral_abyss)}\n` +
-                `💳 Card ID: ${result.card_id || 'N/A'}`;
+            const na = t('p.genshin.na');
+            const caption = `🎮 ${t('p.genshin.info', {
+                nickname: result.nickname || na,
+                uid: result.uid || na,
+                achievements: result.achivement || na,
+                level: result.level || na,
+                worldLevel: result.world_level || na,
+                spiralAbyss: decodeUnicode(result.spiral_abyss),
+                cardId: result.card_id || na
+            })}`;
             await sock.sendMessage(chatId, { image: { url: result.image }, caption }, { quoted: message });
         }
         catch (err) {
             console.error('Genshin plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch UID info.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.genshin.failed')}` }, { quoted: message });
         }
     }
 };

@@ -71,61 +71,64 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const t = context.t;
         try {
             const config = await initConfig();
             const action = args[0]?.toLowerCase();
             if (!action) {
+                const status = config.enabled ? `✅ ${t('p.autoreply.enabledLabel')}` : `❌ ${t('p.autoreply.disabledLabel')}`;
+                const storage = HAS_DB ? t('p.autoreply.storageDb') : t('p.autoreply.storageFs');
                 return await sock.sendMessage(chatId, {
-                    text: `*🤖 AUTO-REPLY STATUS*\n\n` +
-                        `*Status:* ${config.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-                        `*Total Replies:* ${config.replies.length}\n` +
-                        `*Storage:* ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                        `*Commands:*\n` +
-                        `• \`.autoreply on\` - Enable\n` +
-                        `• \`.autoreply off\` - Disable\n` +
-                        `• \`.addreply\` - Add a new trigger\n` +
-                        `• \`.delreply\` - Remove a trigger\n` +
-                        `• \`.listreplies\` - View all triggers`,
+                    text: `*🤖 ${t('p.autoreply.statusTitle')}*\n\n` +
+                        `*${t('p.autoreply.status')}:* ${status}\n` +
+                        `*${t('p.autoreply.totalReplies')}:* ${config.replies.length}\n` +
+                        `*${t('p.autoreply.storage')}:* ${storage}\n\n` +
+                        `*${t('p.autoreply.commands')}:*\n` +
+                        `• \`.autoreply on\` - ${t('p.autoreply.cmdOn')}\n` +
+                        `• \`.autoreply off\` - ${t('p.autoreply.cmdOff')}\n` +
+                        `• \`.addreply\` - ${t('p.autoreply.cmdAddReply')}\n` +
+                        `• \`.delreply\` - ${t('p.autoreply.cmdDelReply')}\n` +
+                        `• \`.listreplies\` - ${t('p.autoreply.cmdListReplies')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             if (action === 'on' || action === 'enable') {
                 if (config.enabled) {
                     return await sock.sendMessage(chatId, {
-                        text: '⚠️ *Auto-reply is already enabled*',
+                        text: `⚠️ *${t('p.autoreply.alreadyEnabled')}*`,
                         ...channelInfo
                     }, { quoted: message });
                 }
                 config.enabled = true;
                 await saveConfig(config);
                 return await sock.sendMessage(chatId, {
-                    text: '✅ *Auto-reply enabled!*\n\nBot will now respond to configured triggers.',
+                    text: `✅ *${t('p.autoreply.enabledMsg')}*`,
                     ...channelInfo
                 }, { quoted: message });
             }
             if (action === 'off' || action === 'disable') {
                 if (!config.enabled) {
                     return await sock.sendMessage(chatId, {
-                        text: '⚠️ *Auto-reply is already disabled*',
+                        text: `⚠️ *${t('p.autoreply.alreadyDisabled')}*`,
                         ...channelInfo
                     }, { quoted: message });
                 }
                 config.enabled = false;
                 await saveConfig(config);
                 return await sock.sendMessage(chatId, {
-                    text: '❌ *Auto-reply disabled!*\n\nBot will no longer respond to triggers.',
+                    text: `❌ *${t('p.autoreply.disabledMsg')}*`,
                     ...channelInfo
                 }, { quoted: message });
             }
             return await sock.sendMessage(chatId, {
-                text: '❌ *Invalid option!*\n\nUse: `.autoreply on` or `.autoreply off`',
+                text: `❌ *${t('p.autoreply.invalidOption')}*`,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (e) {
             console.error('Error in autoreply command:', e);
             await sock.sendMessage(chatId, {
-                text: '❌ *Error processing command!*',
+                text: `❌ *${t('p.autoreply.genericError')}*`,
                 ...channelInfo
             }, { quoted: message });
         }

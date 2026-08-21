@@ -8,17 +8,18 @@ export default {
     usage: '.quote <text> or reply to a message',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const ctx = message.message?.extendedTextMessage?.contextInfo;
         let text = args.join(' ').trim();
         if (!text) {
             const q = ctx?.quotedMessage;
             if (!q)
-                return sock.sendMessage(chatId, { text: '📝 Please provide text or reply to a message.\n\nUsage: .quote <text>' }, { quoted: message });
+                return sock.sendMessage(chatId, { text: t('p.quoted.missingText') }, { quoted: message });
             text = q.conversation
                 || q.extendedTextMessage?.text
                 || q.imageMessage?.caption
                 || q.videoMessage?.caption
-                || 'Media message';
+                || t('p.quoted.mediaFallback');
         }
         const who = ctx?.participant
             || ctx?.mentionedJid?.[0]
@@ -37,7 +38,7 @@ export default {
         const userName = storeContact?.name
             || storeContact?.notify
             || contactValue?.[0]?.notify
-            || (who.includes('@s.whatsapp.net') ? `+${ who.replace('@s.whatsapp.net', '')}` : 'User');
+            || (who.includes('@s.whatsapp.net') ? `+${ who.replace('@s.whatsapp.net', '')}` : t('p.quoted.userFallback'));
         try {
             const res = await axios.post('https://bot.lyo.su/quote/generate', {
                 type: 'quote',
@@ -72,17 +73,17 @@ export default {
                 await sock.sendMessage(chatId, { sticker: stickerBuffer }, { quoted: message });
             }
             catch {
-                await sock.sendMessage(chatId, { image: bufferImage, caption: '📝 Quote image (sticker conversion failed)' }, { quoted: message });
+                await sock.sendMessage(chatId, { image: bufferImage, caption: t('p.quoted.stickerFallbackCaption') }, { quoted: message });
             }
         }
         catch (err) {
             console.error('Quote plugin error:', err);
             const msg = err.message.includes('timeout')
-                ? 'Request timed out.'
+                ? t('p.quoted.errorTimeout')
                 : err.message.includes('Invalid API')
-                    ? 'API returned invalid data.'
-                    : 'Please try again later.';
-            await sock.sendMessage(chatId, { text: `❌ Failed to generate quote. ${msg}` }, { quoted: message });
+                    ? t('p.quoted.errorInvalidApi')
+                    : t('p.quoted.errorGeneric');
+            await sock.sendMessage(chatId, { text: t('p.quoted.failed', { reason: msg }) }, { quoted: message });
         }
     }
 };

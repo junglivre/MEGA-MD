@@ -148,25 +148,11 @@ export default {
     description: 'Convert between 100+ units — length, weight, speed, data, temperature and more',
     usage: '.units <value> <from> to <to>\nExample: .units 100 km to miles',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const input = args.join(' ').trim().toLowerCase();
         if (!input) {
             return await sock.sendMessage(chatId, {
-                text: `📏 *Unit Converter*\n\n` +
-                    `*Usage:* \`.units <value> <from> to <to>\`\n\n` +
-                    `*Examples:*\n` +
-                    `• \`.units 100 km to mi\`\n` +
-                    `• \`.units 70 kg to lb\`\n` +
-                    `• \`.units 37 c to f\`\n` +
-                    `• \`.units 1 gb to mb\`\n` +
-                    `• \`.units 60 mph to kph\`\n` +
-                    `• \`.units 1 yr to day\`\n` +
-                    `• \`.units 1 atm to psi\`\n` +
-                    `• \`.units 500 kcal to kj\`\n\n` +
-                    `*Categories:*\n` +
-                    `📐 length · ⚖️ weight · 🌡️ temperature\n` +
-                    `💨 speed · 💾 data · 📦 volume\n` +
-                    `🗺️ area · ⏱️ time · 🔋 energy · 🌬️ pressure`,
+                text: t('p.units.help'),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -185,13 +171,13 @@ export default {
         }
         else {
             return await sock.sendMessage(chatId, {
-                text: `❌ Wrong format.\n\nUse: \`.units 100 km to mi\``,
+                text: t('p.units.wrongFormat'),
                 ...channelInfo
             }, { quoted: message });
         }
         if (isNaN(value)) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Invalid number: \`${args[0]}\``,
+                text: t('p.units.invalidNumber', { input: args[0] }),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -201,18 +187,18 @@ export default {
             const toCat = UNIT_TO_CATEGORY[toUnit];
             if (!fromCat) {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ Unknown unit: \`${fromUnit}\`\n\nUse \`.units\` to see all supported units.`,
+                    text: t('p.units.unknownUnitFrom', { unit: fromUnit }),
                     ...channelInfo
                 }, { quoted: message });
             }
             if (!toCat) {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ Unknown unit: \`${toUnit}\``,
+                    text: t('p.units.unknownUnitTo', { unit: toUnit }),
                     ...channelInfo
                 }, { quoted: message });
             }
             return await sock.sendMessage(chatId, {
-                text: `❌ Cannot convert *${fromUnit}* (${fromCat}) to *${toUnit}* (${toCat}) — different categories.`,
+                text: t('p.units.categoryMismatch', { fromUnit, fromCat, toUnit, toCat }),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -225,10 +211,16 @@ export default {
         };
         const emoji = catEmojis[res.category] || '📏';
         await sock.sendMessage(chatId, {
-            text: `${emoji} *Unit Converter*\n\n` +
-                `📥 *Input:* ${value} ${fromName} (${fromUnit})\n` +
-                `📤 *Result:* ${formatNumber(res.result)} ${toName} (${toUnit})\n\n` +
-                `📂 *Category:* ${res.category.charAt(0).toUpperCase() + res.category.slice(1)}`,
+            text: t('p.units.resultText', {
+                emoji,
+                value,
+                fromName,
+                fromUnit,
+                result: formatNumber(res.result),
+                toName,
+                toUnit,
+                category: res.category.charAt(0).toUpperCase() + res.category.slice(1)
+            }),
             ...channelInfo
         }, { quoted: message });
     }

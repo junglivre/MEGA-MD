@@ -8,6 +8,7 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const t = context.t;
         const isGroup = chatId.endsWith('@g.us');
         const senderId = context.senderId || message.key.participant || message.key.remoteJid;
         const senderIsOwnerOrSudo = context.senderIsOwnerOrSudo || false;
@@ -16,14 +17,14 @@ export default {
             const { isSenderAdmin } = await isAdmin(sock, chatId, senderId);
             if (!isSenderAdmin) {
                 return await sock.sendMessage(chatId, {
-                    text: '❌ Only group admins or bot owner can clear this chat.',
+                    text: `❌ ${t('p.clearchat.adminOnly')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
         }
         if (!isGroup && !senderIsOwnerOrSudo && !message.key.fromMe) {
             return await sock.sendMessage(chatId, {
-                text: '❌ Only the bot owner can clear DM chats.',
+                text: `❌ ${t('p.clearchat.ownerOnlyDm')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -38,14 +39,14 @@ export default {
                 ]
             }, chatId);
             await sock.sendMessage(chatId, {
-                text: `🗑️ *Chat cleared successfully!*`,
+                text: `🗑️ *${t('p.clearchat.successMsg')}*`,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (e) {
             console.error('[CLEARCHAT] Error:', e.message);
             await sock.sendMessage(chatId, {
-                text: `❌ Failed to clear chat: ${e.message}`,
+                text: `❌ ${t('p.clearchat.failedMsg', { error: e.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

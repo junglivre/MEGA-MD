@@ -21,6 +21,7 @@ export default {
     usage: '.viral <text> OR reply to a message',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             let txt = "";
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -36,7 +37,7 @@ export default {
             }
             if (!txt || txt.trim() === "") {
                 return await sock.sendMessage(chatId, {
-                    text: 'Please provide text or reply to a message to forward.'
+                    text: t('p.forwarded.noText')
                 }, { quoted: message });
             }
             await sock.sendMessage(chatId, {
@@ -46,7 +47,7 @@ export default {
         }
         catch (err) {
             console.error('Forwarding Spoof Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to spoof forwarding.' });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.forwarded.failed')}` });
         }
     }
 };

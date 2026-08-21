@@ -21,12 +21,13 @@ export default {
     category: 'tools',
     description: 'Convert any audio message into a voice note',
     usage: 'Reply to an audio file with .vnote',
-    async handler(sock, message, _args, _context) {
+    async handler(sock, message, _args, context) {
+        const { t } = context;
         const chatId = message.key.remoteJid;
         const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (!quoted?.audioMessage) {
             return sock.sendMessage(chatId, {
-                text: '❌ Please reply to an *audio file* to convert it to a voice note.'
+                text: `❌ ${t('p.vnote.noAudio')}`
             }, { quoted: message });
         }
         const tmpDir = path.join(process.cwd(), 'tmp');
@@ -53,7 +54,7 @@ export default {
         catch (error) {
             console.error('[VNOTE] Error:', error.message);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to convert audio to voice note.'
+                text: `❌ ${t('p.vnote.failed')}`
             }, { quoted: message });
         }
         finally {

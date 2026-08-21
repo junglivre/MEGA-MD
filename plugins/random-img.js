@@ -52,20 +52,13 @@ export default {
     usage: '.images <category>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const category = (args[0] || '').toLowerCase();
         if (!category || !imageUrls[category]) {
             const categoriesList = Object.keys(imageUrls)
                 .map((c, i) => `┃ ${i + 1}. ${c}`)
                 .join('\n');
-            const menuText = `
-╭──── *『 IMAGES 』* ──◆
-┃ Available Categories:
-${categoriesList}
-┃
-┃ *Usage example:*
-┃   .images cat
-╰━━━━━━━━━━━━━━────⊷
-            `.trim();
+            const menuText = t('p.images.menu', { categoriesList });
             return await sock.sendMessage(chatId, { text: menuText }, { quoted: message });
         }
         try {
@@ -80,14 +73,14 @@ ${categoriesList}
             for (const img of selectedImages) {
                 await sock.sendMessage(chatId, {
                     image: { url: img.url },
-                    caption: `📷 Random ${category} image`
+                    caption: `📷 ${t('p.images.caption', { category })}`
                 }, { quoted: message });
             }
         }
         catch (err) {
             console.error('Images Command Error:', err);
             await sock.sendMessage(chatId, {
-                text: '❌ An error occurred while processing your request. Please try again later.'
+                text: t('p.images.failed')
             }, { quoted: message });
         }
     }

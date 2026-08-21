@@ -9,12 +9,13 @@ export default {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
         const rawText = context.rawText || '';
+        const { t } = context;
         // Auto-detect from command name
         const isUnarchive = rawText.toLowerCase().startsWith('.unarchive');
         const action = args[0]?.toLowerCase() || (isUnarchive ? 'unarchive' : 'archive');
         if (!['archive', 'unarchive'].includes(action)) {
             return await sock.sendMessage(chatId, {
-                text: `*📦 ARCHIVE CHAT*\n\n*Usage:*\n• \`.archivechat archive\` — Archive this chat\n• \`.archivechat unarchive\` — Unarchive this chat\n\n_Or use aliases: \`.archive\` / \`.unarchive\`_`,
+                text: `*📦 ${t('p.archivechat.title')}*\n\n*${t('p.archivechat.usageLabel')}:*\n• \`.archivechat archive\` — ${t('p.archivechat.usageArchive')}\n• \`.archivechat unarchive\` — ${t('p.archivechat.usageUnarchive')}\n\n_${t('p.archivechat.aliasesHint')}_`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -32,15 +33,15 @@ export default {
             }, chatId);
             await sock.sendMessage(chatId, {
                 text: shouldArchive
-                    ? `📦 *Chat archived!*`
-                    : `📂 *Chat unarchived!*`,
+                    ? `📦 *${t('p.archivechat.archived')}*`
+                    : `📂 *${t('p.archivechat.unarchived')}*`,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (e) {
             console.error('[ARCHIVECHAT] Error:', e.message);
             await sock.sendMessage(chatId, {
-                text: `❌ Failed to ${action} chat: ${e.message}`,
+                text: `❌ ${t('p.archivechat.failed', { action, error: e.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

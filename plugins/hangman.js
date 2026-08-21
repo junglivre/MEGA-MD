@@ -51,13 +51,7 @@ export default {
             maxWrongGuesses: 6,
         };
         await sock.sendMessage(chatId, {
-            text: `🎮 *HANGMAN GAME STARTED!*\n\n` +
-                `The word is: ${maskedWord}\n\n` +
-                `*How to play:*\n` +
-                `• Use \`.guess <letter>\` to guess\n` +
-                `• You have 6 wrong guesses allowed\n` +
-                `• Guess the word before running out of tries!\n\n` +
-                `Good luck! 🍀`
+            text: context.t('p.hangman.started', { maskedWord })
         }, { quoted: message });
     },
     guessLetter

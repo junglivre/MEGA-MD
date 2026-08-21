@@ -9,10 +9,11 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const { t } = context;
         const config = await initConfig();
         if (config.replies.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: `📭 *No auto-replies configured yet*\n\nStatus: ${config.enabled ? '✅ Enabled' : '❌ Disabled'}\n\nUse \`.addreply <trigger> | <response>\` to add one!`,
+                text: `📭 *${t('p.listreplies.emptyTitle')}*\n\n${t('p.listreplies.statusLabel')}: ${config.enabled ? t('p.listreplies.enabled') : t('p.listreplies.disabled')}\n\n${t('p.listreplies.emptyHint')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -24,11 +25,11 @@ export default {
             return `${i + 1}. ${matchIcon} *${r.trigger}*\n    ↳ ${preview}`;
         }).join('\n\n');
         await sock.sendMessage(chatId, {
-            text: `*🤖 AUTO-REPLIES (${config.replies.length})*\n` +
-                `*Status:* ${config.enabled ? '✅ Enabled' : '❌ Disabled'}\n\n` +
+            text: `*🤖 ${t('p.listreplies.title')} (${config.replies.length})*\n` +
+                `*${t('p.listreplies.statusLabel')}:* ${config.enabled ? t('p.listreplies.enabled') : t('p.listreplies.disabled')}\n\n` +
                 `${lines}\n\n` +
-                `🎯 = exact match | 🔍 = contains\n` +
-                `_Use .delreply <trigger> to remove one_`,
+                `${t('p.listreplies.legend')}\n` +
+                `_${t('p.listreplies.removeHint')}_`,
             ...channelInfo
         }, { quoted: message });
     }

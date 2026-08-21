@@ -45,23 +45,23 @@ export default {
     description: 'List all sticker commands',
     usage: '.listcmd',
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         const stickers = await getStickerCommands();
         const entries = Object.entries(stickers);
         if (entries.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: '✳️ No sticker commands found'
+                text: `✳️ ${t('p.listcmd.noneFound')}`
             }, { quoted: message });
         }
         const stickerList = entries
-            .map(([key, value], index) => `${index + 1}. ${value.locked ? `*(blocked)* ${key}` : key} : ${value.text}`)
+            .map(([key, value], index) => `${index + 1}. ${value.locked ? `*(${t('p.listcmd.blocked')})* ${key}` : key} : ${value.text}`)
             .join('\n');
         const mentions = entries
             .map(([, value]) => value.mentionedJid)
             .flat()
             .filter(Boolean);
         await sock.sendMessage(chatId, {
-            text: `*CUSTOM STICKER COMMANDS*\n\n▢ *Info:* Custom commands set via .setcmd\n\n──────────────────\n${stickerList}`,
+            text: `*${t('p.listcmd.title')}*\n\n▢ *${t('p.listcmd.info')}:* ${t('p.listcmd.setViaHint')}\n\n──────────────────\n${stickerList}`,
             mentions
         }, { quoted: message });
     }

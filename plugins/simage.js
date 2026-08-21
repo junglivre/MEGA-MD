@@ -25,10 +25,11 @@ export default {
     usage: '.s2img (reply to a sticker)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quotedMessage?.stickerMessage) {
-                await sock.sendMessage(chatId, { text: '⚠️ Reply to a sticker with .simage to convert it.' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.s2img.noSticker')}` }, { quoted: message });
                 return;
             }
             const stickerFilePath = path.join(tempDir, `sticker_${Date.now()}.webp`);
@@ -40,13 +41,13 @@ export default {
             await fsPromises.writeFile(stickerFilePath, buffer);
             await sharp(stickerFilePath).toFormat('png').toFile(outputImagePath);
             const imageBuffer = await fsPromises.readFile(outputImagePath);
-            await sock.sendMessage(chatId, { image: imageBuffer, caption: '✨ Here is the converted image!' }, { quoted: message });
+            await sock.sendMessage(chatId, { image: imageBuffer, caption: `✨ ${t('p.s2img.caption')}` }, { quoted: message });
             scheduleFileDeletion(stickerFilePath);
             scheduleFileDeletion(outputImagePath);
         }
         catch (error) {
             console.error('SImage Command Error:', error);
-            await sock.sendMessage(chatId, { text: '❌ An error occurred while converting the sticker.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.s2img.failed')}` }, { quoted: message });
         }
     }
 };

@@ -28,11 +28,11 @@ export default {
     usage: '.warnings [@user]',
     groupOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const mentionedJidList = message.message?.extendedTextMessage?.contextInfo?.mentionedJid || [];
         if (mentionedJidList.length === 0) {
             await sock.sendMessage(chatId, {
-                text: 'Please mention a user to check warnings.',
+                text: t('p.warnings.noMention'),
                 ...channelInfo
             }, { quoted: message });
             return;
@@ -40,8 +40,9 @@ export default {
         const userToCheck = mentionedJidList[0];
         const warnings = await loadWarnings();
         const warningCount = (warnings[chatId] && warnings[chatId][userToCheck]) || 0;
+        const storage = HAS_DB ? t('p.warnings.storageDb') : t('p.warnings.storageFile');
         await sock.sendMessage(chatId, {
-            text: `@${userToCheck.split('@')[0]} has ${warningCount} warning(s).\n\nStorage: ${HAS_DB ? 'Database' : 'File System'}`,
+            text: t('p.warnings.count', { user: userToCheck.split('@')[0], count: warningCount, storage }),
             mentions: [userToCheck],
             ...channelInfo
         }, { quoted: message });

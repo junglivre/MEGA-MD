@@ -8,38 +8,13 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const { t } = context;
         const setting = args[0]?.toLowerCase();
         const value = args[1]?.toLowerCase();
         // ── No args: show full menu ───────────────────────────────────────
         if (!setting) {
             return await sock.sendMessage(chatId, {
-                text: `╔══════════════╗\n` +
-                    `║🔒*PRIVACY SETTING*║\n` +
-                    `╚══════════════╝\n` +
-                    `📌 *Usage:* \`.pvcy <set> <val>\`\n\n` +
-                    `────────────────────\n` +
-                    `*⚙️ PRIVACY CONTROLS*\n\n` +
-                    `👁️ *lastseen* — \`all\` \`contacts\` \`blacklist\` \`none\`\n\n` +
-                    `🟢 *online* — \`all\` \`match_last_seen\`\n\n` +
-                    `🖼️ *profile* — \`all\` \`contacts\` \`blacklist\` \`none\`\n\n` +
-                    `📊 *status* — \`all\` \`contacts\` \`blacklist\` \`none\`\n\n` +
-                    `✅ *receipts* — \`all\` \`none\`\n\n` +
-                    `👥 *groups* — \`all\` \`contacts\` \`blacklist\`\n\n` +
-                    `⏳ *timer* — \`off\` \`24h\` \`7d\` \`90d\`\n\n` +
-                    `*🚫 BLOCK CONTROLS*\n\n` +
-                    `🔴 *block* — \`<number>\` or reply to msg\n\n` +
-                    `🟢 *unblock* — \`<number>\` or reply to msg\n\n` +
-                    `📋 *blocklist* — view blocked users\n\n` +
-                    `*📊 INFO*\n` +
-                    `🔍 *status* — view privacy settings\n` +
-                    `────────────────────\n\n` +
-                    `💡 *Examples:*\n` +
-                    `› \`.privacy lastseen all\`\n\n` +
-                    `› \`.privacy receipts none\`\n\n` +
-                    `› \`.privacy timer 7d\`\n\n` +
-                    `› \`.privacy block 923001234567\`\n\n` +
-                    `› \`.privacy blocklist\`\n\n` +
-                    `› \`.privacy status\``,
+                text: t('p.privacy.menu'),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -49,21 +24,19 @@ export default {
                 const s = await sock.fetchPrivacySettings(true);
                 const fmt = (v) => v ? `\`${v}\`` : `\`unknown\``;
                 return await sock.sendMessage(chatId, {
-                    text: `╔═══════════════╗\n` +
-                        `║🔒*CURRENT PRIVACY*║\n` +
-                        `╚═══════════════╝\n\n` +
-                        `👁️ *Last Seen:* ${fmt(s.last)}\n\n` +
-                        `🟢 *Online:* ${fmt(s.online)}\n\n` +
-                        `🖼️ *Profile Pic:* ${fmt(s.profile)}\n\n` +
-                        `📊 *Status:* ${fmt(s.status)}\n\n` +
-                        `✅ *Read Receipts:* ${fmt(s.readreceipts)}\n\n` +
-                        `👥 *Groups Add:* ${fmt(s.groupadd)}\n\n` +
-                        `_Use \`.pvcy <set> <value>\` to change_`,
+                    text: t('p.privacy.statusView', {
+                        last: fmt(s.last),
+                        online: fmt(s.online),
+                        profile: fmt(s.profile),
+                        status: fmt(s.status),
+                        readreceipts: fmt(s.readreceipts),
+                        groupadd: fmt(s.groupadd)
+                    }),
                     ...channelInfo
                 }, { quoted: message });
             }
             catch (e) {
-                return await sock.sendMessage(chatId, { text: `❌ Failed to fetch settings: ${e.message}`, ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.privacy.statusFetchFailed', { error: e.message })}`, ...channelInfo }, { quoted: message });
             }
         }
         // ── blocklist ─────────────────────────────────────────────────────
@@ -71,21 +44,16 @@ export default {
             try {
                 const list = await sock.fetchBlocklist();
                 if (!list || list.length === 0) {
-                    return await sock.sendMessage(chatId, { text: `📋 *Block List*\n\n_No blocked users._`, ...channelInfo }, { quoted: message });
+                    return await sock.sendMessage(chatId, { text: `📋 ${t('p.privacy.blocklistEmpty')}`, ...channelInfo }, { quoted: message });
                 }
                 const entries = list.map((jid, i) => `${i + 1}. +${jid.split('@')[0]}`).join('\n');
                 return await sock.sendMessage(chatId, {
-                    text: `╔═════════════╗\n` +
-                        `║🚫 *BLOCK LIST*   ║\n` +
-                        `╚═════════════╝\n\n` +
-                        `${entries}\n\n` +
-                        `────────────────────\n` +
-                        `*Total:* ${list.length} blocked user(s)`,
+                    text: t('p.privacy.blocklistView', { entries, count: list.length }),
                     ...channelInfo
                 }, { quoted: message });
             }
             catch (e) {
-                return await sock.sendMessage(chatId, { text: `❌ Failed to fetch block list: ${e.message}`, ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.privacy.blocklistFetchFailed', { error: e.message })}`, ...channelInfo }, { quoted: message });
             }
         }
         // ── block/unblock ─────────────────────────────────────────────────
@@ -106,21 +74,21 @@ export default {
             }
             if (!targetJid) {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ Provide a number or reply to a message.\n\nExample: \`.privacy block 923001234567\``,
+                    text: `❌ ${t('p.privacy.missingTarget')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             try {
                 await sock.updateBlockStatus(targetJid, setting);
                 const icon = setting === 'block' ? '🚫' : '✅';
-                const action = setting === 'block' ? 'Blocked' : 'Unblocked';
+                const action = setting === 'block' ? t('p.privacy.blockedWord') : t('p.privacy.unblockedWord');
                 return await sock.sendMessage(chatId, {
                     text: `${icon} *${action}* +${targetJid.split('@')[0]}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             catch (e) {
-                return await sock.sendMessage(chatId, { text: `❌ Failed to ${setting}: ${e.message}`, ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.privacy.actionFailed', { action: setting, error: e.message })}`, ...channelInfo }, { quoted: message });
             }
         }
         // ── default disappearing timer ────────────────────────────────────
@@ -133,38 +101,38 @@ export default {
             };
             if (!value || !(value in durations)) {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ Choose: \`off\` \`24h\` \`7d\` \`90d\`\n\nExample: \`.privacy timer 7d\``,
+                    text: `❌ ${t('p.privacy.timerInvalid')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             try {
                 await sock.updateDefaultDisappearingMode(durations[value]);
-                const label = value === 'off' || value === '0' ? 'disabled' : `set to *${value}*`;
-                return await sock.sendMessage(chatId, { text: `⏳ Default disappearing timer ${label}`, ...channelInfo }, { quoted: message });
+                const label = value === 'off' || value === '0' ? t('p.privacy.timerDisabled') : t('p.privacy.timerSetTo', { value });
+                return await sock.sendMessage(chatId, { text: `⏳ ${t('p.privacy.timerResult', { label })}`, ...channelInfo }, { quoted: message });
             }
             catch (e) {
-                return await sock.sendMessage(chatId, { text: `❌ Failed to set timer: ${e.message}`, ...channelInfo }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.privacy.timerFailed', { error: e.message })}`, ...channelInfo }, { quoted: message });
             }
         }
         // ── privacy setting updates ───────────────────────────────────────
         const privacySettings = {
-            lastseen: { fn: (v) => sock.updateLastSeenPrivacy(v), allowed: ['all', 'contacts', 'contact_blacklist', 'blacklist', 'none'], label: 'Last Seen' },
-            online: { fn: (v) => sock.updateOnlinePrivacy(v), allowed: ['all', 'match_last_seen'], label: 'Online Status' },
-            profile: { fn: (v) => sock.updateProfilePicturePrivacy(v), allowed: ['all', 'contacts', 'contact_blacklist', 'blacklist', 'none'], label: 'Profile Picture' },
-            status: { fn: (v) => sock.updateStatusPrivacy(v), allowed: ['all', 'contacts', 'contact_blacklist', 'blacklist', 'none'], label: 'Status' },
-            receipts: { fn: (v) => sock.updateReadReceiptsPrivacy(v), allowed: ['all', 'none'], label: 'Read Receipts' },
-            groups: { fn: (v) => sock.updateGroupsAddPrivacy(v), allowed: ['all', 'contacts', 'contact_blacklist', 'blacklist'], label: 'Groups Add' },
+            lastseen: { fn: (v) => sock.updateLastSeenPrivacy(v), allowed: ['all', 'contacts', 'contact_blacklist', 'blacklist', 'none'], label: t('p.privacy.labelLastseen') },
+            online: { fn: (v) => sock.updateOnlinePrivacy(v), allowed: ['all', 'match_last_seen'], label: t('p.privacy.labelOnline') },
+            profile: { fn: (v) => sock.updateProfilePicturePrivacy(v), allowed: ['all', 'contacts', 'contact_blacklist', 'blacklist', 'none'], label: t('p.privacy.labelProfile') },
+            status: { fn: (v) => sock.updateStatusPrivacy(v), allowed: ['all', 'contacts', 'contact_blacklist', 'blacklist', 'none'], label: t('p.privacy.labelStatus') },
+            receipts: { fn: (v) => sock.updateReadReceiptsPrivacy(v), allowed: ['all', 'none'], label: t('p.privacy.labelReceipts') },
+            groups: { fn: (v) => sock.updateGroupsAddPrivacy(v), allowed: ['all', 'contacts', 'contact_blacklist', 'blacklist'], label: t('p.privacy.labelGroups') },
         };
         const config = privacySettings[setting];
         if (!config) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Unknown option: *${setting}*\n\nUse \`.privacy\` to see all commands.`,
+                text: `❌ ${t('p.privacy.unknownOption', { setting })}`,
                 ...channelInfo
             }, { quoted: message });
         }
         if (!value || !config.allowed.includes(value)) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Invalid value for *${setting}*\n\nAllowed: ${config.allowed.filter(v => v !== 'contact_blacklist').map(v => `\`${v}\``).join(' ')}`,
+                text: `❌ ${t('p.privacy.invalidValue', { setting, allowed: config.allowed.filter(v => v !== 'contact_blacklist').map(v => `\`${v}\``).join(' ') })}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -172,14 +140,14 @@ export default {
         try {
             await config.fn(resolvedValue);
             return await sock.sendMessage(chatId, {
-                text: `✅ *${config.label}* set to \`${value}\``,
+                text: `✅ ${t('p.privacy.settingUpdated', { label: config.label, value })}`,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (e) {
             console.error('[PRIVACY] Error:', e.message);
             return await sock.sendMessage(chatId, {
-                text: `❌ Failed to update ${config.label}: ${e.message}`,
+                text: `❌ ${t('p.privacy.updateFailed', { label: config.label, error: e.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

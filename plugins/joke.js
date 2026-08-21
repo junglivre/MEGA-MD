@@ -6,6 +6,7 @@ export default {
     description: 'Get a random dad joke',
     usage: '.joke',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const response = await axios.get('https://icanhazdadjoke.com/', {
@@ -17,7 +18,7 @@ export default {
         catch (error) {
             console.error('Error fetching dad joke:', error);
             await sock.sendMessage(chatId, {
-                text: 'Sorry, I could not fetch a joke right now. Please try again later.',
+                text: t('p.joke.failed'),
                 quoted: message
             });
         }

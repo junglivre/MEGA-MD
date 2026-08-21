@@ -7,6 +7,7 @@ export default {
     description: 'Waste someone in style!',
     usage: '.wasted @user',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         let userToWaste;
         if (message.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
@@ -17,7 +18,7 @@ export default {
         }
         if (!userToWaste) {
             return await sock.sendMessage(chatId, {
-                text: 'Please mention someone or reply to their message to waste them!',
+                text: t('p.wasted.noTarget'),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -32,7 +33,7 @@ export default {
             const wastedResponse = await axios.get(`https://some-random-api.com/canvas/overlay/wasted?avatar=${encodeURIComponent(profilePic)}`, { responseType: 'arraybuffer' });
             await sock.sendMessage(chatId, {
                 image: Buffer.from(wastedResponse.data),
-                caption: `⚰️ *Wasted* : ${sock.store?.contacts?.[userToWaste]?.name || sock.store?.contacts?.[userToWaste]?.notify || (userToWaste.includes('@s.whatsapp.net') ? `+${ userToWaste.replace('@s.whatsapp.net', '')}` : 'User')} 💀\n\nRest in pieces!`,
+                caption: `⚰️ *${t('p.wasted.title')}* : ${sock.store?.contacts?.[userToWaste]?.name || sock.store?.contacts?.[userToWaste]?.notify || (userToWaste.includes('@s.whatsapp.net') ? `+${ userToWaste.replace('@s.whatsapp.net', '')}` : t('p.wasted.defaultUser'))} 💀\n\n${t('p.wasted.footer')}`,
                 mentions: [userToWaste],
                 ...channelInfo
             }, { quoted: message });
@@ -40,7 +41,7 @@ export default {
         catch (error) {
             console.error('Error in wasted command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to create wasted image! Try again later.',
+                text: `❌ ${t('p.wasted.failed')}`,
                 ...channelInfo
             }, { quoted: message });
         }

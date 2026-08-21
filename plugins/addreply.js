@@ -10,21 +10,22 @@ export default {
         const chatId = context.chatId || message.key.remoteJid;
         const senderId = context.senderId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const { t } = context;
         const fullText = args.join(' ');
         const pipeIndex = fullText.indexOf('|');
         if (!fullText || pipeIndex === -1) {
             return await sock.sendMessage(chatId, {
-                text: `*➕ ADD AUTO-REPLY*\n\n` +
-                    `*Usage:*\n` +
+                text: `*➕ ${t('p.addreply.title')}*\n\n` +
+                    `*${t('p.addreply.usageLabel')}:*\n` +
                     `\`.addreply <trigger> | <response>\`\n\n` +
-                    `*Examples:*\n` +
+                    `*${t('p.addreply.examplesLabel')}:*\n` +
                     `• \`.addreply hello | Hi there! 👋\`\n` +
                     `• \`.addreply exact:good morning | Good morning! ☀️\`\n` +
                     `• \`.addreply hi | Hello {name}! How are you?\`\n\n` +
-                    `*Tips:*\n` +
-                    `• Use \`exact:\` prefix for full message match\n` +
-                    `• Without \`exact:\` it matches if message *contains* trigger\n` +
-                    `• Use \`{name}\` in response to mention the sender's name`,
+                    `*${t('p.addreply.tipsLabel')}:*\n` +
+                    `• ${t('p.addreply.tipExact')}\n` +
+                    `• ${t('p.addreply.tipContains')}\n` +
+                    `• ${t('p.addreply.tipName')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -32,7 +33,7 @@ export default {
         const response = fullText.substring(pipeIndex + 1).trim();
         if (!trigger || !response) {
             return await sock.sendMessage(chatId, {
-                text: '❌ Both trigger and response are required.\n\nExample: `.addreply hello | Hi there!`',
+                text: `❌ ${t('p.addreply.missingParts')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -43,7 +44,7 @@ export default {
         }
         if (!trigger) {
             return await sock.sendMessage(chatId, {
-                text: '❌ Trigger cannot be empty after `exact:` prefix.',
+                text: `❌ ${t('p.addreply.emptyTrigger')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -51,7 +52,7 @@ export default {
         const exists = config.replies.find(r => r.trigger === trigger.toLowerCase());
         if (exists) {
             return await sock.sendMessage(chatId, {
-                text: `⚠️ A reply for *"${trigger}"* already exists!\n\nUse \`.delreply ${trigger}\` to remove it first.`,
+                text: `⚠️ ${t('p.addreply.alreadyExists', { trigger })}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -63,11 +64,12 @@ export default {
             createdAt: Date.now()
         });
         await saveConfig(config);
+        const matchType = exactMatch ? t('p.addreply.matchExact') : t('p.addreply.matchContains');
         await sock.sendMessage(chatId, {
-            text: `✅ *Auto-Reply Added!*\n\n` +
-                `🔑 *Trigger:* ${trigger}\n` +
-                `🎯 *Match type:* ${exactMatch ? 'Exact' : 'Contains'}\n` +
-                `💬 *Response:* ${response}`,
+            text: `✅ *${t('p.addreply.added')}*\n\n` +
+                `🔑 *${t('p.addreply.triggerLabel')}:* ${trigger}\n` +
+                `🎯 *${t('p.addreply.matchTypeLabel')}:* ${matchType}\n` +
+                `💬 *${t('p.addreply.responseLabel')}:* ${response}`,
             ...channelInfo
         }, { quoted: message });
     }

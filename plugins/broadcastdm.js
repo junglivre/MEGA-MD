@@ -10,10 +10,11 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const t = context.t;
         const text = args.join(' ').trim();
         if (!text) {
             return await sock.sendMessage(chatId, {
-                text: `*📩 BROADCAST DM*\n\n*Usage:* .broadcastdm <message>\n\n*Example:*\n.broadcastdm Hey! Check out our new features!\n\n_Sends to all contacts in the bot's contact list. Has a 1.5s delay between each to avoid ban._`,
+                text: `*📩 ${t('p.broadcastdm.usageTitle')}*\n\n*${t('p.broadcastdm.usageLabel')}:* .broadcastdm <message>\n\n*${t('p.broadcastdm.exampleLabel')}:*\n.broadcastdm ${t('p.broadcastdm.exampleText')}\n\n_${t('p.broadcastdm.note')}_`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -28,15 +29,15 @@ export default {
         }
         if (contacts.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: '❌ No contacts found in the bot\'s contact list.',
+                text: `❌ ${t('p.broadcastdm.noContacts')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         await sock.sendMessage(chatId, {
-            text: `📩 *Broadcasting to ${contacts.length} contact(s)...*\n\nThis may take a moment.`,
+            text: `📩 *${t('p.broadcastdm.broadcasting', { count: contacts.length })}*\n\n${t('p.broadcastdm.mayTakeMoment')}`,
             ...channelInfo
         }, { quoted: message });
-        const broadcastText = `📩 *MESSAGE*\n\n${text}`;
+        const broadcastText = `📩 *${t('p.broadcastdm.messageTitle')}*\n\n${text}`;
         let sent = 0;
         let failed = 0;
         for (const contactJid of contacts) {
@@ -55,7 +56,7 @@ export default {
             await new Promise(r => setTimeout(r, 1500));
         }
         await sock.sendMessage(chatId, {
-            text: `✅ *DM Broadcast Complete!*\n\n📤 Sent: ${sent}\n❌ Failed: ${failed}\n📊 Total: ${contacts.length}`,
+            text: `✅ *${t('p.broadcastdm.completeTitle')}*\n\n📤 ${t('p.broadcastdm.sentLabel')}: ${sent}\n❌ ${t('p.broadcastdm.failedLabel')}: ${failed}\n📊 ${t('p.broadcastdm.totalLabel')}: ${contacts.length}`,
             ...channelInfo
         }, { quoted: message });
     }

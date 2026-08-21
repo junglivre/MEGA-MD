@@ -40,23 +40,24 @@ export default {
     usage: '.dalle <prompt>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const imagePrompt = args.join(' ').trim();
         if (!imagePrompt) {
-            return sock.sendMessage(chatId, { text: '🎨 *AI Image Generator*\n\nUsage: `.dalle <prompt>`\nExample: `.dalle a beautiful sunset over mountains`' }, { quoted: message });
+            return sock.sendMessage(chatId, { text: t('p.dalle.usage') }, { quoted: message });
         }
         await sock.sendMessage(chatId, { react: { text: '🎨', key: message.key } });
-        await sock.sendMessage(chatId, { text: '🎨 Generating your image... Please wait.' }, { quoted: message });
+        await sock.sendMessage(chatId, { text: `🎨 ${t('p.dalle.generating')}` }, { quoted: message });
         try {
             const enhanced = enhancePrompt(imagePrompt);
             const imageBuffer = await generateImage(enhanced);
             await sock.sendMessage(chatId, {
                 image: imageBuffer,
-                caption: `🎨 *Generated Image*\n📝 Prompt: _${imagePrompt}_`
+                caption: t('p.dalle.caption', { prompt: imagePrompt })
             }, { quoted: message });
         }
         catch (error) {
             console.error('Imagine error:', error.message);
-            await sock.sendMessage(chatId, { text: '❌ Failed to generate image. Please try again later.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.dalle.failed')}` }, { quoted: message });
         }
     }
 };

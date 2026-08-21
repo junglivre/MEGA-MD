@@ -6,6 +6,7 @@ export default {
     usage: '.meme',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const res = await fetch('https://shizoapi.onrender.com/api/memes/cheems?apikey=shizo');
             if (!res.ok)
@@ -14,19 +15,19 @@ export default {
             if (contentType && contentType.includes('image')) {
                 const imageBuffer = Buffer.from(await res.arrayBuffer());
                 const buttons = [
-                    { buttonId: '.meme', buttonText: { displayText: '🎭 Another Meme' }, type: 1 },
-                    { buttonId: '.joke', buttonText: { displayText: '😄 Joke' }, type: 1 }
+                    { buttonId: '.meme', buttonText: { displayText: `🎭 ${t('p.meme.anotherMemeBtn')}` }, type: 1 },
+                    { buttonId: '.joke', buttonText: { displayText: `😄 ${t('p.meme.jokeBtn')}` }, type: 1 }
                 ];
                 await sock.sendMessage(chatId, {
                     image: imageBuffer,
-                    caption: "🐕 > Here's your cheems meme!",
+                    caption: `🐕 > ${t('p.meme.caption')}`,
                     buttons,
                     headerType: 1
                 }, { quoted: message });
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: '❌ The API did not return a valid image.',
+                    text: `❌ ${t('p.meme.invalidImage')}`,
                     quoted: message
                 });
             }
@@ -34,7 +35,7 @@ export default {
         catch (error) {
             console.error('Meme Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to fetch meme. Please try again later.',
+                text: `❌ ${t('p.meme.fetchFailed')}`,
                 quoted: message
             });
         }

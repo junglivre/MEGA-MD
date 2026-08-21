@@ -7,6 +7,7 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const config = context.config;
+        const { t } = context;
         try {
             const vcard = `
 BEGIN:VCARD
@@ -22,7 +23,7 @@ END:VCARD
         catch (error) {
             console.error('Owner Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to fetch owner contact.'
+                text: `❌ ${t('p.owner.fetchFailed')}`
             }, { quoted: message });
         }
     }

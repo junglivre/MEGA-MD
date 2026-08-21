@@ -10,40 +10,30 @@ export default {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
         const isBotAdmin = context.isBotAdmin || false;
+        const t = context.t;
         if (!isBotAdmin) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Bot needs to be an admin to change group settings.`,
+                text: `❌ ${t('p.gcset.notAdmin')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         const setting = args[0]?.toLowerCase();
         if (!setting) {
             return await sock.sendMessage(chatId, {
-                text: `╔════════════════╗\n` +
-                    `║⚙️ *GROUP SETTINGS*   ║\n` +
-                    `╚════════════════╝\n\n` +
-                    `📌 *Usage:* \`.gcset <option>\`\n\n` +
-                    `────────────────────\n` +
-                    `*💬 MESSAGE PERMISSIONS*\n` +
-                    `🔒 *lock* — Only admins can send messages\n\n` +
-                    `🔓 *unlock* — Everyone can send messages\n\n` +
-                    `*🛠️ SETTINGS PERMISSIONS*\n` +
-                    `🔒 *lockset* — Only admins can edit group info\n\n` +
-                    `🔓 *unlockset* — Everyone can edit group info\n` +
-                    `────────────────────`,
+                text: t('p.gcset.menu'),
                 ...channelInfo
             }, { quoted: message });
         }
         const settingsMap = {
-            lock: { value: 'announcement', label: '🔒 Only admins can send messages' },
-            unlock: { value: 'not_announcement', label: '🔓 Everyone can send messages' },
-            lockset: { value: 'locked', label: '🔒 Only admins can edit group info' },
-            unlockset: { value: 'unlocked', label: '🔓 Everyone can edit group info' },
+            lock: { value: 'announcement', label: `🔒 ${t('p.gcset.lockLabel')}` },
+            unlock: { value: 'not_announcement', label: `🔓 ${t('p.gcset.unlockLabel')}` },
+            lockset: { value: 'locked', label: `🔒 ${t('p.gcset.locksetLabel')}` },
+            unlockset: { value: 'unlocked', label: `🔓 ${t('p.gcset.unlocksetLabel')}` },
         };
         const config = settingsMap[setting];
         if (!config) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Unknown setting: *${setting}*\n\nUse \`.groupsettings\` to see options.`,
+                text: `❌ ${t('p.gcset.unknown', { setting })}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -57,7 +47,7 @@ export default {
         catch (e) {
             console.error('[GROUPSETTINGS] Error:', e.message);
             return await sock.sendMessage(chatId, {
-                text: `❌ Failed to update setting: ${e.message}`,
+                text: `❌ ${t('p.gcset.failed', { error: e.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

@@ -9,9 +9,10 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const { t } = context;
         if (!args || args.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: '❌ Please provide the trigger to delete.\n\nUsage: `.delreply hello`\nSee all triggers: `.listreplies`',
+                text: `❌ ${t('p.delreply.noTrigger')}\n\n${t('p.delreply.usageLabel')}: \`.delreply hello\`\n${t('p.delreply.seeAll')}: \`.listreplies\``,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -21,13 +22,13 @@ export default {
         config.replies = config.replies.filter(r => r.trigger !== trigger);
         if (config.replies.length === before) {
             return await sock.sendMessage(chatId, {
-                text: `❌ No auto-reply found for *"${trigger}"*\n\nUse \`.listreplies\` to see all triggers.`,
+                text: `❌ ${t('p.delreply.notFound', { trigger })}\n\n${t('p.delreply.useListReplies')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         await saveConfig(config);
         await sock.sendMessage(chatId, {
-            text: `🗑️ *Auto-reply deleted!*\n\nTrigger *"${trigger}"* has been removed.`,
+            text: `🗑️ *${t('p.delreply.deletedTitle')}*\n\n${t('p.delreply.deletedBody', { trigger })}`,
             ...channelInfo
         }, { quoted: message });
     }

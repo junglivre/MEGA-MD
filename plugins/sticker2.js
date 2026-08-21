@@ -11,7 +11,7 @@ export default {
     description: 'Convert image/video to sticker',
     usage: '.sticker2 (reply to image/video or send with caption)',
     async handler(sock, message, args, context) {
-        const { chatId, config, channelInfo } = context;
+        const { chatId, config, channelInfo, t } = context;
         const messageToQuote = message;
         let targetMessage = message;
         if (message.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
@@ -28,7 +28,7 @@ export default {
         const mediaMessage = targetMessage.message?.imageMessage || targetMessage.message?.videoMessage || targetMessage.message?.documentMessage;
         if (!mediaMessage) {
             await sock.sendMessage(chatId, {
-                text: 'Please reply to an image/video with .sticker2, or send an image/video with .sticker2 as the caption.',
+                text: t('p.sticker2.needMedia'),
                 ...channelInfo
             }, { quoted: messageToQuote });
             return;
@@ -40,7 +40,7 @@ export default {
             });
             if (!mediaBuffer) {
                 await sock.sendMessage(chatId, {
-                    text: 'Failed to download media. Please try again.',
+                    text: t('p.sticker2.downloadFailed'),
                     ...channelInfo
                 }, { quoted: messageToQuote });
                 return;
@@ -148,7 +148,7 @@ export default {
         catch (error) {
             console.error('Error in sticker command:', error);
             await sock.sendMessage(chatId, {
-                text: 'Failed to create sticker! Try again later.',
+                text: t('p.sticker2.createFailed'),
                 ...channelInfo
             }, { quoted: messageToQuote });
         }

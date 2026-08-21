@@ -45,6 +45,7 @@ export default {
     usage: '.url (send or reply to media)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             let targetMsg = null;
             if (message.message?.imageMessage ||
@@ -60,7 +61,7 @@ export default {
                     targetMsg = quoted;
             }
             if (!targetMsg) {
-                return sock.sendMessage(chatId, { text: 'Send or reply to a media to get a URL.' }, { quoted: message });
+                return sock.sendMessage(chatId, { text: t('p.url.noMedia') }, { quoted: message });
             }
             const ext = getExtFromMessage(targetMsg);
             if (!ext)
@@ -102,13 +103,13 @@ export default {
                 }, 2000);
             }
             if (!url) {
-                return sock.sendMessage(chatId, { text: 'Failed to upload media.' }, { quoted: message });
+                return sock.sendMessage(chatId, { text: t('p.url.uploadFailed') }, { quoted: message });
             }
-            await sock.sendMessage(chatId, { text: `URL: ${url}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.url.urlLabel', { url }) }, { quoted: message });
         }
         catch (error) {
             console.error('[URL] error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to convert media to URL.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.url.convertFailed')}` }, { quoted: message });
         }
     }
 };

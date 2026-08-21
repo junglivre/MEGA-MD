@@ -83,22 +83,23 @@ export default {
     adminOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const action = args[0]?.toLowerCase();
         if (!action) {
             const config = await getAntitag(chatId, 'on');
             await sock.sendMessage(chatId, {
-                text: `*🏷️ ANTITAG SETUP*\n\n` +
-                    `*Current Status:* ${config?.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-                    `*Current Action:* ${config?.action || 'Not set'}\n\n` +
-                    `*Commands:*\n` +
-                    `• \`.antitag on\` - Enable\n` +
-                    `• \`.antitag off\` - Disable\n` +
-                    `• \`.antitag set delete\` - Delete tagall messages\n` +
-                    `• \`.antitag set kick\` - Kick users who tagall\n\n` +
-                    `*Detection:*\n` +
-                    `• Detects mentions of 50%+ members\n` +
-                    `• Catches bot tagall patterns\n` +
-                    `• Protects against spam tagging`
+                text: `*🏷️ ${t('p.antitag.setupTitle')}*\n\n` +
+                    `*${t('p.antitag.currentStatus')}:* ${config?.enabled ? `✅ ${t('p.antitag.enabled')}` : `❌ ${t('p.antitag.disabled')}`}\n` +
+                    `*${t('p.antitag.currentAction')}:* ${config?.action || t('p.antitag.notSet')}\n\n` +
+                    `*${t('p.antitag.commandsLabel')}:*\n` +
+                    `• \`.antitag on\` - ${t('p.antitag.enableHint')}\n` +
+                    `• \`.antitag off\` - ${t('p.antitag.disableHint')}\n` +
+                    `• \`.antitag set delete\` - ${t('p.antitag.setDeleteHint')}\n` +
+                    `• \`.antitag set kick\` - ${t('p.antitag.setKickHint')}\n\n` +
+                    `*${t('p.antitag.detectionLabel')}:*\n` +
+                    `• ${t('p.antitag.detDetects')}\n` +
+                    `• ${t('p.antitag.detCatches')}\n` +
+                    `• ${t('p.antitag.detProtects')}`
             }, { quoted: message });
             return;
         }
@@ -107,64 +108,64 @@ export default {
                 const existingConfig = await getAntitag(chatId, 'on');
                 if (existingConfig?.enabled) {
                     await sock.sendMessage(chatId, {
-                        text: '⚠️ *Antitag is already enabled*'
+                        text: `⚠️ *${t('p.antitag.alreadyEnabled')}*`
                     }, { quoted: message });
                     return;
                 }
                 const result = await setAntitag(chatId, 'on', 'delete');
                 await sock.sendMessage(chatId, {
                     text: result
-                        ? '✅ *Antitag enabled successfully!*\n\nDefault action: Delete tagall messages'
-                        : '❌ *Failed to enable antitag*'
+                        ? `✅ *${t('p.antitag.enabledSuccess')}*\n\n${t('p.antitag.defaultActionDelete')}`
+                        : `❌ *${t('p.antitag.enableFailed')}*`
                 }, { quoted: message });
                 break;
             case 'off':
                 await removeAntitag(chatId, 'on');
                 await sock.sendMessage(chatId, {
-                    text: '❌ *Antitag disabled*\n\nUsers can now tag all members.'
+                    text: `❌ *${t('p.antitag.disabledTitle')}*\n\n${t('p.antitag.usersCanTagFreely')}`
                 }, { quoted: message });
                 break;
             case 'set':
                 if (args.length < 2) {
                     await sock.sendMessage(chatId, {
-                        text: '❌ *Please specify an action*\n\nUsage: `.antitag set delete | kick`'
+                        text: `❌ *${t('p.antitag.specifyAction')}*\n\nUsage: \`.antitag set delete | kick\``
                     }, { quoted: message });
                     return;
                 }
                 const setAction = args[1].toLowerCase();
                 if (!['delete', 'kick'].includes(setAction)) {
                     await sock.sendMessage(chatId, {
-                        text: '❌ *Invalid action*\n\nChoose: delete or kick'
+                        text: `❌ *${t('p.antitag.invalidAction')}*\n\n${t('p.antitag.chooseDeleteKick')}`
                     }, { quoted: message });
                     return;
                 }
                 const setResult = await setAntitag(chatId, 'on', setAction);
                 const actionDescriptions = {
-                    delete: 'Delete tagall messages and warn users',
-                    kick: 'Delete messages and remove users from group'
+                    delete: t('p.antitag.descDelete'),
+                    kick: t('p.antitag.descKick')
                 };
                 await sock.sendMessage(chatId, {
                     text: setResult
-                        ? `✅ *Antitag action set to: ${setAction}*\n\n${actionDescriptions[setAction]}`
-                        : '❌ *Failed to set antitag action*'
+                        ? `✅ *${t('p.antitag.actionSetTo', { action: setAction })}*\n\n${actionDescriptions[setAction]}`
+                        : `❌ *${t('p.antitag.setActionFailed')}*`
                 }, { quoted: message });
                 break;
             case 'status':
             case 'get':
                 const status = await getAntitag(chatId, 'on');
                 await sock.sendMessage(chatId, {
-                    text: `*🏷️ ANTITAG STATUS*\n\n` +
-                        `*Status:* ${status?.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-                        `*Action:* ${status?.action || 'Not set'}\n\n` +
-                        `*What happens when tagall is detected:*\n` +
-                        `${status?.action === 'delete' ? '• Message is deleted\n• User gets warning' : ''}` +
-                        `${status?.action === 'kick' ? '• Message is deleted\n• User is removed from group' : ''}\n\n` +
-                        `*Detection threshold:* 50% of group members or 10+ mentions`
+                    text: `*🏷️ ${t('p.antitag.statusTitle')}*\n\n` +
+                        `*${t('p.antitag.statusLabel')}:* ${status?.enabled ? `✅ ${t('p.antitag.enabled')}` : `❌ ${t('p.antitag.disabled')}`}\n` +
+                        `*${t('p.antitag.actionLabel')}:* ${status?.action || t('p.antitag.notSet')}\n\n` +
+                        `*${t('p.antitag.whatHappens')}:*\n` +
+                        `${status?.action === 'delete' ? `• ${t('p.antitag.msgDeleted')}\n• ${t('p.antitag.userWarned')}` : ''}` +
+                        `${status?.action === 'kick' ? `• ${t('p.antitag.msgDeleted')}\n• ${t('p.antitag.userRemoved')}` : ''}\n\n` +
+                        `*${t('p.antitag.detectionThreshold')}*`
                 }, { quoted: message });
                 break;
             default:
                 await sock.sendMessage(chatId, {
-                    text: '❌ *Invalid command*\n\nUse `.antitag` to see available options.'
+                    text: `❌ *${t('p.antitag.invalidCommand')}*\n\n${t('p.antitag.useToSeeOptions')}`
                 }, { quoted: message });
         }
     },

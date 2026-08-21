@@ -61,7 +61,7 @@ export default {
     description: 'Crop image/video/sticker to circle sticker',
     usage: '.crop (reply to image/video/sticker)',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const messageToQuote = message;
         let targetMessage = message;
         if (message.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
@@ -78,7 +78,7 @@ export default {
         const mediaMessage = targetMessage.message?.imageMessage || targetMessage.message?.videoMessage || targetMessage.message?.documentMessage || targetMessage.message?.stickerMessage;
         if (!mediaMessage) {
             await sock.sendMessage(chatId, {
-                text: 'Please reply to an image/video/sticker with .crop, or send an image/video/sticker with .crop as the caption.',
+                text: t('p.crop.needMedia'),
                 ...channelInfo
             }, { quoted: messageToQuote });
             return;
@@ -90,7 +90,7 @@ export default {
             });
             if (!mediaBuffer) {
                 await sock.sendMessage(chatId, {
-                    text: 'Failed to download media. Please try again.',
+                    text: t('p.crop.downloadFailed'),
                     ...channelInfo
                 }, { quoted: messageToQuote });
                 return;
@@ -173,7 +173,7 @@ export default {
         catch (error) {
             console.error('Error in stickercrop command:', error);
             await sock.sendMessage(chatId, {
-                text: 'Failed to crop sticker! Try with an image.',
+                text: t('p.crop.cropFailed'),
                 ...channelInfo
             }, { quoted: messageToQuote });
         }

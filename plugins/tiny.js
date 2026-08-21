@@ -6,24 +6,25 @@ export default {
     usage: '.tinyurl <url>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const query = args?.join(' ')?.trim();
         if (!query) {
-            return await sock.sendMessage(chatId, { text: '*Please provide a URL to shorten.*\nExample: .tinyurl https://example.com' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: t('p.tinyurl.usage') }, { quoted: message });
         }
         try {
             const response = await fetch(`https://tinyurl.com/api-create.php?url=${encodeURIComponent(query)}`);
             const shortUrl = await response.text();
             if (!shortUrl) {
-                return await sock.sendMessage(chatId, { text: '❌ Error: Could not generate a short URL.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.tinyurl.generateFailed')}` }, { quoted: message });
             }
-            const output = `✨ *YOUR SHORT URL*\n\n` +
-                `🔗 *Original Link:*\n${query}\n\n` +
-                `✂️ *Shortened URL:*\n${shortUrl}`;
+            const output = `✨ *${t('p.tinyurl.resultTitle')}*\n\n` +
+                `🔗 *${t('p.tinyurl.originalLinkLabel')}:*\n${query}\n\n` +
+                `✂️ *${t('p.tinyurl.shortenedUrlLabel')}:*\n${shortUrl}`;
             await sock.sendMessage(chatId, { text: output }, { quoted: message });
         }
         catch (err) {
             console.error('TinyURL plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to shorten URL.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.tinyurl.failed')}` }, { quoted: message });
         }
     }
 };

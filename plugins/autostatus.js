@@ -161,21 +161,24 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const channelInfo = context.channelInfo || {};
+        const t = context.t;
         try {
             const config = await readConfig();
             if (!args || args.length === 0) {
-                const viewStatus = config.enabled ? '✅ Enabled' : '❌ Disabled';
-                const reactStatus = config.reactOn ? '✅ Enabled' : '❌ Disabled';
+                const viewStatus = config.enabled ? `✅ ${t('p.autostatus.enabledLabel')}` : `❌ ${t('p.autostatus.disabledLabel')}`;
+                const reactStatus = config.reactOn ? `✅ ${t('p.autostatus.enabledLabel')}` : `❌ ${t('p.autostatus.disabledLabel')}`;
+                const storage = HAS_DB ? t('p.autostatus.storageDb') : t('p.autostatus.storageFs');
                 await sock.sendMessage(chatId, {
-                    text: `🔄 *Auto Status Settings*\n\n` +
-                        `📱 *Auto Status View:* ${viewStatus}\n` +
-                        `💫 *Status Reactions:* ${reactStatus}\n` +
-                        `🗄️ *Storage:* ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                        `*Commands:*\n` +
-                        `• \`.autostatus on\` - Enable auto view\n` +
-                        `• \`.autostatus off\` - Disable auto view\n` +
-                        `• \`.autostatus react on\` - Enable reaction\n` +
-                        `• \`.autostatus react off\` - Disable reaction`,
+                    text: `🔄 *${t('p.autostatus.title')}*\n\n` +
+                        `📱 *${t('p.autostatus.viewLabel')}:* ${viewStatus}\n` +
+                        `💫 *${t('p.autostatus.reactLabel')}:* ${reactStatus}\n` +
+                        `🗄️ *${t('p.autostatus.storage')}:* ${storage}\n\n` +
+                        `*${t('p.autostatus.commands')}:*\n` +
+                        `• \`.autostatus on\` - ${t('p.autostatus.cmdOn')}\n` +
+                        `• \`.autostatus off\` - ${t('p.autostatus.cmdOff')}\n` +
+                        `• \`.autostatus react on\` - ${t('p.autostatus.cmdReactOn')}\n` +
+                        `• \`.autostatus react off\` - ${t('p.autostatus.cmdReactOff')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -185,8 +188,7 @@ export default {
                 config.enabled = true;
                 await writeConfig(config);
                 await sock.sendMessage(chatId, {
-                    text: '✅ *Auto status view enabled!*\n\n' +
-                        'Bot will now automatically view all contact statuses.',
+                    text: `✅ *${t('p.autostatus.viewEnabledMsg')}*`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -194,16 +196,14 @@ export default {
                 config.enabled = false;
                 await writeConfig(config);
                 await sock.sendMessage(chatId, {
-                    text: '❌ *Auto status view disabled!*\n\n' +
-                        'Bot will no longer automatically view statuses.',
+                    text: `❌ *${t('p.autostatus.viewDisabledMsg')}*`,
                     ...channelInfo
                 }, { quoted: message });
             }
             else if (command === 'react') {
                 if (!args[1]) {
                     await sock.sendMessage(chatId, {
-                        text: '❌ *Please specify on/off for reactions!*\n\n' +
-                            'Usage: `.autostatus react on/off`',
+                        text: `❌ *${t('p.autostatus.reactMissingArg')}*`,
                         ...channelInfo
                     }, { quoted: message });
                     return;
@@ -213,8 +213,7 @@ export default {
                     config.reactOn = true;
                     await writeConfig(config);
                     await sock.sendMessage(chatId, {
-                        text: '💫 *Status reactions enabled!*\n\n' +
-                            'Bot will now react to status updates with 💚',
+                        text: `💫 *${t('p.autostatus.reactEnabledMsg')}*`,
                         ...channelInfo
                     }, { quoted: message });
                 }
@@ -222,25 +221,20 @@ export default {
                     config.reactOn = false;
                     await writeConfig(config);
                     await sock.sendMessage(chatId, {
-                        text: '❌ *Status reactions disabled!*\n\n' +
-                            'Bot will no longer react to status updates.',
+                        text: `❌ *${t('p.autostatus.reactDisabledMsg')}*`,
                         ...channelInfo
                     }, { quoted: message });
                 }
                 else {
                     await sock.sendMessage(chatId, {
-                        text: '❌ *Invalid reaction command!*\n\n' +
-                            'Usage: `.autostatus react on/off`',
+                        text: `❌ *${t('p.autostatus.reactInvalid')}*`,
                         ...channelInfo
                     }, { quoted: message });
                 }
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: '❌ *Invalid command!*\n\n' +
-                        '*Usage:*\n' +
-                        '• `.autostatus on/off` - Enable/disable auto view\n' +
-                        '• `.autostatus react on/off` - Enable/disable reactions',
+                    text: `❌ *${t('p.autostatus.invalidCommand')}*`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -248,8 +242,7 @@ export default {
         catch (error) {
             console.error('Error in autostatus command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ *Error occurred while managing auto status!*\n\n' +
-                    `Error: ${error.message}`,
+                text: `❌ *${t('p.autostatus.genericError', { error: error.message })}*`,
                 ...channelInfo
             }, { quoted: message });
         }

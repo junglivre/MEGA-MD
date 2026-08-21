@@ -8,6 +8,7 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const { t } = context;
         const isGroup = chatId.endsWith('@g.us');
         const senderId = context.senderId || message.key.participant || message.key.remoteJid;
         const senderIsOwnerOrSudo = context.senderIsOwnerOrSudo || false;
@@ -16,26 +17,26 @@ export default {
             const { isSenderAdmin } = await isAdmin(sock, chatId, senderId);
             if (!isSenderAdmin) {
                 return await sock.sendMessage(chatId, {
-                    text: '❌ Only group admins or bot owner can change disappearing messages.',
+                    text: `❌ ${t('p.disappear.groupPermission')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
         }
         if (!isGroup && !senderIsOwnerOrSudo && !message.key.fromMe) {
             return await sock.sendMessage(chatId, {
-                text: '❌ Only the bot owner can change disappearing messages in DMs.',
+                text: `❌ ${t('p.disappear.dmPermission')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         const input = args[0]?.toLowerCase();
         if (!input) {
             return await sock.sendMessage(chatId, {
-                text: `*⏳ DISAPPEARING MESSAGES*\n\n` +
-                    `*Usage:*\n` +
-                    `• \`.disappear off\` — Disable\n` +
-                    `• \`.disappear 24h\` — 24 hours\n` +
-                    `• \`.disappear 7d\` — 7 days (default)\n` +
-                    `• \`.disappear 90d\` — 90 days`,
+                text: `*⏳ ${t('p.disappear.title')}*\n\n` +
+                    `*${t('p.disappear.usageLabel')}*\n` +
+                    `• \`.disappear off\` — ${t('p.disappear.disableOption')}\n` +
+                    `• \`.disappear 24h\` — ${t('p.disappear.h24Option')}\n` +
+                    `• \`.disappear 7d\` — ${t('p.disappear.d7Option')}\n` +
+                    `• \`.disappear 90d\` — ${t('p.disappear.d90Option')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -51,7 +52,7 @@ export default {
         };
         if (!(input in durations)) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Invalid option: *${input}*\n\nChoose: \`off\`, \`24h\`, \`7d\`, \`90d\``,
+                text: `❌ ${t('p.disappear.invalidOption', { input })}\n\n${t('p.disappear.chooseOptions')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -61,14 +62,14 @@ export default {
                 disappearingMessagesInChat: seconds === false ? false : seconds
             });
             const labels = {
-                'off': '❌ Disappearing messages *disabled*',
-                '0': '❌ Disappearing messages *disabled*',
-                '24h': '⏳ Disappearing messages set to *24 hours*',
-                '1d': '⏳ Disappearing messages set to *24 hours*',
-                '7d': '⏳ Disappearing messages set to *7 days*',
-                '1w': '⏳ Disappearing messages set to *7 days*',
-                '90d': '⏳ Disappearing messages set to *90 days*',
-                '3m': '⏳ Disappearing messages set to *90 days*',
+                'off': `❌ ${t('p.disappear.disabled')}`,
+                '0': `❌ ${t('p.disappear.disabled')}`,
+                '24h': `⏳ ${t('p.disappear.set24h')}`,
+                '1d': `⏳ ${t('p.disappear.set24h')}`,
+                '7d': `⏳ ${t('p.disappear.set7d')}`,
+                '1w': `⏳ ${t('p.disappear.set7d')}`,
+                '90d': `⏳ ${t('p.disappear.set90d')}`,
+                '3m': `⏳ ${t('p.disappear.set90d')}`,
             };
             await sock.sendMessage(chatId, {
                 text: labels[input],
@@ -78,7 +79,7 @@ export default {
         catch (e) {
             console.error('[DISAPPEAR] Error:', e.message);
             await sock.sendMessage(chatId, {
-                text: `❌ Failed to change disappearing messages: ${e.message}`,
+                text: `❌ ${t('p.disappear.failed', { error: e.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

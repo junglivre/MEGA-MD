@@ -285,23 +285,27 @@ export default {
     adminOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const senderId = context.senderId || message.key.participant || message.key.remoteJid;
+        const language = context.language || await getUserLanguage(senderId);
+        const t = createTranslator(language);
         const match = args.join(' ').toLowerCase();
         if (!match) {
             await showTyping(sock, chatId);
+            const storage = HAS_DB ? t('p.chatbot.storageDb') : t('p.chatbot.storageFs');
             return sock.sendMessage(chatId, {
-                text: `*🤖 CHATBOT SETUP*\n\n` +
-                    `*Storage:* ${HAS_DB ? 'Database' : 'File System'}\n` +
-                    `*APIs:* ${API_ENDPOINTS.length} endpoints with fallback\n\n` +
-                    `*Commands:*\n` +
-                    `• \`.chatbot on\` - Enable chatbot\n` +
-                    `• \`.chatbot off\` - Disable chatbot\n\n` +
-                    `*How it works:*\n` +
-                    `When enabled, bot responds when mentioned or replied to.\n\n` +
-                    `*Features:*\n` +
-                    `• Natural English conversations\n` +
-                    `• Remembers context\n` +
-                    `• Personality-based replies\n` +
-                    `• Auto fallback if API fails`,
+                text: `*🤖 ${t('p.chatbot.setupTitle')}*\n\n` +
+                    `*${t('p.chatbot.storageLabel')}:* ${storage}\n` +
+                    `*${t('p.chatbot.apisLabel')}:* ${t('p.chatbot.apisDesc', { count: API_ENDPOINTS.length })}\n\n` +
+                    `*${t('p.chatbot.commandsLabel')}:*\n` +
+                    `• \`.chatbot on\` - ${t('p.chatbot.cmdOn')}\n` +
+                    `• \`.chatbot off\` - ${t('p.chatbot.cmdOff')}\n\n` +
+                    `*${t('p.chatbot.howItWorksLabel')}:*\n` +
+                    `${t('p.chatbot.howItWorksDesc')}\n\n` +
+                    `*${t('p.chatbot.featuresLabel')}:*\n` +
+                    `• ${t('p.chatbot.featNatural')}\n` +
+                    `• ${t('p.chatbot.featMemory')}\n` +
+                    `• ${t('p.chatbot.featPersonality')}\n` +
+                    `• ${t('p.chatbot.featFallback')}`,
                 quoted: message
             });
         }
@@ -310,14 +314,14 @@ export default {
             await showTyping(sock, chatId);
             if (data.chatbot[chatId]) {
                 return sock.sendMessage(chatId, {
-                    text: '⚠️ *Chatbot is already enabled for this group*',
+                    text: `⚠️ *${t('p.chatbot.alreadyEnabled')}*`,
                     quoted: message
                 });
             }
             data.chatbot[chatId] = true;
             await saveUserGroupData(data);
             return sock.sendMessage(chatId, {
-                text: '✅ *Chatbot enabled!*\n\nMention me or reply to my messages to chat.',
+                text: `✅ *${t('p.chatbot.enabledMsg')}*`,
                 quoted: message
             });
         }
@@ -325,20 +329,20 @@ export default {
             await showTyping(sock, chatId);
             if (!data.chatbot[chatId]) {
                 return sock.sendMessage(chatId, {
-                    text: '⚠️ *Chatbot is already disabled for this group*',
+                    text: `⚠️ *${t('p.chatbot.alreadyDisabled')}*`,
                     quoted: message
                 });
             }
             delete data.chatbot[chatId];
             await saveUserGroupData(data);
             return sock.sendMessage(chatId, {
-                text: '❌ *Chatbot disabled!*\n\nI will no longer respond to mentions.',
+                text: `❌ *${t('p.chatbot.disabledMsg')}*`,
                 quoted: message
             });
         }
         await showTyping(sock, chatId);
         return sock.sendMessage(chatId, {
-            text: '❌ *Invalid command*\n\nUse: `.chatbot on/off`',
+            text: `❌ *${t('p.chatbot.invalidCommand')}*`,
             quoted: message
         });
     },

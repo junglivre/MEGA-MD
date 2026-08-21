@@ -7,9 +7,10 @@ export default {
     usage: '.github <username>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         if (!args.length) {
             return await sock.sendMessage(chatId, {
-                text: '*Please provide a GitHub username.*\nExample: .github GlobalTechInfo'
+                text: t('p.github.missingUsername')
             }, { quoted: message });
         }
         const username = args[0];
@@ -22,27 +23,28 @@ export default {
                 }
             });
             if (!data?.result) {
-                return await sock.sendMessage(chatId, { text: '❌ GitHub user not found.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.github.notFound')}` }, { quoted: message });
             }
             const result = data.result;
-            const caption = `🐙 *GitHub Profile Info*\n\n` +
-                `👤 Name: ${result.nickname || 'N/A'}\n` +
-                `🆔 Username: ${result.username || 'N/A'}\n` +
-                `🏢 Company: ${result.company || 'N/A'}\n` +
-                `📍 Location: ${result.location || 'N/A'}\n` +
-                `💬 Bio: ${result.bio || 'N/A'}\n` +
-                `📦 Public Repos: ${result.public_repo || 0}\n` +
-                `📜 Public Gists: ${result.public_gists || 0}\n` +
-                `👥 Followers: ${result.followers || 0}\n` +
-                `➡ Following: ${result.following || 0}\n` +
-                `🔗 Profile URL: ${result.url || 'N/A'}\n` +
-                `📅 Created At: ${new Date(result.created_at).toDateString()}\n` +
-                `🕒 Last Updated: ${new Date(result.updated_at).toDateString()}`;
+            const caption = t('p.github.profile', {
+                name: result.nickname || 'N/A',
+                username: result.username || 'N/A',
+                company: result.company || 'N/A',
+                location: result.location || 'N/A',
+                bio: result.bio || 'N/A',
+                repos: result.public_repo || 0,
+                gists: result.public_gists || 0,
+                followers: result.followers || 0,
+                following: result.following || 0,
+                url: result.url || 'N/A',
+                createdAt: new Date(result.created_at).toDateString(),
+                updatedAt: new Date(result.updated_at).toDateString()
+            });
             await sock.sendMessage(chatId, { image: { url: result.profile_pic }, caption }, { quoted: message });
         }
         catch (err) {
             console.error('GitHub plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch GitHub profile.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.github.fetchFailed')}` }, { quoted: message });
         }
     }
 };

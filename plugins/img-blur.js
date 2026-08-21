@@ -8,6 +8,7 @@ export default {
     description: 'Apply a blur effect to an image',
     usage: '.blur (reply to an image or send image with caption)',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         try {
@@ -21,7 +22,7 @@ export default {
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: 'Please reply to an image or send an image with caption `.blur`'
+                    text: t('p.blur.noMedia')
                 }, { quoted: message });
                 return;
             }
@@ -37,14 +38,14 @@ export default {
                 .toBuffer();
             await sock.sendMessage(chatId, {
                 image: blurredImage,
-                caption: '✨ *Image Blurred Successfully!*',
+                caption: `✨ *${t('p.blur.success')}*`,
                     ...channelInfo
             }, { quoted: message });
         }
         catch (error) {
             console.error('Error in blur command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to blur image. Please try again later.'
+                text: `❌ ${t('p.blur.failed')}`
             }, { quoted: message });
         }
     }

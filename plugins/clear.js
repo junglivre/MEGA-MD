@@ -6,10 +6,10 @@ export default {
     usage: '.clear',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         try {
             const sent = await sock.sendMessage(chatId, {
-                text: 'Clearing bot messages...',
+                text: t('p.clear.clearing'),
                 ...channelInfo
             });
             await new Promise(resolve => setTimeout(resolve, 1000));
@@ -18,7 +18,7 @@ export default {
         catch (error) {
             console.error('Error clearing messages:', error);
             await sock.sendMessage(chatId, {
-                text: 'An error occurred while clearing messages.',
+                text: t('p.clear.genericError'),
                 ...channelInfo
             }, { quoted: message });
         }

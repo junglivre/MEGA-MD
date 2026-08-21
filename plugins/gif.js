@@ -8,9 +8,10 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const config = context.config;
+        const { t } = context;
         const query = args.join(' ');
         if (!query) {
-            await sock.sendMessage(chatId, { text: 'Please provide a search term for the GIF.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.gif.noQuery') }, { quoted: message });
             return;
         }
         try {
@@ -24,21 +25,21 @@ export default {
             });
             const gifData = response.data.data[0];
             if (!gifData) {
-                await sock.sendMessage(chatId, { text: 'No GIFs found for your search term.' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: t('p.gif.notFound') }, { quoted: message });
                 return;
             }
             const mp4Url = gifData.images.original_mp4?.mp4;
             if (mp4Url) {
-                await sock.sendMessage(chatId, { video: { url: mp4Url }, caption: `Here is your GIF for "${query}"` }, { quoted: message });
+                await sock.sendMessage(chatId, { video: { url: mp4Url }, caption: t('p.gif.caption', { query }) }, { quoted: message });
             }
             else {
                 const gifUrl = gifData.images.original?.url;
-                await sock.sendMessage(chatId, { document: { url: gifUrl }, mimetype: 'image/gif', caption: `Here is your GIF for "${query}"` }, { quoted: message });
+                await sock.sendMessage(chatId, { document: { url: gifUrl }, mimetype: 'image/gif', caption: t('p.gif.caption', { query }) }, { quoted: message });
             }
         }
         catch (error) {
             console.error('Error in gif command:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch GIF. Please try again later.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.gif.failed')}` }, { quoted: message });
         }
     }
 };

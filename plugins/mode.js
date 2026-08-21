@@ -9,12 +9,12 @@ import store from '../lib/lightweight_store.js';
  * - self: Owner/sudo only (alias for private)
  */
 async function modeCommand(sock, message, args, context) {
-    const { chatId, channelInfo } = context;
+    const { chatId, channelInfo, t } = context;
     const _senderId = message.key.participant || message.key.remoteJid;
     const isOwnerOrSudoCheck = message.key.fromMe || context.senderIsOwnerOrSudo || context.isOwnerOrSudoCheck;
     if (!isOwnerOrSudoCheck) {
         return await sock.sendMessage(chatId, {
-            text: '❌ Only the owner or sudo users can change bot mode!',
+            text: `❌ ${t('p.mode.ownerOnly')}`,
             ...channelInfo
         }, { quoted: message });
     }
@@ -29,29 +29,29 @@ async function modeCommand(sock, message, args, context) {
             self: '👤'
         };
         const modeDescriptions = {
-            public: 'Everyone can use bot (groups + private chats)',
-            private: 'Only owner and sudo users can use bot',
-            groups: 'Only works in group chats (everyone in groups)',
-            inbox: 'Only works in private chats (everyone in DMs)',
-            self: 'Owner and sudo only (same as private)'
+            public: t('p.mode.descPublic'),
+            private: t('p.mode.descPrivate'),
+            groups: t('p.mode.descGroups'),
+            inbox: t('p.mode.descInbox'),
+            self: t('p.mode.descSelf')
         };
-        let statusText = `📊 *BOT MODE STATUS*\n\n`;
-        statusText += `Current Mode: ${modeEmojis[currentMode]} *${currentMode.toUpperCase()}*\n`;
-        statusText += `Description: ${modeDescriptions[currentMode]}\n\n`;
+        let statusText = `📊 *${t('p.mode.statusTitle')}*\n\n`;
+        statusText += `${t('p.mode.currentModeLabel')}: ${modeEmojis[currentMode]} *${currentMode.toUpperCase()}*\n`;
+        statusText += `${t('p.mode.descriptionLabel')}: ${modeDescriptions[currentMode]}\n\n`;
         statusText += `━━━━━━━━━━━━━━━━━━━━\n\n`;
-        statusText += `*Available Modes:*\n\n`;
+        statusText += `*${t('p.mode.availableModesTitle')}:*\n\n`;
         Object.entries(modeDescriptions).forEach(([mode, desc]) => {
             const current = mode === currentMode ? '✓ ' : '';
             statusText += `${current}${modeEmojis[mode]} \`${mode}\`\n${desc}\n\n`;
         });
-        statusText += `*Usage:*\n`;
-        statusText += `• \`.mode <mode>\` - Change mode\n`;
-        statusText += `• \`.mode status\` - Show current mode\n\n`;
-        statusText += `*Examples:*\n`;
-        statusText += `• \`.mode public\` - Enable for everyone\n`;
-        statusText += `• \`.mode groups\` - Groups only\n`;
-        statusText += `• \`.mode inbox\` - Private chats only\n`;
-        statusText += `• \`.mode private\` - Owner/sudo only`;
+        statusText += `*${t('p.mode.usageTitle')}:*\n`;
+        statusText += `• \`.mode <mode>\` - ${t('p.mode.usageChange')}\n`;
+        statusText += `• \`.mode status\` - ${t('p.mode.usageStatus')}\n\n`;
+        statusText += `*${t('p.mode.examplesTitle')}:*\n`;
+        statusText += `• \`.mode public\` - ${t('p.mode.exPublic')}\n`;
+        statusText += `• \`.mode groups\` - ${t('p.mode.exGroups')}\n`;
+        statusText += `• \`.mode inbox\` - ${t('p.mode.exInbox')}\n`;
+        statusText += `• \`.mode private\` - ${t('p.mode.exPrivate')}`;
         return await sock.sendMessage(chatId, {
             text: statusText,
             ...channelInfo
@@ -60,7 +60,7 @@ async function modeCommand(sock, message, args, context) {
     const validModes = ['public', 'private', 'groups', 'inbox', 'self'];
     if (!validModes.includes(subCommand)) {
         return await sock.sendMessage(chatId, {
-            text: `❌ Invalid mode: *${subCommand}*\n\nValid modes: ${validModes.join(', ')}\n\nUse \`.mode\` to see all available modes.`,
+            text: `❌ ${t('p.mode.invalidMode', { subCommand })}\n\n${t('p.mode.validModesLabel', { modes: validModes.join(', ') })}\n\n${t('p.mode.seeAllModes')}`,
             ...channelInfo
         }, { quoted: message });
     }
@@ -73,14 +73,14 @@ async function modeCommand(sock, message, args, context) {
         self: '👤'
     };
     const modeMessages = {
-        public: 'Bot is now accessible to *everyone* in groups and private chats.',
-        private: 'Bot is now restricted to *owner and sudo users only*.',
-        groups: 'Bot now works *only in group chats* (all group members can use it).',
-        inbox: 'Bot now works *only in private chats* (all users can DM the bot).',
-        self: 'Bot is now restricted to *owner and sudo users only*.'
+        public: t('p.mode.msgPublic'),
+        private: t('p.mode.msgPrivate'),
+        groups: t('p.mode.msgGroups'),
+        inbox: t('p.mode.msgInbox'),
+        self: t('p.mode.msgSelf')
     };
     await sock.sendMessage(chatId, {
-        text: `${modeEmojis[subCommand]} *Mode Changed to ${subCommand.toUpperCase()}*\n\n${modeMessages[subCommand]}\n\n_Use \`.mode status\` to check current mode._`,
+        text: `${modeEmojis[subCommand]} *${t('p.mode.changedTitle', { mode: subCommand.toUpperCase() })}*\n\n${modeMessages[subCommand]}\n\n_${t('p.mode.checkStatusHint')}_`,
         ...channelInfo
     }, { quoted: message });
 }

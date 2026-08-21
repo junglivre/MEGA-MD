@@ -10,12 +10,13 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const senderId = message.key.participant || message.key.remoteJid;
+        const { t } = context;
         try {
             const isOwner = await isOwnerOrSudo(senderId, sock, chatId);
             const isMe = message.key.fromMe;
             if (!isMe && !isOwner) {
                 return await sock.sendMessage(chatId, {
-                    text: '❌ *Access Denied:* Only Owner/Sudo can view settings.'
+                    text: `❌ *${t('p.settings.accessDeniedTitle')}:* ${t('p.settings.accessDeniedHint')}`
                 }, { quoted: message });
             }
             const isGroup = chatId.endsWith('@g.us');
@@ -41,20 +42,20 @@ export default {
                 cmdReactEnabled = true;
             }
             const getSt = (val) => val ? '✅' : '❌';
-            let menuText = `╭━〔 *MEGA CONFIG* 〕━┈\n┃\n`;
-            menuText += `┃ 👤 *User:* @${cleanJid(senderId)}\n`;
-            menuText += `┃ 🤖 *Mode:* ${botMode.toUpperCase()}\n`;
-            menuText += `┃\n┣━〔 *GLOBAL CONFIG* 〕━┈\n`;
-            menuText += `┃ ${getSt(autoStatus?.enabled)} *Auto Status*\n`;
-            menuText += `┃ ${getSt(autoread?.enabled)} *Auto Read*\n`;
-            menuText += `┃ ${getSt(autotyping?.enabled)} *Auto Typing*\n`;
-            menuText += `┃ ${getSt(pmblocker?.enabled)} *PM Blocker*\n`;
-            menuText += `┃ ${getSt(anticall?.enabled)} *Anti Call*\n`;
-            menuText += `┃ ${getSt(autoReaction)} *Auto Reaction*\n`;
-            menuText += `┃ ${getSt(cmdReactEnabled)} *Cmd Reactions*\n`;
-            menuText += `┃ ${getSt(stealthMode?.enabled)} *Stealth Mode*\n`;
-            menuText += `┃ ${getSt(autoBio?.enabled)} *Auto Bio*\n`;
-            menuText += `┃ ${getSt(mentionData?.enabled)} *Mention Alert*\n`;
+            let menuText = `╭━〔 *${t('p.settings.title')}* 〕━┈\n┃\n`;
+            menuText += `┃ 👤 *${t('p.settings.userLabel')}:* @${cleanJid(senderId)}\n`;
+            menuText += `┃ 🤖 *${t('p.settings.modeLabel')}:* ${botMode.toUpperCase()}\n`;
+            menuText += `┃\n┣━〔 *${t('p.settings.globalConfigHeader')}* 〕━┈\n`;
+            menuText += `┃ ${getSt(autoStatus?.enabled)} *${t('p.settings.autoStatus')}*\n`;
+            menuText += `┃ ${getSt(autoread?.enabled)} *${t('p.settings.autoRead')}*\n`;
+            menuText += `┃ ${getSt(autotyping?.enabled)} *${t('p.settings.autoTyping')}*\n`;
+            menuText += `┃ ${getSt(pmblocker?.enabled)} *${t('p.settings.pmBlocker')}*\n`;
+            menuText += `┃ ${getSt(anticall?.enabled)} *${t('p.settings.antiCall')}*\n`;
+            menuText += `┃ ${getSt(autoReaction)} *${t('p.settings.autoReaction')}*\n`;
+            menuText += `┃ ${getSt(cmdReactEnabled)} *${t('p.settings.cmdReactions')}*\n`;
+            menuText += `┃ ${getSt(stealthMode?.enabled)} *${t('p.settings.stealthMode')}*\n`;
+            menuText += `┃ ${getSt(autoBio?.enabled)} *${t('p.settings.autoBio')}*\n`;
+            menuText += `┃ ${getSt(mentionData?.enabled)} *${t('p.settings.mentionAlert')}*\n`;
             menuText += `┃\n`;
             if (isGroup) {
                 const groupSettings = await store.getAllSettings(chatId);
@@ -71,16 +72,16 @@ export default {
                 const groupWelcome = welcomeData !== null && welcomeData !== undefined && welcomeData !== false;
                 // getGoodbye returns null or message string or {enabled}
                 const groupGoodbye = goodbyeData !== null && goodbyeData !== undefined && goodbyeData !== false;
-                menuText += `┣━〔 *GROUP CONFIG* 〕━┈\n`;
-                menuText += `┃ ${getSt(groupAntilink.enabled)} *Antilink*\n`;
-                menuText += `┃ ${getSt(groupBadword.enabled)} *Antibadword*\n`;
-                menuText += `┃ ${getSt(groupAntitag.enabled)} *Antitag*\n`;
-                menuText += `┃ ${getSt(groupChatbot)} *Chatbot*\n`;
-                menuText += `┃ ${getSt(groupWelcome)} *Welcome*\n`;
-                menuText += `┃ ${getSt(groupGoodbye)} *Goodbye*\n`;
+                menuText += `┣━〔 *${t('p.settings.groupConfigHeader')}* 〕━┈\n`;
+                menuText += `┃ ${getSt(groupAntilink.enabled)} *${t('p.settings.antilink')}*\n`;
+                menuText += `┃ ${getSt(groupBadword.enabled)} *${t('p.settings.antibadword')}*\n`;
+                menuText += `┃ ${getSt(groupAntitag.enabled)} *${t('p.settings.antitag')}*\n`;
+                menuText += `┃ ${getSt(groupChatbot)} *${t('p.settings.chatbot')}*\n`;
+                menuText += `┃ ${getSt(groupWelcome)} *${t('p.settings.welcome')}*\n`;
+                menuText += `┃ ${getSt(groupGoodbye)} *${t('p.settings.goodbye')}*\n`;
             }
             else {
-                menuText += `┃ 💡 *Note:* _Use in group for group configs._\n`;
+                menuText += `┃ 💡 *${t('p.settings.noteLabel')}:* _${t('p.settings.groupOnlyNote')}_\n`;
             }
             menuText += `┃\n╰━━━━━━━━━━━━━━━━┈`;
             await sock.sendMessage(chatId, {
@@ -88,8 +89,8 @@ export default {
                 mentions: [senderId],
                 contextInfo: {
                     externalAdReply: {
-                        title: "SYSTEM SETTINGS PANEL",
-                        body: "Configuration Status",
+                        title: t('p.settings.adTitle'),
+                        body: t('p.settings.adBody'),
                         thumbnailUrl: "https://github.com/GlobalTechInfo.png",
                         mediaType: 1,
                         renderLargerThumbnail: true
@@ -100,7 +101,7 @@ export default {
         catch (error) {
             console.error('Settings Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Error: Failed to load settings.'
+                text: `❌ ${t('p.settings.loadError')}`
             }, { quoted: message });
         }
     }

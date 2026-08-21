@@ -22,15 +22,15 @@ export default {
     usage: '.math',
     initialized: false,
     async handler(sock, message, args, _context) {
-        const { chatId, config } = _context;
+        const { chatId, config, t } = _context;
         const prefix = config.prefix;
         if (mathGames[chatId]) {
-            return sock.sendMessage(chatId, { text: '⚠️ Solve the current problem first!' }, { quoted: mathGames[chatId].msg });
+            return sock.sendMessage(chatId, { text: `⚠️ ${t('p.math.alreadyPlaying')}` }, { quoted: mathGames[chatId].msg });
         }
         const mode = args[0]?.toLowerCase();
         if (!mode || !(mode in modes)) {
             return sock.sendMessage(chatId, {
-                text: `🧮 *Available Difficulties:*\n\n${Object.keys(modes).join(' | ')}\n\n_Example: ${prefix}math normal_`
+                text: `🧮 *${t('p.math.availableTitle')}:*\n\n${Object.keys(modes).join(' | ')}\n\n_${t('p.math.exampleLine', { prefix })}_`
             }, { quoted: message });
         }
         const math = genMath(mode);
@@ -42,7 +42,7 @@ export default {
             attempts: 4,
             timeout: setTimeout(() => {
                 if (mathGames[chatId]) {
-                    sock.sendMessage(chatId, { text: `⏳ *Time is up!*\nThe answer was: *${math.result}*` }, { quoted: mathGames[chatId].msg });
+                    sock.sendMessage(chatId, { text: `⏳ *${t('p.math.timeUpTitle')}*\n${t('p.math.answerWas', { result: math.result })}` }, { quoted: mathGames[chatId].msg });
                     delete mathGames[chatId];
                 }
             }, math.time)
@@ -67,17 +67,17 @@ export default {
                 if (body === game.math.result) {
                     clearTimeout(game.timeout);
                     delete mathGames[chat];
-                    await sock.sendMessage(chat, { text: `✅ *Correct answer!*\n\nYou won the game.` }, { quoted: m });
+                    await sock.sendMessage(chat, { text: `✅ *${t('p.math.correctTitle')}*\n\n${t('p.math.correctBody')}` }, { quoted: m });
                 }
                 else {
                     game.attempts--;
                     if (game.attempts <= 0) {
                         clearTimeout(game.timeout);
                         delete mathGames[chat];
-                        await sock.sendMessage(chat, { text: `❌ *Game Over!*\n\nThe correct answer was: *${game.math.result}*` }, { quoted: m });
+                        await sock.sendMessage(chat, { text: `❌ *${t('p.math.gameOverTitle')}*\n\n${t('p.math.gameOverBody', { result: game.math.result })}` }, { quoted: m });
                     }
                     else {
-                        await sock.sendMessage(chat, { text: `❎ *Wrong answer!*\n\nYou have ${game.attempts} attempts left.` }, { quoted: m });
+                        await sock.sendMessage(chat, { text: `❎ *${t('p.math.wrongTitle')}*\n\n${t('p.math.attemptsLeft', { attempts: game.attempts })}` }, { quoted: m });
                     }
                 }
             });

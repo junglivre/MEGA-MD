@@ -9,6 +9,7 @@ export default {
     description: 'Upload to Uguu.se (temporary)',
     usage: '.uguu (reply to media or caption on media)',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const hasMedia = message.message?.imageMessage ||
@@ -17,16 +18,16 @@ export default {
                 message.message?.documentMessage;
             const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!hasMedia && !quotedMsg) {
-                await sock.sendMessage(chatId, { text: '⚠️ Please send media with caption or reply to media!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.uguu.noMedia')}` }, { quoted: message });
                 return;
             }
             const mediaSource = hasMedia ? message.message : quotedMsg;
             const type = Object.keys(mediaSource).find(key => ['imageMessage', 'videoMessage', 'stickerMessage', 'documentMessage'].includes(key));
             if (!type) {
-                await sock.sendMessage(chatId, { text: '⚠️ Unsupported media type!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.uguu.unsupportedType')}` }, { quoted: message });
                 return;
             }
-            await sock.sendMessage(chatId, { text: 'Uploading to Uguu...' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.uguu.uploading') }, { quoted: message });
             const mediaType = type === 'stickerMessage' ? 'sticker' : type.replace('Message', '');
             const stream = await downloadContentFromMessage(mediaSource[type], mediaType);
             let buffer = Buffer.from([]);
@@ -50,13 +51,13 @@ export default {
             fs.writeFileSync(tempPath, buffer);
             const result = await uploadToUguu(tempPath);
             await sock.sendMessage(chatId, {
-                text: `✅ *Uguu Upload Success!*\n\n🔗 ${result.url}\n⚠️ Temporary link`
+                text: `✅ *${t('p.uguu.uploadSuccess')}*\n\n🔗 ${result.url}\n⚠️ ${t('p.uguu.temporaryLink')}`
             }, { quoted: message });
             fs.unlinkSync(tempPath);
         }
         catch (error) {
             console.error('Uguu Error:', error);
-            await sock.sendMessage(chatId, { text: `❌ Error: ${error.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.uguu.error', { message: error.message })}` }, { quoted: message });
         }
     }
 };

@@ -45,34 +45,34 @@ export default {
     description: 'Advanced calculator',
     usage: '.calc <expression>',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const expr = args.join(' ').trim();
         if (!expr) {
             return await sock.sendMessage(chatId, {
-                text: `🧮 *CALCULATOR*\n\n` +
-                    `*Usage:* \`.calc <expression>\`\n\n` +
-                    `*Examples:*\n` +
+                text: `🧮 *${t('p.calc.title')}*\n\n` +
+                    `*${t('p.calc.usageLabel')}:* \`.calc <expression>\`\n\n` +
+                    `*${t('p.calc.examplesLabel')}:*\n` +
                     `• \`.calc 2 ** 10\` → 1024\n` +
                     `• \`.calc sqrt(144)\` → 12\n` +
                     `• \`.calc sin(pi / 2)\` → 1\n` +
                     `• \`.calc log(1000)\` → 3\n` +
                     `• \`.calc (3 + 4) * 2\` → 14\n` +
                     `• \`.calc pow(2, 8)\` → 256\n\n` +
-                    `*Functions:* sqrt, cbrt, abs, sin, cos, tan, log, ln, floor, ceil, round, pow, min, max\n` +
-                    `*Constants:* pi, e`,
+                    `*${t('p.calc.functionsLabel')}:* sqrt, cbrt, abs, sin, cos, tan, log, ln, floor, ceil, round, pow, min, max\n` +
+                    `*${t('p.calc.constantsLabel')}:* pi, e`,
                 ...channelInfo
             }, { quoted: message });
         }
         try {
             const result = safeMath(expr);
             await sock.sendMessage(chatId, {
-                text: `🧮 *Calculator*\n\n📥 *Input:* \`${expr}\`\n📤 *Result:* \`${result}\``,
+                text: `🧮 *${t('p.calc.resultTitle')}*\n\n📥 *${t('p.calc.inputLabel')}:* \`${expr}\`\n📤 *${t('p.calc.resultLabel')}:* \`${result}\``,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ *Error:* ${error.message}`,
+                text: `❌ *${t('p.calc.errorLabel')}:* ${error.message}`,
                 ...channelInfo
             }, { quoted: message });
         }

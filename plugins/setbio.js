@@ -100,60 +100,61 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const action = args[0]?.toLowerCase();
         try {
             const autoBioSettings = await store.getSetting('global', 'autoBio') || { enabled: false, customBio: null };
             if (!action) {
                 const quotes = await fetchQuotes();
                 return await sock.sendMessage(chatId, {
-                    text: `*📝 AUTO BIO SETTINGS*\n\n` +
-                        `*Status:* ${autoBioSettings.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-                        `*Custom Bio:* ${autoBioSettings.customBio ? 'Set' : 'Default'}\n` +
-                        `*Quotes Loaded:* ${quotes.length}\n` +
-                        `*Update Interval:* Every 10 minute\n\n` +
-                        `*Commands:*\n` +
-                        `• \`.setbio on\` - Enable auto bio\n` +
-                        `• \`.setbio off\` - Disable auto bio\n` +
-                        `• \`.setbio set <text>\` - Set custom bio\n` +
-                        `• \`.setbio reset\` - Reset to default bio\n` +
-                        `• \`.setbio preview\` - Preview random quote\n\n` +
-                        `*Default Bio:*\n{quote}\n💎 MEGA-MD\n\n` +
-                        `*Custom Bio:*\n${autoBioSettings.customBio || 'Not set'}\n\n` +
-                        `*Note:* Use \`{quote}\` in custom bio to insert random quotes.\n\n` +
-                        `*Sources:*\n• Famous Quotes\n• Motivational Quotes\n• Pickup Lines`
+                    text: `*📝 ${t('p.setbio.settingsTitle')}*\n\n` +
+                        `*${t('p.setbio.statusLabel')}:* ${autoBioSettings.enabled ? `✅ ${t('p.setbio.enabled')}` : `❌ ${t('p.setbio.disabled')}`}\n` +
+                        `*${t('p.setbio.customBioLabel')}:* ${autoBioSettings.customBio ? t('p.setbio.set') : t('p.setbio.default')}\n` +
+                        `*${t('p.setbio.quotesLoaded')}:* ${quotes.length}\n` +
+                        `*${t('p.setbio.updateInterval')}:* ${t('p.setbio.every10min')}\n\n` +
+                        `*${t('p.setbio.commandsLabel')}:*\n` +
+                        `• \`.setbio on\` - ${t('p.setbio.cmdOn')}\n` +
+                        `• \`.setbio off\` - ${t('p.setbio.cmdOff')}\n` +
+                        `• \`.setbio set <text>\` - ${t('p.setbio.cmdSet')}\n` +
+                        `• \`.setbio reset\` - ${t('p.setbio.cmdReset')}\n` +
+                        `• \`.setbio preview\` - ${t('p.setbio.cmdPreview')}\n\n` +
+                        `*${t('p.setbio.defaultBioLabel')}:*\n{quote}\n💎 MEGA-MD\n\n` +
+                        `*${t('p.setbio.customBioLabel')}:*\n${autoBioSettings.customBio || t('p.setbio.notSet')}\n\n` +
+                        `*${t('p.setbio.noteLabel')}:* ${t('p.setbio.noteText')}\n\n` +
+                        `*${t('p.setbio.sourcesLabel')}:*\n• ${t('p.setbio.sourceFamous')}\n• ${t('p.setbio.sourceMotivational')}\n• ${t('p.setbio.sourcePickup')}`
                 }, { quoted: message });
             }
             if (action === 'preview') {
                 const quotes = await fetchQuotes();
                 const randomQuote = getRandomQuote(quotes);
                 return await sock.sendMessage(chatId, {
-                    text: `*📝 Preview Quote*\n\n${randomQuote}\n\n💎 MEGA-MD\n\n_This is how your bio will look with random quotes_`
+                    text: `*📝 ${t('p.setbio.previewTitle')}*\n\n${randomQuote}\n\n💎 MEGA-MD\n\n_${t('p.setbio.previewHint')}_`
                 }, { quoted: message });
             }
             if (action === 'on') {
                 if (autoBioSettings.enabled) {
                     return await sock.sendMessage(chatId, {
-                        text: '⚠️ *Auto bio is already enabled*'
+                        text: `⚠️ *${t('p.setbio.alreadyEnabled')}*`
                     }, { quoted: message });
                 }
                 autoBioSettings.enabled = true;
                 await store.saveSetting('global', 'autoBio', autoBioSettings);
                 startAutoBio(sock);
                 return await sock.sendMessage(chatId, {
-                    text: '✅ *Auto bio enabled!*\n\nYour bio will now update every 1 minute with random quotes from:\n• Islamic Quotes\n• Motivational Quotes\n• Pickup Lines'
+                    text: `✅ *${t('p.setbio.enabledSuccess')}*\n\n${t('p.setbio.enabledHint')}\n• ${t('p.setbio.sourceIslamic')}\n• ${t('p.setbio.sourceMotivational')}\n• ${t('p.setbio.sourcePickup')}`
                 }, { quoted: message });
             }
             if (action === 'off') {
                 if (!autoBioSettings.enabled) {
                     return await sock.sendMessage(chatId, {
-                        text: '⚠️ *Auto bio is already disabled*'
+                        text: `⚠️ *${t('p.setbio.alreadyDisabled')}*`
                     }, { quoted: message });
                 }
                 autoBioSettings.enabled = false;
                 await store.saveSetting('global', 'autoBio', autoBioSettings);
                 stopAutoBio();
                 return await sock.sendMessage(chatId, {
-                    text: '❌ *Auto bio disabled!*\n\nYour bio will no longer auto-update.'
+                    text: `❌ *${t('p.setbio.disabledSuccess')}*\n\n${t('p.setbio.disabledHint')}`
                 }, { quoted: message });
             }
             if (action === 'set') {
@@ -169,7 +170,7 @@ export default {
                 }
                 if (!customBio) {
                     return await sock.sendMessage(chatId, {
-                        text: '❌ *Please provide bio text!*\n\n*Usage:*\n• `.setbio set Your bio here`\n• Reply to a message with `.setbio set`\n\n*Tip:* Use `{quote}` to insert random quotes in your bio.'
+                        text: `❌ *${t('p.setbio.provideBio')}*\n\n*${t('p.setbio.usageLabel')}:*\n• \`.setbio set Your bio here\`\n• ${t('p.setbio.usageSet2')}\n\n*${t('p.setbio.tipLabel')}:* ${t('p.setbio.tipText')}`
                     }, { quoted: message });
                 }
                 autoBioSettings.customBio = customBio;
@@ -178,7 +179,7 @@ export default {
                     await updateAutoBio(sock);
                 }
                 return await sock.sendMessage(chatId, {
-                    text: `✅ *Custom bio set!*\n\n*Your bio:*\n${customBio}\n\n${autoBioSettings.enabled ? '✅ Auto bio is enabled - Bio updated!' : '⚠️ Auto bio is disabled - Use `.setbio on` to enable'}`
+                    text: `✅ *${t('p.setbio.customSet')}*\n\n*${t('p.setbio.yourBioLabel')}:*\n${customBio}\n\n${autoBioSettings.enabled ? `✅ ${t('p.setbio.enabledUpdated')}` : `⚠️ ${t('p.setbio.disabledUseOn')}`}`
                 }, { quoted: message });
             }
             if (action === 'reset') {
@@ -188,17 +189,17 @@ export default {
                     await updateAutoBio(sock);
                 }
                 return await sock.sendMessage(chatId, {
-                    text: '✅ *Bio reset to default!*\n\n*Default bio:*\n{quote}\n💎 MEGA-MD'
+                    text: `✅ *${t('p.setbio.resetSuccess')}*\n\n*${t('p.setbio.defaultBioLabel')}:*\n{quote}\n💎 MEGA-MD`
                 }, { quoted: message });
             }
             return await sock.sendMessage(chatId, {
-                text: '❌ *Invalid command!*\n\nUse `.setbio` to see available options.'
+                text: `❌ *${t('p.setbio.invalidCommand')}*\n\n${t('p.setbio.seeOptions')}`
             }, { quoted: message });
         }
         catch (error) {
             console.error('SetBio Error:', error);
             await sock.sendMessage(chatId, {
-                text: `❌ *Error:* ${error.message}`
+                text: `❌ *${t('p.setbio.errorLabel')}:* ${error.message}`
             }, { quoted: message });
         }
     },

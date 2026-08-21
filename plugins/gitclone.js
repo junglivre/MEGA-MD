@@ -4,11 +4,12 @@ export default {
     category: 'download',
     description: 'Download a GitHub repository as zip',
     usage: '.gitclone <url> OR <username> <repo>',
-    async handler(sock, message, args) {
+    async handler(sock, message, args, context) {
         const chatId = message.key.remoteJid;
+        const { t } = context;
         if (!args || args.length === 0) {
             return sock.sendMessage(chatId, {
-                text: '*🌟 Please provide a GitHub URL or username and repository name.*\n\n*Example usage:*\n\n.clone https://github.com/GlobalTechInfo/MEGA-MD\n\n.clone GlobalTechInfo MEGA-MD'
+                text: t('p.gitclone.missingRepo')
             });
         }
         let url = '';
@@ -30,10 +31,10 @@ export default {
         }
         else {
             return sock.sendMessage(chatId, {
-                text: '*Missing repository info.*\n\n*Example usage:*\n\n.clone https://github.com/GlobalTechInfo/MEGA-MD\n\n.clone GlobalTechInfo MEGA-MD'
+                text: t('p.gitclone.missingInfo')
             });
         }
-        await sock.sendMessage(chatId, { text: '⏱️ Preparing repository zip...' });
+        await sock.sendMessage(chatId, { text: `⏱️ ${t('p.gitclone.preparing')}` });
         try {
             await sock.sendMessage(chatId, {
                 document: { url },
@@ -44,7 +45,7 @@ export default {
         catch (e) {
             console.error(e);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to fetch the repository. Please make sure the repository exists and try again.'
+                text: `❌ ${t('p.gitclone.failed')}`
             });
         }
     }

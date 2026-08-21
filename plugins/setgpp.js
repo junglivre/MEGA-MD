@@ -11,11 +11,12 @@ export default {
     adminOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const imageMessage = quoted?.imageMessage || quoted?.stickerMessage;
         if (!imageMessage) {
             await sock.sendMessage(chatId, {
-                text: '❌ *Please reply to an image or sticker*\n\nUsage: Reply to an image with `.setgpp`'
+                text: `❌ *${t('p.setgpp.noImageTitle')}*\n\n${t('p.setgpp.noImageHint')}`
             }, { quoted: message });
             return;
         }
@@ -37,13 +38,13 @@ export default {
             }
             catch (e) { }
             await sock.sendMessage(chatId, {
-                text: '✅ *Group profile picture updated successfully!*'
+                text: `✅ *${t('p.setgpp.success')}*`
             }, { quoted: message });
         }
         catch (error) {
             console.error('Error updating group photo:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ *Failed to update group profile picture*\n\nMake sure the bot is an admin and the image is valid.'
+                text: `❌ *${t('p.setgpp.failedTitle')}*\n\n${t('p.setgpp.failedHint')}`
             }, { quoted: message });
         }
     }

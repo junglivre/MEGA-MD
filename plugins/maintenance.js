@@ -23,6 +23,7 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const input = args[0]?.toLowerCase();
         if (input === 'stop' || input === 'off') {
             if (activeMaintenanceTimer) {
@@ -35,11 +36,11 @@ export default {
                     CommandHandler.disabledCommands.delete(cmd.command.toLowerCase());
                 }
             });
-            return await sock.sendMessage(chatId, { text: '✅ *MAINTENANCE ENDED EARLY*\nAll commands are now active.' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `✅ *${t('p.maintenance.endedTitle')}*\n${t('p.maintenance.endedBody')}` }, { quoted: message });
         }
         const minutes = parseInt(input, 10);
         if (isNaN(minutes) || minutes <= 0) {
-            return await sock.sendMessage(chatId, { text: '❌ Usage: .maintenance [minutes] OR .maintenance stop' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `❌ ${t('p.maintenance.usage')}` }, { quoted: message });
         }
         try {
             if (activeMaintenanceTimer)
@@ -56,10 +57,10 @@ export default {
                 }
             });
             await sock.sendMessage(chatId, {
-                text: `⚠️ *MAINTENANCE MODE STARTING*\n\n` +
-                    `Locked: ${affectedCount} commands\n` +
-                    `Duration: ${minutes}m\n\n` +
-                    `_Type ".maintenance stop" to enable commands early._`
+                text: `⚠️ *${t('p.maintenance.startingTitle')}*\n\n` +
+                    `${t('p.maintenance.lockedLine', { count: affectedCount })}\n` +
+                    `${t('p.maintenance.durationLine', { minutes })}\n\n` +
+                    `_${t('p.maintenance.stopHint')}_`
             }, { quoted: message });
             activeMaintenanceTimer = setTimeout(async () => {
                 allCommands.forEach(cmd => {
@@ -68,12 +69,12 @@ export default {
                     }
                 });
                 activeMaintenanceTimer = null;
-                await sock.sendMessage(chatId, { text: '✅ *MAINTENANCE FINISHED*\nCommands re-enabled automatically.' });
+                await sock.sendMessage(chatId, { text: `✅ *${t('p.maintenance.finishedTitle')}*\n${t('p.maintenance.finishedBody')}` });
             }, minutes * 60000);
         }
         catch (error) {
             console.error('Maintenance Error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Action failed.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.maintenance.actionFailed')}` }, { quoted: message });
         }
     }
 };

@@ -41,6 +41,7 @@ export default {
     groupOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const messageCounts = await loadMessageCounts();
             const groupCounts = messageCounts[chatId] || {};
@@ -68,12 +69,12 @@ export default {
                 .slice(0, 5);
             if (sortedMembers.length === 0) {
                 await sock.sendMessage(chatId, {
-                    text: '📊 *No message activity recorded yet*\n\nStart chatting to appear on the leaderboard!'
+                    text: `📊 *${t('p.rank.noActivity')}*\n\n${t('p.rank.noActivityHint')}`
                 }, { quoted: message });
                 return;
             }
             const medals = ['🥇', '🥈', '🥉', '4️⃣', '5️⃣'];
-            let messageText = '🏆 *TOP MEMBERS LEADERBOARD*\n\n';
+            let messageText = `🏆 *${t('p.rank.title')}*\n\n`;
             for (let index = 0; index < sortedMembers.length; index++) {
                 const [userId, count] = sortedMembers[index];
                 // Try all sources for name
@@ -83,9 +84,9 @@ export default {
                     || participant?.notify || participant?.name
                     || await sock.getName(userId)
                     || (userId.includes('@s.whatsapp.net') ? `+${ userId.replace('@s.whatsapp.net', '')}` : 'Unknown');
-                messageText += `${medals[index]} @${username}\n💬 ${count} messages\n\n`;
+                messageText += `${medals[index]} @${username}\n💬 ${t('p.rank.messagesCount', { count })}\n\n`;
             }
-            messageText += '_Keep chatting to climb the ranks!_';
+            messageText += `_${t('p.rank.footer')}_`;
             await sock.sendMessage(chatId, {
                 text: messageText,
                 mentions: sortedMembers.map(([userId]) => userId)
@@ -94,7 +95,7 @@ export default {
         catch (error) {
             console.error('Rank Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to load leaderboard. Please try again later.'
+                text: `❌ ${t('p.rank.loadFailed')}`
             }, { quoted: message });
         }
     },

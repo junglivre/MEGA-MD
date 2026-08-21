@@ -10,10 +10,11 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const t = context.t;
         const text = args.join(' ').trim();
         if (!text) {
             return await sock.sendMessage(chatId, {
-                text: `*📢 BROADCAST*\n\n*Usage:* .broadcast <message>\n\n*Example:*\n.broadcast Hello everyone! Bot will be down for maintenance at 10 PM.\n\n_Sends to all groups the bot is in. Has a 1 second delay between each group to avoid ban._`,
+                text: `*📢 ${t('p.broadcast.usageTitle')}*\n\n*${t('p.broadcast.usageLabel')}:* .broadcast <message>\n\n*${t('p.broadcast.exampleLabel')}:*\n.broadcast ${t('p.broadcast.exampleText')}\n\n_${t('p.broadcast.note')}_`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -27,15 +28,15 @@ export default {
         }
         if (groups.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: '❌ No groups found. Make sure the bot is in at least one group.',
+                text: `❌ ${t('p.broadcast.noGroups')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         await sock.sendMessage(chatId, {
-            text: `📢 *Broadcasting to ${groups.length} group(s)...*\n\nThis may take a moment.`,
+            text: `📢 *${t('p.broadcast.broadcasting', { count: groups.length })}*\n\n${t('p.broadcast.mayTakeMoment')}`,
             ...channelInfo
         }, { quoted: message });
-        const broadcastText = `📢 *BROADCAST MESSAGE*\n\n${text}`;
+        const broadcastText = `📢 *${t('p.broadcast.messageTitle')}*\n\n${text}`;
         let sent = 0;
         let failed = 0;
         for (const groupJid of groups) {
@@ -54,7 +55,7 @@ export default {
             await new Promise(r => setTimeout(r, 1000));
         }
         await sock.sendMessage(chatId, {
-            text: `✅ *Broadcast Complete!*\n\n📤 Sent: ${sent}\n❌ Failed: ${failed}\n📊 Total: ${groups.length}`,
+            text: `✅ *${t('p.broadcast.completeTitle')}*\n\n📤 ${t('p.broadcast.sentLabel')}: ${sent}\n❌ ${t('p.broadcast.failedLabel')}: ${failed}\n📊 ${t('p.broadcast.totalLabel')}: ${groups.length}`,
             ...channelInfo
         }, { quoted: message });
     }

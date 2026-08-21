@@ -114,28 +114,28 @@ export default {
     description: 'Calculate distance between two cities with flight and driving time estimates',
     usage: '.distance <city1> to <city2>\nExample: .distance karachi to dubai',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const input = args.join(' ').trim().toLowerCase();
         if (!input) {
             return await sock.sendMessage(chatId, {
-                text: `🌍 *Distance Calculator*\n\n` +
-                    `*Usage:* \`.distance <city1> to <city2>\`\n\n` +
-                    `*Examples:*\n` +
+                text: `🌍 *${t('p.distance.title')}*\n\n` +
+                    `*${t('p.distance.usageLabel')}* \`.distance <city1> to <city2>\`\n\n` +
+                    `*${t('p.distance.examplesLabel')}*\n` +
                     `• \`.distance karachi to dubai\`\n` +
                     `• \`.distance lahore to islamabad\`\n` +
                     `• \`.distance london to newyork\`\n` +
                     `• \`.distance tokyo to singapore\`\n\n` +
-                    `*Supported cities include:*\n` +
+                    `*${t('p.distance.supportedLabel')}*\n` +
                     `🇵🇰 PK · 🇮🇳 IN · 🇦🇪 UAE · 🇸🇦 SA · 🇬🇧 UK\n` +
                     `🇺🇸 USA · 🇨🇳 CN · 🇯🇵 JP · 🇫🇷 FR · 🇩🇪 DE\n` +
-                    `🇧🇩 BD · 🇦🇫 AF · 🇮🇷 IR · 🇹🇷 TR · + many more`,
+                    `🇧🇩 BD · 🇦🇫 AF · 🇮🇷 IR · 🇹🇷 TR · ${t('p.distance.moreLabel')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         const toIndex = args.findIndex((a) => a.toLowerCase() === 'to');
         if (toIndex === -1 || toIndex === 0 || toIndex === args.length - 1) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Use: \`.distance <city1> to <city2>\``,
+                text: `❌ ${t('p.distance.useFormat')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -145,19 +145,19 @@ export default {
         const city2 = findCity(city2Input);
         if (!city1) {
             return await sock.sendMessage(chatId, {
-                text: `❌ City not found: *${args.slice(0, toIndex).join(' ')}*\n\nTry common city names like: karachi, dubai, london, newyork`,
+                text: `❌ ${t('p.distance.cityNotFound', { city: args.slice(0, toIndex).join(' ') })}\n\n${t('p.distance.tryCommon')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         if (!city2) {
             return await sock.sendMessage(chatId, {
-                text: `❌ City not found: *${args.slice(toIndex + 1).join(' ')}*\n\nTry common city names like: karachi, dubai, london, newyork`,
+                text: `❌ ${t('p.distance.cityNotFound', { city: args.slice(toIndex + 1).join(' ') })}\n\n${t('p.distance.tryCommon')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         if (city1.name === city2.name) {
             return await sock.sendMessage(chatId, {
-                text: `😄 Both cities are the same! Distance is 0 km.`,
+                text: `😄 ${t('p.distance.sameCity')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -165,17 +165,17 @@ export default {
         const miles = km * 0.621371;
         const nm = km * 0.539957;
         await sock.sendMessage(chatId, {
-            text: `🌍 *Distance Calculator*\n\n` +
-                `${city1.flag} *From:* ${city1.name}, ${city1.country}\n` +
-                `${city2.flag} *To:* ${city2.name}, ${city2.country}\n\n` +
+            text: `🌍 *${t('p.distance.title')}*\n\n` +
+                `${city1.flag} *${t('p.distance.fromLabel')}* ${city1.name}, ${city1.country}\n` +
+                `${city2.flag} *${t('p.distance.toLabel')}* ${city2.name}, ${city2.country}\n\n` +
                 `━━━━━━━━━━━━━━━━━\n` +
-                `📏 *Distance:*\n` +
-                `   • ${Math.round(km).toLocaleString()} km\n` +
-                `   • ${Math.round(miles).toLocaleString()} miles\n` +
-                `   • ${Math.round(nm).toLocaleString()} nautical miles\n\n` +
-                `✈️ *Flight time:* ${flightTime(km)}\n` +
-                `🚗 *Drive time:* ${drivingTime(km)}\n\n` +
-                `📍 *Coordinates:*\n` +
+                `📏 *${t('p.distance.distanceLabel')}*\n` +
+                `   • ${Math.round(km).toLocaleString()} ${t('p.distance.km')}\n` +
+                `   • ${Math.round(miles).toLocaleString()} ${t('p.distance.miles')}\n` +
+                `   • ${Math.round(nm).toLocaleString()} ${t('p.distance.nauticalMiles')}\n\n` +
+                `✈️ *${t('p.distance.flightLabel')}* ${flightTime(km)}\n` +
+                `🚗 *${t('p.distance.driveLabel')}* ${drivingTime(km)}\n\n` +
+                `📍 *${t('p.distance.coordinatesLabel')}*\n` +
                 `   ${city1.name}: ${city1.lat.toFixed(4)}, ${city1.lon.toFixed(4)}\n` +
                 `   ${city2.name}: ${city2.lat.toFixed(4)}, ${city2.lon.toFixed(4)}`,
             ...channelInfo

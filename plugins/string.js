@@ -7,31 +7,32 @@ export default {
     usage: '.string <text>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const textInput = args?.join(' ')?.trim();
         if (!textInput) {
-            return await sock.sendMessage(chatId, { text: '*Provide some text to analyze.*\nExample: .string What is AI' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `*${t('p.string.provideText')}*\n${t('p.string.example')}` }, { quoted: message });
         }
         try {
             const apiUrl = `https://discardapi.dpdns.org/api/tools/string?apikey=guru&text=${encodeURIComponent(textInput)}`;
             const { data } = await axios.get(apiUrl, { timeout: 10000 });
             if (!data?.status) {
-                return await sock.sendMessage(chatId, { text: '❌ Failed to analyze text.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.string.analyzeFailed')}` }, { quoted: message });
             }
-            const reply = `📝 *Text Analysis*\n\n` +
-                `✏️ Text: ${textInput}\n` +
-                `🔠 Letters: ${data.letters}\n` +
-                `🔢 Characters (including spaces): ${data.length}\n` +
-                `📄 Words: ${data.words}\n\n` +
-                `💡 Tip: Keep your text concise for better readability!`;
+            const reply = t('p.string.analysis', {
+                text: textInput,
+                letters: data.letters,
+                length: data.length,
+                words: data.words
+            });
             await sock.sendMessage(chatId, { text: reply }, { quoted: message });
         }
         catch (error) {
             console.error('String plugin error:', error);
             if (error.code === 'ECONNABORTED') {
-                await sock.sendMessage(chatId, { text: '❌ Request timed out. Please try again later.' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `❌ ${t('p.string.timeout')}` }, { quoted: message });
             }
             else {
-                await sock.sendMessage(chatId, { text: '❌ Failed to fetch text information.' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `❌ ${t('p.string.fetchFailed')}` }, { quoted: message });
             }
         }
     }

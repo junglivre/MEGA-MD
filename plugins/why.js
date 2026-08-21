@@ -22,17 +22,18 @@ export default {
     description: 'Get a random “why” question from the API',
     usage: '.why',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const data = await fetchWithRetries('https://nekos.life/api/v2/why');
             if (!data?.why?.trim()) {
-                return await sock.sendMessage(chatId, { text: '❌ Invalid response from API. Try again.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.why.invalidResponse')}` }, { quoted: message });
             }
-            await sock.sendMessage(chatId, { text: `🤔 *Why?*\n\n${data.why}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `🤔 *${t('p.why.title')}*\n\n${data.why}` }, { quoted: message });
         }
         catch (error) {
             console.error('Why plugin error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch question. Try again later.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.why.failed')}` }, { quoted: message });
         }
     }
 };

@@ -21,12 +21,13 @@ export default {
     usage: '.getpage <url>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const url = args[0];
         if (!url || !url.startsWith('http')) {
-            return await sock.sendMessage(chatId, { text: 'Provide a valid URL (include http/https).' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: t('p.getpage.invalidUrl') }, { quoted: message });
         }
         try {
-            await sock.sendMessage(chatId, { text: '🌐 *Fetching source code...*' });
+            await sock.sendMessage(chatId, { text: `🌐 *${t('p.getpage.fetching')}*` });
             const res = await axios.get(url);
             const html = res.data;
             const buffer = Buffer.from(html, 'utf-8');
@@ -34,11 +35,11 @@ export default {
                 document: buffer,
                 mimetype: 'text/html',
                 fileName: 'source.html',
-                caption: `*Source code for:* ${url}`
+                caption: `*${t('p.getpage.sourceFor')}:* ${url}`
             }, { quoted: message });
         }
         catch (err) {
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch source. The site might be protected.' });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.getpage.fetchFailed')}` });
         }
     }
 };

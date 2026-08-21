@@ -6,6 +6,7 @@ export default {
     usage: '.flirt',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const shizokeys = 'shizo';
             const res = await fetch(`https://shizoapi.onrender.com/api/texts/flirt?apikey=${shizokeys}`);
@@ -16,7 +17,7 @@ export default {
         }
         catch (e) {
             console.error('Error in flirt command:', e);
-            await sock.sendMessage(chatId, { text: '❌ Failed to get flirt message. Please try again later!' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.flirt.failed')}` }, { quoted: message });
         }
     }
 };

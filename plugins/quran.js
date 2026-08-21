@@ -32,22 +32,11 @@ export default {
     description: 'Search Quran verses by surah:ayah or keyword',
     usage: '.quran 1:1\n.quran 2:255\n.quran mercy',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const input = args.join(' ').trim();
         if (!input) {
             return await sock.sendMessage(chatId, {
-                text: `📖 *Quran*\n\n` +
-                    `*By Surah:Ayah:*\n` +
-                    `\`.quran 1:1\` — Al-Fatihah, verse 1\n` +
-                    `\`.quran 2:255\` — Ayat Al-Kursi\n` +
-                    `\`.quran 36:1\` — Ya-Sin, verse 1\n\n` +
-                    `*By keyword:*\n` +
-                    `\`.quran mercy\`\n` +
-                    `\`.quran patience\`\n` +
-                    `\`.quran paradise\`\n\n` +
-                    `*Full Surah:*\n` +
-                    `\`.surah 1\` — Al-Fatihah\n` +
-                    `\`.surah 112\` — Al-Ikhlas`,
+                text: t('p.quran.menu'),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -63,10 +52,15 @@ export default {
                 const en = enRes.data.data;
                 const surahName = SURAH_NAMES[parseInt(surah, 10)] || ar.surah?.englishName;
                 await sock.sendMessage(chatId, {
-                    text: `📖 *Surah ${surahName} — Ayah ${ayah}*\n\n` +
-                        `*Arabic:*\n${ar.text}\n\n` +
-                        `*Translation (Asad):*\n_${en.text}_\n\n` +
-                        `📍 Surah: ${surah} | Ayah: ${ayah} | Juz: ${ar.juz} | Page: ${ar.page}`,
+                    text: t('p.quran.verseDetail', {
+                        surahName,
+                        ayah,
+                        arabicText: ar.text,
+                        translationText: en.text,
+                        surah,
+                        juz: ar.juz,
+                        page: ar.page
+                    }),
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -79,11 +73,15 @@ export default {
                 const arData = arRes.data.data;
                 const verses = data.ayahs.slice(0, 7).map((a, i) => `*${i + 1}.* ${arData.ayahs[i]?.text || ''}\n_${a.text}_`).join('\n\n');
                 await sock.sendMessage(chatId, {
-                    text: `📖 *Surah ${data.englishName} (${data.name})*\n` +
-                        `_${data.englishNameTranslation}_ — ${data.numberOfAyahs} verses — ${data.revelationType}\n\n` +
-                        `${verses}\n\n` +
-                        `_Showing first 7 of ${data.numberOfAyahs} verses_\n` +
-                        `Use \`.quran ${num}:8\` for more`,
+                    text: t('p.quran.surahDetail', {
+                        englishName: data.englishName,
+                        name: data.name,
+                        translation: data.englishNameTranslation,
+                        numberOfAyahs: data.numberOfAyahs,
+                        revelationType: data.revelationType,
+                        verses,
+                        num
+                    }),
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -93,7 +91,7 @@ export default {
                 const matches = res.data.data?.matches || [];
                 if (!matches.length) {
                     return await sock.sendMessage(chatId, {
-                        text: `❌ No verses found for: *${input}*`,
+                        text: t('p.quran.noResults', { input }),
                         ...channelInfo
                     }, { quoted: message });
                 }
@@ -103,16 +101,14 @@ export default {
                     return `📍 *${surahName} ${m.surah?.number}:${m.numberInSurah}*\n_${m.text}_`;
                 }).join('\n\n');
                 await sock.sendMessage(chatId, {
-                    text: `📖 *Quran Search: "${input}"*\n` +
-                        `Found ${matches.length} results (showing top 5)\n\n${ 
-                        results}`,
+                    text: t('p.quran.searchResults', { input, count: matches.length, results }),
                     ...channelInfo
                 }, { quoted: message });
             }
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ Failed: ${error.message}`,
+                text: t('p.quran.failed', { error: error.message }),
                 ...channelInfo
             }, { quoted: message });
         }

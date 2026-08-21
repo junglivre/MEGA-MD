@@ -10,15 +10,16 @@ export default {
     usage: '.sticker (reply to image/video)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quotedMsg) {
-                await sock.sendMessage(chatId, { text: '⚠️ Please reply to an image or video!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: t('p.sticker.needMedia') }, { quoted: message });
                 return;
             }
             const type = Object.keys(quotedMsg)[0];
             if (!['imageMessage', 'videoMessage'].includes(type)) {
-                await sock.sendMessage(chatId, { text: '⚠️ Please reply to an image or video!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: t('p.sticker.needMedia') }, { quoted: message });
                 return;
             }
             const stream = await downloadContentFromMessage(quotedMsg[type], type.split('Message')[0]);
@@ -48,7 +49,7 @@ export default {
         }
         catch (error) {
             console.error('Sticker Command Error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to create sticker!' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.sticker.createFailed') }, { quoted: message });
         }
     }
 };

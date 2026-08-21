@@ -7,27 +7,28 @@ export default {
     usage: '.stickers <search term>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const text = args?.join(' ')?.trim();
         if (!text) {
-            return await sock.sendMessage(chatId, { text: '*Provide a search term.*\nExample: .stickers funny' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `*${t('p.stickers.provideTerm')}*\n${t('p.stickers.example')}` }, { quoted: message });
         }
         try {
-            await sock.sendMessage(chatId, { text: 'Searching for stickers...' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.stickers.searching') }, { quoted: message });
             const { data } = await axios.get(`https://g.tenor.com/v1/search?q=${encodeURIComponent(text)}&key=LIVDSRZULELA&limit=8`);
             if (!data?.results?.length) {
-                return await sock.sendMessage(chatId, { text: '❌ No stickers found.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.stickers.notFound')}` }, { quoted: message });
             }
             const limit = Math.min(data.results.length, 5);
             for (let i = 0; i < limit; i++) {
                 const media = data.results[i].media?.[0]?.mp4?.url;
                 if (!media)
                     continue;
-                await sock.sendMessage(chatId, { video: { url: media }, caption: `Sticker ${i + 1}`, mimetype: 'video/mp4' }, { quoted: message });
+                await sock.sendMessage(chatId, { video: { url: media }, caption: t('p.stickers.captionLabel', { n: i + 1 }), mimetype: 'video/mp4' }, { quoted: message });
             }
         }
         catch (error) {
             console.error('StickerSearch plugin error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch stickers.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.stickers.fetchFailed')}` }, { quoted: message });
         }
     }
 };

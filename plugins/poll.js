@@ -9,14 +9,12 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const { t } = context;
         const fullText = args.join(' ');
         const parts = fullText.split('|').map((p) => p.trim()).filter(Boolean);
         if (parts.length < 3) {
             return await sock.sendMessage(chatId, {
-                text: `*📊 CREATE A POLL*\n\n` +
-                    `*Usage:*\n\`.poll <Question> | <Option1> | <Option2> | ...\`\n\n` +
-                    `*Example:*\n\`.poll Favourite color? | Red | Blue | Green | Yellow\`\n\n` +
-                    `_Minimum 2 options. Maximum 12 options._`,
+                text: t('p.poll.usage'),
                 ...channelInfo
             }, { quoted: message });
         }
@@ -24,7 +22,7 @@ export default {
         const options = parts.slice(1);
         if (options.length > 12) {
             return await sock.sendMessage(chatId, {
-                text: '❌ Maximum 12 options allowed.',
+                text: `❌ ${t('p.poll.maxOptions')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -40,7 +38,7 @@ export default {
         catch (e) {
             console.error('[POLL] Error sending poll:', e.message);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to create poll. Please try again.',
+                text: `❌ ${t('p.poll.failed')}`,
                 ...channelInfo
             }, { quoted: message });
         }

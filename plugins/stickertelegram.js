@@ -11,18 +11,18 @@ export default {
     description: 'Download stickers from Telegram',
     usage: '.tgstk <telegram sticker URL>',
     async handler(sock, message, args, context) {
-        const { chatId, config, channelInfo } = context;
+        const { chatId, config, channelInfo, t } = context;
         try {
             if (!args[0]) {
                 await sock.sendMessage(chatId, {
-                    text: '⚠️ Please enter the Telegram sticker URL!\n\nExample: .tgstk https://t.me/addstickers/Porcientoreal',
+                    text: `⚠️ ${t('p.tgstk.needUrl')}\n\n${t('p.tgstk.example')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
             }
             if (!args[0].match(/(https:\/\/t.me\/addstickers\/)/gi)) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Invalid URL! Make sure it\'s a Telegram sticker URL.',
+                    text: `❌ ${t('p.tgstk.invalidUrl')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -45,7 +45,7 @@ export default {
                     throw new Error('Invalid sticker pack or API response');
                 }
                 await sock.sendMessage(chatId, {
-                    text: `📦 Found ${stickerSet.result.stickers.length} stickers\n⏳ Starting download...`,
+                    text: t('p.tgstk.foundStickers', { count: stickerSet.result.stickers.length }),
                     ...channelInfo
                 }, { quoted: message });
                 const tmpDir = path.join(process.cwd(), 'temp');
@@ -117,7 +117,7 @@ export default {
                     }
                 }
                 await sock.sendMessage(chatId, {
-                    text: `✅ Successfully downloaded ${successCount}/${stickerSet.result.stickers.length} stickers!`,
+                    text: t('p.tgstk.downloadSummary', { success: successCount, total: stickerSet.result.stickers.length }),
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -128,7 +128,7 @@ export default {
         catch (error) {
             console.error('Error in stickertelegram command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to process Telegram stickers!\nMake sure:\n1. The URL is correct\n2. The sticker pack exists\n3. The sticker pack is public',
+                text: t('p.tgstk.processFailed'),
                 ...channelInfo
             }, { quoted: message });
         }

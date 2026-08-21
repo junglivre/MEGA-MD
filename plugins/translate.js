@@ -6,6 +6,7 @@ export default {
     usage: '.translate <text> <lang> or reply to a message with .translate <lang>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             await sock.presenceSubscribe(chatId);
             await sock.sendPresenceUpdate('composing', chatId);
@@ -23,7 +24,7 @@ export default {
             else {
                 if (args.length < 2) {
                     return await sock.sendMessage(chatId, {
-                        text: `*TRANSLATOR*\n\nUsage:\n1. Reply to a message with: .translate <lang> or .trt <lang>\n2. Or type: .translate <text> <lang> or .trt <text> <lang>\n\nExample:\n.translate hello fr\n.trt hello fr\n\nLanguage codes:\nfr - French\nes - Spanish\nde - German\nit - Italian\npt - Portuguese\nru - Russian\nja - Japanese\nko - Korean\nzh - Chinese\nar - Arabic\nhi - Hindi`,
+                        text: t('p.translate.usage'),
                         quoted: message
                     });
                 }
@@ -32,7 +33,7 @@ export default {
             }
             if (!textToTranslate) {
                 return await sock.sendMessage(chatId, {
-                    text: 'No text found to translate. Please provide text or reply to a message.',
+                    text: t('p.translate.noText'),
                     quoted: message
                 });
             }
@@ -86,7 +87,7 @@ export default {
         catch (error) {
             console.error('❌ Error in translate command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to translate text. Please try again later.\n\nUsage:\n1. Reply to a message with: .translate <lang> or .trt <lang>\n2. Or type: .translate <text> <lang> or .trt <text> <lang>',
+                text: `❌ ${t('p.translate.failed')}`,
                 quoted: message
             });
         }

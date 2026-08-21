@@ -6,17 +6,17 @@ export default {
     description: 'Download a GitHub repository as a ZIP file',
     usage: '.gitclone2 <github-link>',
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         const regex = new RegExp('(?:https|git)(?://|@)github.com[/:]([^/:]+)/(.+)', 'i');
         try {
             const link = args[0];
             if (!link) {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ *Missing Link!*\n\nExample: .gitclone2 https://github.com/GlobalTechInfo/MEGA-MD`
+                    text: `❌ ${t('p.gitclone2.noLink')}`
                 }, { quoted: message });
             }
             if (!regex.test(link)) {
-                return await sock.sendMessage(chatId, { text: '⚠️ *Invalid GitHub link!*' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `⚠️ ${t('p.gitclone2.invalidLink')}` }, { quoted: message });
             }
             // eslint-disable-next-line prefer-const
             let [_, user, repo] = link.match(regex) || [];
@@ -32,17 +32,17 @@ export default {
                 if (match)
                     filename = match[1];
             }
-            await sock.sendMessage(chatId, { text: `✳️ *Wait, sending repository...*` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `✳️ ${t('p.gitclone2.sending')}` }, { quoted: message });
             await sock.sendMessage(chatId, {
                 document: { url },
                 fileName: filename,
                 mimetype: 'application/zip',
-                caption: `📦 *Repository:* ${user}/${repo}\n✨ *Cloned by MEGA-MD*`
+                caption: `📦 *${t('p.gitclone2.repoLabel')}:* ${user}/${repo}\n✨ *${t('p.gitclone2.clonedBy')}*`
             }, { quoted: message });
         }
         catch (err) {
             console.error('Gitclone Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ *Failed to download the repository.* Make sure it is public.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.gitclone2.failed')}` }, { quoted: message });
         }
     }
 };

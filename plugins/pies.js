@@ -18,16 +18,17 @@ export default {
     usage: `.pies <country>\nAvailable countries: ${VALID_COUNTRIES.join(', ')}`,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const t = context.t;
         const sub = (args[0] || '').toLowerCase();
         if (!sub) {
             await sock.sendMessage(chatId, {
-                text: `Usage: .pies <country>\nCountries: ${VALID_COUNTRIES.join(', ')}`
+                text: t('p.pies.usage', { countries: VALID_COUNTRIES.join(', ') })
             }, { quoted: message });
             return;
         }
         if (!VALID_COUNTRIES.includes(sub)) {
             await sock.sendMessage(chatId, {
-                text: `Unsupported country: ${sub}. Try one of: ${VALID_COUNTRIES.join(', ')}`
+                text: t('p.pies.unsupported', { country: sub, countries: VALID_COUNTRIES.join(', ') })
             }, { quoted: message });
             return;
         }
@@ -35,13 +36,13 @@ export default {
             const imageBuffer = await fetchPiesImageBuffer(sub);
             await sock.sendMessage(chatId, {
                 image: imageBuffer,
-                caption: `🍰 pies: ${sub}`
+                caption: `🍰 ${t('p.pies.caption', { country: sub })}`
             }, { quoted: message });
         }
         catch (err) {
             console.error('Pies Command Error:', err);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to fetch image. Please try again.'
+                text: `❌ ${t('p.pies.fetchFailed')}`
             }, { quoted: message });
         }
     }

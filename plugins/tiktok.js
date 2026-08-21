@@ -6,19 +6,19 @@ export default {
     description: 'Download TikTok video without watermark (HD if available)',
     usage: '.tiktok <TikTok URL>',
     async handler(sock, message, args, context) {
-        const { chatId, rawText } = context;
+        const { chatId, rawText, t } = context;
         const prefix = rawText.match(/^[.!#]/)?.[0] || '.';
         const commandPart = rawText.slice(prefix.length).trim();
         const parts = commandPart.split(/\s+/);
         const url = parts.slice(1).join(' ').trim();
         if (!url) {
             return await sock.sendMessage(chatId, {
-                text: '🎵 *TikTok Downloader*\n\nPlease provide a TikTok URL.\nExample:\n.tiktok https://vm.tiktok.com/XXXX'
+                text: `🎵 *${t('p.tiktok.title')}*\n\n${t('p.tiktok.provideUrl')}`
             }, { quoted: message });
         }
         try {
             await sock.sendMessage(chatId, {
-                text: '⏳ Downloading TikTok video...'
+                text: `⏳ ${t('p.tiktok.downloading')}`
             }, { quoted: message });
             const apiUrl = `https://discardapi.onrender.com/api/dl/tiktok?apikey=guru&url=${encodeURIComponent(url)}`;
             const { data } = await axios.get(apiUrl, {
@@ -37,25 +37,25 @@ export default {
             if (!videoUrl) {
                 throw new Error('No downloadable video found');
             }
-            const caption = `🎵 *TikTok Downloader*
+            const caption = `🎵 *${t('p.tiktok.title')}*
 ━━━━━━━━━━━━━━━━━━━
-👤 *User:* ${res.author.nickname}
-🆔 *Username:* ${res.author.fullname}
-🌍 *Region:* ${res.region}
-⏱️ *Duration:* ${res.duration}
+👤 *${t('p.tiktok.userLabel')}:* ${res.author.nickname}
+🆔 *${t('p.tiktok.usernameLabel')}:* ${res.author.fullname}
+🌍 *${t('p.tiktok.regionLabel')}:* ${res.region}
+⏱️ *${t('p.tiktok.durationLabel')}:* ${res.duration}
 
-❤️ *Likes:* ${res.stats.likes}
-💬 *Comments:* ${res.stats.comment}
-🔁 *Shares:* ${res.stats.share}
-👀 *Views:* ${res.stats.views}
+❤️ *${t('p.tiktok.likesLabel')}:* ${res.stats.likes}
+💬 *${t('p.tiktok.commentsLabel')}:* ${res.stats.comment}
+🔁 *${t('p.tiktok.sharesLabel')}:* ${res.stats.share}
+👀 *${t('p.tiktok.viewsLabel')}:* ${res.stats.views}
 
-🎧 *Sound:* ${res.music_info.title}
-📅 *Posted:* ${res.taken_at}
+🎧 *${t('p.tiktok.soundLabel')}:* ${res.music_info.title}
+📅 *${t('p.tiktok.postedLabel')}:* ${res.taken_at}
 
-📝 *Caption:*
-${res.title || 'No caption'}
+📝 *${t('p.tiktok.captionLabel')}:*
+${res.title || t('p.tiktok.noCaption')}
 
-✨ *Quality:* ${hd ? 'HD No Watermark' : 'No Watermark'}
+✨ *${t('p.tiktok.qualityLabel')}:* ${hd ? t('p.tiktok.hdNoWatermark') : t('p.tiktok.noWatermark')}
 ━━━━━━━━━━━━━━━━━━━`;
             await sock.sendMessage(chatId, {
                 video: { url: videoUrl },
@@ -67,12 +67,12 @@ ${res.title || 'No caption'}
             console.error('TikTok plugin error:', error);
             if (error.code === 'ECONNABORTED') {
                 await sock.sendMessage(chatId, {
-                    text: '⏱️ Request timed out. Please try again later.'
+                    text: `⏱️ ${t('p.tiktok.timeout')}`
                 }, { quoted: message });
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: `❌ Failed to download TikTok video.\nReason: ${error.message}`
+                    text: `❌ ${t('p.tiktok.downloadFailed', { reason: error.message })}`
                 }, { quoted: message });
             }
         }

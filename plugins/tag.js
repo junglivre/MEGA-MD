@@ -20,7 +20,7 @@ export default {
     groupOnly: true,
     adminOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const groupMetadata = await sock.groupMetadata(chatId);
         const participants = groupMetadata.participants;
         const mentionedJidList = participants.map((p) => p.id);
@@ -69,7 +69,7 @@ export default {
         }
         else {
             await sock.sendMessage(chatId, {
-                text: tagText || "Tagged message",
+                text: tagText || t('p.tag.defaultText'),
                 mentions: mentionedJidList,
                 ...channelInfo
             });

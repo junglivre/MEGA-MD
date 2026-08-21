@@ -20,6 +20,7 @@ export default {
     usage: '.flip <text> OR reply to a message',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         let txt = args?.join(' ') || "";
         const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (quoted) {
@@ -27,7 +28,7 @@ export default {
         }
         txt = txt.replace(/^\.\w+\s*/, '').trim();
         if (!txt)
-            return await sock.sendMessage(chatId, { text: '*What should I flip?*' });
+            return await sock.sendMessage(chatId, { text: t('p.flip.noText') });
         const charMap = {
             'a': 'ɐ', 'b': 'q', 'c': 'ɔ', 'd': 'p', 'e': 'ǝ', 'f': 'ɟ', 'g': 'ƃ', 'h': 'ɥ', 'i': 'ᴉ', 'j': 'ɾ',
             'k': 'ʞ', 'l': 'l', 'm': 'ɯ', 'n': 'u', 'o': 'o', 'p': 'd', 'q': 'b', 'r': 'ɹ', 's': 's', 't': 'ʇ',

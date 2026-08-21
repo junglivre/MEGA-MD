@@ -14,7 +14,7 @@ export default {
         try {
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quoted?.imageMessage) {
-                return await sock.sendMessage(chatId, { text: '🖤 *Grayscale Image*\n\nReply to an image to convert it to grayscale\n\nUsage:\n.grayscale' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `🖤 ${context.t('p.grayscale.noImage')}` }, { quoted: message });
             }
             await sock.sendMessage(chatId, { react: { text: '🔄', key: message.key } });
             const stream = await downloadContentFromMessage(quoted.imageMessage, 'image');
@@ -35,13 +35,13 @@ export default {
             fs.writeFileSync(grayFile, res.data);
             await sock.sendMessage(chatId, {
                 image: { url: grayFile },
-                caption: `🖤 *Grayscale Image*\n\nProcessed by: MEGA-MD`
+                caption: `🖤 ${context.t('p.grayscale.caption')}`
             }, { quoted: message });
             fs.unlinkSync(grayFile);
         }
         catch (err) {
             console.error('Grayscale Plugin Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to convert image to grayscale. Make sure the image is clear and try again.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${context.t('p.grayscale.failed')}` }, { quoted: message });
         }
     }
 };

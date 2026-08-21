@@ -38,6 +38,7 @@ export default {
     usage: '.compliment @user',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             if (!message || !chatId) {
                 console.log('Invalid message or chatId:', { message, chatId });
@@ -54,7 +55,7 @@ export default {
             }
             if (!userToCompliment) {
                 await sock.sendMessage(chatId, {
-                    text: 'Please mention someone or reply to their message to compliment them!'
+                    text: t('p.compliment.noTarget')
                 }, { quoted: message });
                 return;
             }
@@ -71,7 +72,7 @@ export default {
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 try {
                     await sock.sendMessage(chatId, {
-                        text: 'Please try again in a few seconds.'
+                        text: t('p.compliment.rateLimit')
                     }, { quoted: message });
                 }
                 catch (retryError) {
@@ -81,7 +82,7 @@ export default {
             else {
                 try {
                     await sock.sendMessage(chatId, {
-                        text: 'An error occurred while sending the compliment.'
+                        text: t('p.compliment.error')
                     }, { quoted: message });
                 }
                 catch (sendError) {

@@ -9,9 +9,10 @@ export default {
     usage: '.attp <text>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const text = args.join(' ');
         if (!text) {
-            return await sock.sendMessage(chatId, { text: 'Please provide text after the .attp command.' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: t('p.attp.noText') }, { quoted: message });
         }
         try {
             const mp4Buffer = await renderBlinkingVideoWithFfmpeg(text);
@@ -24,7 +25,7 @@ export default {
             await sock.sendMessage(chatId, { sticker: webpBuffer }, { quoted: message });
         }
         catch {
-            await sock.sendMessage(chatId, { text: '❌ Failed to generate the sticker locally.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.attp.generateFailed')}` }, { quoted: message });
         }
     }
 };

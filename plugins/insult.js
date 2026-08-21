@@ -36,6 +36,7 @@ export default {
     description: 'Send a playful insult to someone by mentioning them or replying to their message',
     usage: '.insult @username or reply to their message with .insult',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             let userToInsult;
@@ -47,7 +48,7 @@ export default {
             }
             if (!userToInsult) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Please mention someone or reply to their message to insult them!',
+                    text: `❌ ${t('p.insult.noTarget')}`,
                     quoted: message
                 });
                 return;
@@ -66,7 +67,7 @@ export default {
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 try {
                     await sock.sendMessage(chatId, {
-                        text: '⚠️ Too many requests. Please try again in a few seconds.',
+                        text: `⚠️ ${t('p.insult.rateLimited')}`,
                         quoted: message
                     });
                 }
@@ -77,7 +78,7 @@ export default {
             else {
                 try {
                     await sock.sendMessage(chatId, {
-                        text: '❌ An error occurred while sending the insult.',
+                        text: `❌ ${t('p.insult.error')}`,
                         quoted: message
                     });
                 }

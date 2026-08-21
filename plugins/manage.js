@@ -8,36 +8,37 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const action = args[0]?.toLowerCase();
         const targetCmd = args[1]?.toLowerCase();
         try {
             if (action === 'toggle') {
                 if (!CommandHandler.commands.has(targetCmd)) {
-                    return await sock.sendMessage(chatId, { text: `❌ Command *${targetCmd}* not found.` }, { quoted: message });
+                    return await sock.sendMessage(chatId, { text: `❌ ${t('p.manage.cmdNotFound', { targetCmd })}` }, { quoted: message });
                 }
                 const state = CommandHandler.toggleCommand(targetCmd);
-                return await sock.sendMessage(chatId, { text: `✅ Command *${targetCmd}* has been *${state}*.` }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `✅ ${t('p.manage.toggled', { targetCmd, state })}` }, { quoted: message });
             }
             if (action === 'alias') {
                 const newAlias = args[2]?.toLowerCase();
                 if (!targetCmd || !newAlias) {
-                    return await sock.sendMessage(chatId, { text: '❌ Usage: .manage alias [command] [new_alias]' }, { quoted: message });
+                    return await sock.sendMessage(chatId, { text: `❌ ${t('p.manage.aliasUsage')}` }, { quoted: message });
                 }
                 if (!CommandHandler.commands.has(targetCmd)) {
-                    return await sock.sendMessage(chatId, { text: `❌ Source command *${targetCmd}* not found.` }, { quoted: message });
+                    return await sock.sendMessage(chatId, { text: `❌ ${t('p.manage.sourceNotFound', { targetCmd })}` }, { quoted: message });
                 }
                 CommandHandler.aliases.set(newAlias, targetCmd);
-                return await sock.sendMessage(chatId, { text: `✅ Added alias *${newAlias}* for command *${targetCmd}*.` }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `✅ ${t('p.manage.aliasAdded', { newAlias, targetCmd })}` }, { quoted: message });
             }
-            const helpText = `🛠️ *COMMAND MANAGER*\n\n` +
-                `*⁠• Toggle:* .manage toggle [name]\n` +
-                `*• Alias:* .manage alias [name] [new_alias]\n` +
-                `*• Reload:* Run your reload command to reset changes.`;
+            const helpText = `🛠️ *${t('p.manage.helpTitle')}*\n\n` +
+                `*⁠• ${t('p.manage.helpToggleLabel')}* .manage toggle [name]\n` +
+                `*• ${t('p.manage.helpAliasLabel')}* .manage alias [name] [new_alias]\n` +
+                `*• ${t('p.manage.helpReloadLabel')}* ${t('p.manage.helpReloadText')}`;
             await sock.sendMessage(chatId, { text: helpText }, { quoted: message });
         }
         catch (error) {
             console.error('Error in manage plugin:', error);
-            await sock.sendMessage(chatId, { text: '❌ Management action failed.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.manage.actionFailed')}` }, { quoted: message });
         }
     }
 };

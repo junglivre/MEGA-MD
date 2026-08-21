@@ -27,9 +27,10 @@ export default {
     usage: '.gpt <question>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const query = args.join(' ').trim();
         if (!query) {
-            return sock.sendMessage(chatId, { text: '🤖 *AI Assistant*\n\nUsage: `.gpt <your question>`\nExample: `.gpt explain quantum physics`' }, { quoted: message });
+            return sock.sendMessage(chatId, { text: `🤖 *${t('p.gpt.title')}*\n\n${t('p.gpt.usage')}` }, { quoted: message });
         }
         try {
             await sock.sendMessage(chatId, { react: { text: '🤖', key: message.key } });
@@ -38,7 +39,7 @@ export default {
         }
         catch (error) {
             console.error('AI Command Error:', error.message);
-            await sock.sendMessage(chatId, { text: '❌ Failed to get AI response. Please try again later.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.gpt.failed')}` }, { quoted: message });
         }
     }
 };

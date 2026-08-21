@@ -48,33 +48,35 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const state = await readState();
         const sub = args.join(' ').trim().toLowerCase();
+        const storageLabel = HAS_DB ? t('p.anticall.database') : t('p.anticall.fileSystem');
         if (!sub || !['on', 'off', 'status'].includes(sub)) {
             return await sock.sendMessage(chatId, {
-                text: '*ANTICALL SETTINGS*\n\n' +
-                    '📵 Auto-block incoming calls\n\n' +
-                    '*Usage:*\n' +
-                    '• `.anticall on` - Enable\n' +
-                    '• `.anticall off` - Disable\n' +
-                    '• `.anticall status` - Current status\n\n' +
-                    `*Current Status:* ${state.enabled ? '✅ ENABLED' : '❌ DISABLED'}\n` +
-                    `*Storage:* ${HAS_DB ? 'Database' : 'File System'}`
+                text: `*${t('p.anticall.settingsTitle')}*\n\n` +
+                    `📵 ${t('p.anticall.autoBlock')}\n\n` +
+                    `*${t('p.anticall.usageLabel')}:*\n` +
+                    `• \`.anticall on\` - ${t('p.anticall.enableHint')}\n` +
+                    `• \`.anticall off\` - ${t('p.anticall.disableHint')}\n` +
+                    `• \`.anticall status\` - ${t('p.anticall.statusHint')}\n\n` +
+                    `*${t('p.anticall.currentStatus')}:* ${state.enabled ? `✅ ${t('p.anticall.enabledCaps')}` : `❌ ${t('p.anticall.disabledCaps')}`}\n` +
+                    `*${t('p.anticall.storage')}:* ${storageLabel}`
             }, { quoted: message });
         }
         if (sub === 'status') {
             return await sock.sendMessage(chatId, {
-                text: `📵 *Anticall Status*\n\n` +
-                    `Current: ${state.enabled ? '✅ *ENABLED*' : '❌ *DISABLED*'}\n` +
-                    `Storage: ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                    `${state.enabled ? 'All incoming calls will be rejected and blocked.' : 'Incoming calls are allowed.'}`
+                text: `📵 *${t('p.anticall.statusTitle')}*\n\n` +
+                    `${t('p.anticall.currentLabel')}: ${state.enabled ? `✅ *${t('p.anticall.enabledCaps')}*` : `❌ *${t('p.anticall.disabledCaps')}*`}\n` +
+                    `${t('p.anticall.storage')}: ${storageLabel}\n\n` +
+                    `${state.enabled ? t('p.anticall.callsWillBeBlocked') : t('p.anticall.callsAllowed')}`
             }, { quoted: message });
         }
         const enable = sub === 'on';
         await writeState(enable);
         await sock.sendMessage(chatId, {
-            text: `📵 *Anticall ${enable ? 'ENABLED' : 'DISABLED'}*\n\n` +
-                `${enable ? '✅ Incoming calls will now be rejected and blocked automatically.' : '❌ Incoming calls are now allowed.'}`
+            text: `📵 *${t('p.anticall.anticallTitle', { state: enable ? t('p.anticall.enabledCaps') : t('p.anticall.disabledCaps') })}*\n\n` +
+                `${enable ? `✅ ${t('p.anticall.willBeBlocked')}` : `❌ ${t('p.anticall.nowAllowed')}`}`
         }, { quoted: message });
     },
     readState,

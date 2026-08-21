@@ -148,7 +148,7 @@ export default {
     description: 'Mobile Money info for African networks (MTN, Airtel, M-Pesa, Wave, Orange)',
     usage: '.momo mtn\n.momo mpesa\n.momo airtel',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo, userMessage } = context;
+        const { chatId, channelInfo, userMessage, t } = context;
         // Detect from command used
         let query = args[0]?.toLowerCase() || '';
         if (userMessage.includes('mpesa'))
@@ -162,9 +162,9 @@ export default {
         if (!query) {
             const list = Object.entries(MOMO_DATA).map(([k, v]) => `• \`.momo ${k}\` — ${v.name}`).join('\n');
             return await sock.sendMessage(chatId, {
-                text: `📡 *Mobile Money Info*\n\n` +
-                    `*Available networks:*\n${list}\n\n` +
-                    `*Examples:*\n` +
+                text: `📡 *${t('p.momo.title')}*\n\n` +
+                    `*${t('p.momo.availableNetworks')}:*\n${list}\n\n` +
+                    `*${t('p.momo.examplesLabel')}:*\n` +
                     `\`.momo mtn\`\n` +
                     `\`.momo mpesa\`\n` +
                     `\`.momo airtel\``,
@@ -176,7 +176,7 @@ export default {
             MOMO_DATA[k].name.toLowerCase().includes(query));
         if (!key) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Unknown network: *${query}*\n\nAvailable: ${Object.keys(MOMO_DATA).join(', ')}`,
+                text: `❌ ${t('p.momo.unknownNetwork', { query })}\n\n${t('p.momo.availableLabel', { list: Object.keys(MOMO_DATA).join(', ') })}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -186,11 +186,11 @@ export default {
         const featureList = m.features.map(f => `✅ ${f}`).join('\n');
         await sock.sendMessage(chatId, {
             text: `📡 *${m.name}*\n\n` +
-                `🌍 *Available in:*\n${m.countries.join(', ')}\n\n` +
-                `📲 *USSD Codes:*\n${ussdList}\n\n` +
-                `⚡ *Features:*\n${featureList}\n\n${ 
-                helpList ? `📞 *Helpline:*\n${helpList}\n\n` : '' 
-                }🌐 *Website:* ${m.website}`,
+                `🌍 *${t('p.momo.availableInLabel')}:*\n${m.countries.join(', ')}\n\n` +
+                `📲 *${t('p.momo.ussdLabel')}:*\n${ussdList}\n\n` +
+                `⚡ *${t('p.momo.featuresLabel')}:*\n${featureList}\n\n${
+                helpList ? `📞 *${t('p.momo.helplineLabel')}:*\n${helpList}\n\n` : ''
+                }🌐 *${t('p.momo.websiteLabel')}:* ${m.website}`,
             ...channelInfo
         }, { quoted: message });
     }
