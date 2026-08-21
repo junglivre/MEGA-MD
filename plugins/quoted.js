@@ -36,10 +36,14 @@ function extractText(message, fallback) {
 
 function getContextInfo(message) {
     const current = unwrapMessage(message);
-    return current.extendedTextMessage?.contextInfo
+    return current.contextInfo
+        || current.extendedTextMessage?.contextInfo
         || current.imageMessage?.contextInfo
         || current.videoMessage?.contextInfo
         || current.documentMessage?.contextInfo
+        || current.audioMessage?.contextInfo
+        || current.buttonsResponseMessage?.contextInfo
+        || current.listResponseMessage?.contextInfo
         || {};
 }
 
@@ -110,10 +114,13 @@ function sourceFromStored(stored) {
 function selectSources(message, chatId, count) {
     const quotedContext = getContextInfo(message);
     const quoted = quotedContext.quotedMessage;
+    const currentId = message.key?.id;
+    const stored = (store.messages?.[chatId] || [])
+        .map(sourceFromStored)
+        .filter(item => item && item.key?.id !== currentId);
     if (!quoted)
-        return [];
+        return stored.slice(-count);
     const quotedId = quotedContext.stanzaId;
-    const stored = (store.messages?.[chatId] || []).map(sourceFromStored).filter(Boolean);
     if (count <= 1 || stored.length === 0)
         return [{ key: { participant: quotedContext.participant || message.key.participant || chatId }, message: quoted }];
     const index = stored.findIndex(item => item.key?.id === quotedId);
