@@ -6,7 +6,7 @@ export default {
     usage: '.staff',
     groupOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         try {
             const groupMetadata = await sock.groupMetadata(chatId);
             let pp;
@@ -21,9 +21,9 @@ export default {
             const listAdmin = groupAdmins.map((v, i) => `${i + 1}. @${v.id.split('@')[0]}`).join('\n▢ ');
             const owner = groupMetadata.owner || groupAdmins.find((p) => p.admin === 'superadmin')?.id || `${chatId.split('-')[0] }@s.whatsapp.net`;
             const text = `
-≡ *GROUP ADMINS* _${groupMetadata.subject}_
+≡ *${t('p.staff.groupAdminsTitle')}* _${groupMetadata.subject}_
 
-┌─⊷ *ADMINS*
+┌─⊷ *${t('p.staff.adminsLabel')}*
 ▢ ${listAdmin}
 └───────────
 `.trim();
@@ -37,7 +37,7 @@ export default {
         catch (error) {
             console.error('Error in staff command:', error);
             await sock.sendMessage(chatId, {
-                text: 'Failed to get admin list!',
+                text: t('p.staff.failed'),
                 ...channelInfo
             }, { quoted: message });
         }

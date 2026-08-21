@@ -9,20 +9,21 @@ export default {
     description: 'Upload to Catbox.moe (200MB, permanent)',
     usage: '.catbox (reply to media)',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quotedMsg) {
-                await sock.sendMessage(chatId, { text: '⚠️ Please reply to media!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.catbox.noMedia')}` }, { quoted: message });
                 return;
             }
             const type = Object.keys(quotedMsg)[0];
             const supportedTypes = ['imageMessage', 'videoMessage', 'stickerMessage', 'documentMessage'];
             if (!supportedTypes.includes(type)) {
-                await sock.sendMessage(chatId, { text: '⚠️ Unsupported type!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.catbox.unsupportedType')}` }, { quoted: message });
                 return;
             }
-            await sock.sendMessage(chatId, { text: 'Uploading to Catbox...' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.catbox.uploading') }, { quoted: message });
             const mediaType = type === 'stickerMessage' ? 'sticker' : type.replace('Message', '');
             const stream = await downloadContentFromMessage(quotedMsg[type], mediaType);
             let buffer = Buffer.from([]);
@@ -46,13 +47,13 @@ export default {
             fs.writeFileSync(tempPath, buffer);
             const result = await uploadToCatbox(tempPath);
             await sock.sendMessage(chatId, {
-                text: `✅ *Catbox Upload Success!*\n\n🔗 ${result.url}`
+                text: `✅ *${t('p.catbox.success')}*\n\n🔗 ${result.url}`
             }, { quoted: message });
             fs.unlinkSync(tempPath);
         }
         catch (error) {
             console.error('Catbox Error:', error);
-            await sock.sendMessage(chatId, { text: `❌ Error: ${error.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.catbox.errorLabel', { error: error.message })}` }, { quoted: message });
         }
     }
 };

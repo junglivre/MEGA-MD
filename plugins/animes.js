@@ -10,7 +10,8 @@ function pickRandom(arr, count = 1) {
     const shuffled = arr.slice().sort(() => 0.5 - Math.random());
     return shuffled.slice(0, count);
 }
-const animuMenu = '🎀 *Animes Menu* 🎀\n\n' +
+function getAnimuMenu(t) {
+    return `🎀 *${t('p.animes.title')}* 🎀\n\n` +
     '• *akira*\n' +
     '• *akiyama*\n' +
     '• *anna*\n' +
@@ -45,9 +46,10 @@ const animuMenu = '🎀 *Animes Menu* 🎀\n\n' +
     '• *sagiri*\n' +
     '• *sasuke*\n' +
     '• *sakura*\n\n' +
-    '📌 *Usage:*\n' +
+    `📌 *${t('p.animes.usageLabel')}:*\n` +
     '.animes <name>\n' +
-    'Example: *.animes naruto*';
+    `${t('p.animes.exampleLabel')}: *.animes naruto*`;
+}
 export default {
     command: 'animes',
     aliases: ['animeimg', 'animepic'],
@@ -56,13 +58,14 @@ export default {
     usage: '.animes <anime_name>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const input = args[0] ? args[0] : '';
         const typeLower = input.toLowerCase();
         if (!input || !supportedAnimes.includes(typeLower)) {
             const replyText = input && !supportedAnimes.includes(typeLower)
-                ? `Unsupported anime: ${typeLower}\n\n`
+                ? `${t('p.animes.unsupported', { name: typeLower })}\n\n`
                 : '';
-            return await sock.sendMessage(chatId, { text: replyText + animuMenu }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: replyText + getAnimuMenu(t) }, { quoted: message });
         }
         try {
             const apiUrl = `https://raw.githubusercontent.com/Guru322/api/Guru/BOT-JSON/anime-${typeLower}.json`;
@@ -80,7 +83,7 @@ export default {
             }
         }
         catch (err) {
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch anime images. Please try again later.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.animes.fetchFailed')}` }, { quoted: message });
         }
     }
 };

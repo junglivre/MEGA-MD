@@ -6,6 +6,7 @@ export default {
     usage: '.brainfuck <text> OR reply to a message',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const t = context.t;
         try {
             let text = args?.join(' ') || "";
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -18,7 +19,7 @@ export default {
             }
             text = text.replace(/^\.\w+\s*/, '').trim();
             if (!text) {
-                return await sock.sendMessage(chatId, { text: '*Please provide text or reply to a message to obfuscate!*' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `*${t('p.brainfuck.noText')}*` }, { quoted: message });
             }
             let bfCode = "";
             let lastAscii = 0;
@@ -34,12 +35,12 @@ export default {
                 bfCode += ".";
                 lastAscii = ascii;
             }
-            const response = `*❄️ Brainfuck Obfuscated Text:*\n\n${bfCode}`;
+            const response = `*❄️ ${t('p.brainfuck.title')}*\n\n${bfCode}`;
             await sock.sendMessage(chatId, { text: response }, { quoted: message });
         }
         catch (err) {
             console.error('BF Encoding Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Error generating code.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.brainfuck.genericError')}` }, { quoted: message });
         }
     }
 };

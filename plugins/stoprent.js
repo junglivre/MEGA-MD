@@ -59,15 +59,15 @@ export default {
     usage: '.stoprent [number/all]',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         if (!global.conns || global.conns.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: "❌ No sub-bots are currently running."
+                text: `❌ ${t('p.stoprent.noneRunning')}`
             }, { quoted: message });
         }
         if (!args[0]) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Please provide a number from the list or type 'all'.\nExample: \`.stoprent 1\``
+                text: `❌ ${t('p.stoprent.provideNumber')}`
             }, { quoted: message });
         }
         if (args[0].toLowerCase() === 'all') {
@@ -99,15 +99,16 @@ export default {
                 }
             }
             return await sock.sendMessage(chatId, {
-                text: `✅ All sub-bots have been stopped and removed.\n\n` +
-                    `Stopped: ${stoppedCount}\n` +
-                    `Storage: ${HAS_DB ? 'Database cleared' : 'Files deleted'}`
+                text: t('p.stoprent.allStopped', {
+                    count: stoppedCount,
+                    storage: HAS_DB ? t('p.stoprent.storageDbCleared') : t('p.stoprent.storageFilesDeleted')
+                })
             }, { quoted: message });
         }
         const index = parseInt(args[0], 10) - 1;
         if (isNaN(index) || !global.conns[index]) {
             return await sock.sendMessage(chatId, {
-                text: "❌ Invalid index number. Check `.listrent` first."
+                text: `❌ ${t('p.stoprent.invalidIndex')}`
             }, { quoted: message });
         }
         try {
@@ -147,15 +148,17 @@ export default {
                 }
             }
             await sock.sendMessage(chatId, {
-                text: `✅ Stopped and removed sub-bot: @${targetNumber}\n\n` +
-                    `Storage: ${HAS_DB ? 'Database cleared' : 'Files deleted'}`,
+                text: t('p.stoprent.stoppedOne', {
+                    number: targetNumber,
+                    storage: HAS_DB ? t('p.stoprent.storageDbCleared') : t('p.stoprent.storageFilesDeleted')
+                }),
                 mentions: [targetJid]
             }, { quoted: message });
         }
         catch (err) {
             console.error(err);
             await sock.sendMessage(chatId, {
-                text: "❌ Error while stopping the sub-bot."
+                text: `❌ ${t('p.stoprent.stopError')}`
             }, { quoted: message });
         }
     }

@@ -7,19 +7,20 @@ export default {
     usage: '.quote2',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const res = await axios.get('https://discardapi.dpdns.org/api/quotes/random?apikey=guru');
             if (!res.data || res.data.status !== true) {
-                return await sock.sendMessage(chatId, { text: '❌ Failed to fetch quote.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.quote2.fetchFailed')}` }, { quoted: message });
             }
-            const quote = res.data.result?.quote || 'No quote found.';
+            const quote = res.data.result?.quote || t('p.quote2.noQuote');
             const _creator = res.data.creator || 'Unknown';
-            const replyText = `💬 *Random Quote*\n\n${quote}`;
+            const replyText = `💬 *${t('p.quote2.header')}*\n\n${quote}`;
             await sock.sendMessage(chatId, { text: replyText }, { quoted: message });
         }
         catch (err) {
             console.error('Quote plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Error while fetching quote.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.quote2.error')}` }, { quoted: message });
         }
     }
 };

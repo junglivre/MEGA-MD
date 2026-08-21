@@ -29,7 +29,7 @@ export default {
         const messageText = rawText.slice(8).trim();
         if (!isBotAdmin) {
             await sock.sendMessage(chatId, {
-                text: '❌ *Please make the bot an admin first*'
+                text: `❌ ${context.t('p.hidetag.notAdmin')}`
             }, { quoted: message });
             return;
         }
@@ -76,7 +76,7 @@ export default {
         }
         else {
             await sock.sendMessage(chatId, {
-                text: messageText || '📢 *Announcement for all members*',
+                text: messageText || `📢 ${context.t('p.hidetag.defaultAnnouncement')}`,
                 mentions: nonAdmins
             });
         }

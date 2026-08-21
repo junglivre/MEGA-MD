@@ -8,11 +8,12 @@ export default {
     usage: '.trends <country-name>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const country = args.join(' ').trim();
             if (!country) {
                 await sock.sendMessage(chatId, {
-                    text: '*Please provide a country name.*\nExample: .trends Pakistan or .trends South-Africa'
+                    text: t('p.trends.usage')
                 }, { quoted: message });
                 return;
             }
@@ -20,7 +21,7 @@ export default {
             if (!result) {
                 throw new Error('No data received');
             }
-            let output = `*Trending topics in ${country}:*\n\n`;
+            let output = `*${t('p.trends.header', { country })}*\n\n`;
             if (typeof result === 'string') {
                 output += result;
             }
@@ -41,7 +42,7 @@ export default {
         catch (error) {
             console.error('Error in trendsCommand:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to fetch trending topics. Please try again later.'
+                text: `❌ ${t('p.trends.failed')}`
             }, { quoted: message });
         }
     }

@@ -141,22 +141,23 @@ export default {
         const chatId = context.chatId || message.key.remoteJid;
         const senderId = context.senderId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const { t } = context;
         // Start engine with current sock
         startSchedulerEngine(sock);
         if (!args || args.length < 2) {
             return await sock.sendMessage(chatId, {
-                text: `*⏰ SCHEDULE A MESSAGE*\n\n` +
-                    `*Usage:*\n\`.schedule <time> <message>\`\n\n` +
-                    `*Time formats:*\n` +
-                    `• \`10m\` → in 10 minutes\n` +
-                    `• \`2h\` → in 2 hours\n` +
-                    `• \`1h30m\` → in 1 hour 30 minutes\n` +
-                    `• \`14:30\` → today at 2:30 PM\n` +
-                    `• \`10:30am\` → today at 10:30 AM\n\n` +
-                    `*Examples:*\n` +
-                    `\`.schedule 10m Good morning everyone!\`\n` +
-                    `\`.schedule 2h Team meeting starting now!\`\n` +
-                    `\`.schedule 14:30 Don't forget the call!\``,
+                text: `*⏰ ${t('p.schedule.title')}*\n\n` +
+                    `*${t('p.schedule.usageLabel')}:*\n\`.schedule <time> <message>\`\n\n` +
+                    `*${t('p.schedule.timeFormats')}:*\n` +
+                    `• \`10m\` → ${t('p.schedule.fmt10m')}\n` +
+                    `• \`2h\` → ${t('p.schedule.fmt2h')}\n` +
+                    `• \`1h30m\` → ${t('p.schedule.fmt1h30m')}\n` +
+                    `• \`14:30\` → ${t('p.schedule.fmt1430')}\n` +
+                    `• \`10:30am\` → ${t('p.schedule.fmt1030am')}\n\n` +
+                    `*${t('p.schedule.examplesLabel')}:*\n` +
+                    `\`.schedule 10m ${t('p.schedule.example1')}\`\n` +
+                    `\`.schedule 2h ${t('p.schedule.example2')}\`\n` +
+                    `\`.schedule 14:30 ${t('p.schedule.example3')}\``,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -164,14 +165,14 @@ export default {
         const msgText = args.slice(1).join(' ').trim();
         if (!msgText) {
             return await sock.sendMessage(chatId, {
-                text: '❌ Please provide a message after the time.\n\nExample: `.schedule 10m Hello!`',
+                text: `❌ ${t('p.schedule.provideMessage')}\n\nExample: \`.schedule 10m ${t('p.schedule.exampleHello')}\``,
                 ...channelInfo
             }, { quoted: message });
         }
         const targetDate = parseTime(timeInput);
         if (!targetDate) {
             return await sock.sendMessage(chatId, {
-                text: `❌ Invalid time format: *${timeInput}*\n\nValid: \`10m\` \`2h\` \`1h30m\` \`14:30\` \`10:30am\``,
+                text: `❌ ${t('p.schedule.invalidFormat')}: *${timeInput}*\n\n${t('p.schedule.valid')}: \`10m\` \`2h\` \`1h30m\` \`14:30\` \`10:30am\``,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -189,11 +190,11 @@ export default {
         const timeLeft = formatTimeLeft(targetDate.getTime() - Date.now());
         const timeStr = targetDate.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
         await sock.sendMessage(chatId, {
-            text: `✅ *Message Scheduled!*\n\n` +
-                `📌 *ID:* ${newItem.id}\n` +
-                `⏳ *Sends in:* ${timeLeft} (at ${timeStr})\n` +
-                `💬 *Message:* ${msgText}\n\n` +
-                `_Use .schedulecancel ${newItem.id} to cancel_`,
+            text: `✅ *${t('p.schedule.scheduled')}*\n\n` +
+                `📌 *${t('p.schedule.idLabel')}:* ${newItem.id}\n` +
+                `⏳ *${t('p.schedule.sendsIn')}:* ${timeLeft} (at ${timeStr})\n` +
+                `💬 *${t('p.schedule.messageLabel')}:* ${msgText}\n\n` +
+                `_${t('p.schedule.useCancelHint', { id: newItem.id })}_`,
             ...channelInfo
         }, { quoted: message });
     }

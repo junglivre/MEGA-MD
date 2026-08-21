@@ -15,6 +15,7 @@ export default {
     usage: '.length <size> (reply to media)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const text = args?.join(' ')?.trim();
         try {
             let mediaMsg, mediaType;
@@ -40,20 +41,20 @@ export default {
                 }
             }
             if (!mediaMsg) {
-                return await sock.sendMessage(chatId, { text: '*⚠️ Reply to an image or video.*' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `*⚠️ ${t('p.length.noMedia')}*` }, { quoted: message });
             }
             if (!text || isNaN(text)) {
-                return await sock.sendMessage(chatId, { text: '*🔢 Provide numeric file size.*\nExample: .length 999999' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `*🔢 ${t('p.length.provideSize')}*\nExample: .length 999999` }, { quoted: message });
             }
             const buffer = await downloadMedia(mediaMsg, mediaType);
             const url = await uploadImage(buffer);
             await sock.sendMessage(chatId, mediaType === 'image'
-                ? { image: { url }, caption: 'Here you go', fileLength: text }
-                : { video: { url }, caption: 'Here you go', fileLength: text }, { quoted: message });
+                ? { image: { url }, caption: t('p.length.hereYouGo'), fileLength: text }
+                : { video: { url }, caption: t('p.length.hereYouGo'), fileLength: text }, { quoted: message });
         }
         catch (err) {
             console.error('FileLength plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to process media.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.length.processFailed')}` }, { quoted: message });
         }
     }
 };

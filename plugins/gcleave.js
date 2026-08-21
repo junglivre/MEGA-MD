@@ -8,16 +8,17 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const t = context.t;
         const targetJid = args[0]?.includes('@g.us') ? args[0] : chatId;
         if (!targetJid.endsWith('@g.us')) {
             return await sock.sendMessage(chatId, {
-                text: `❌ This command only works in groups.\n\nTo leave a specific group: \`.groupleave 1234567890-1234567890@g.us\``,
+                text: `❌ ${t('p.gcleave.groupOnly')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         try {
             await sock.sendMessage(targetJid, {
-                text: `👋 *Bot is leaving the group.*\n\n_Goodbye everyone!_`,
+                text: `👋 ${t('p.gcleave.leaving')}`,
                 ...channelInfo
             });
             await new Promise(r => setTimeout(r, 500));
@@ -25,7 +26,7 @@ export default {
             // If triggered from another chat, confirm there
             if (targetJid !== chatId) {
                 await sock.sendMessage(chatId, {
-                    text: `✅ Left group: \`${targetJid}\``,
+                    text: `✅ ${t('p.gcleave.left', { jid: targetJid })}`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -33,7 +34,7 @@ export default {
         catch (e) {
             console.error('[GROUPLEAVE] Error:', e.message);
             await sock.sendMessage(chatId, {
-                text: `❌ Failed to leave group: ${e.message}`,
+                text: `❌ ${t('p.gcleave.failed', { error: e.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

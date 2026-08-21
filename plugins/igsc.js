@@ -6,7 +6,7 @@ import fs from 'fs';
 import path from 'path';
 import webp from 'node-webpmux';
 import crypto from 'crypto';
-import { stickercropFromBuffer } from './stickercrop.js';
+import { stickercropFromBuffer } from './sticker.js';
 async function _convertBufferToStickerWebp(inputBuffer, isAnimated, cropSquare) {
     const tmpDir = path.join(process.cwd(), 'temp');
     if (!fs.existsSync(tmpDir))
@@ -90,13 +90,13 @@ export default {
     description: 'Convert Instagram post/reel to cropped sticker',
     usage: '.igsc <instagram URL>',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         try {
             const text = message.message?.conversation || message.message?.extendedTextMessage?.text || '';
             const urlMatch = text.match(/https?:\/\/\S+/);
             if (!urlMatch) {
                 await sock.sendMessage(chatId, {
-                    text: `Send an Instagram post/reel link.\nUsage: .igsc <url>`,
+                    text: t('p.igsc.usage'),
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -105,7 +105,7 @@ export default {
             const downloadData = await igdl(urlMatch[0]).catch(() => null);
             if (!downloadData || !downloadData.data) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Failed to fetch media from Instagram link.',
+                    text: `❌ ${t('p.igsc.fetchFailed')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -121,7 +121,7 @@ export default {
             }
             if (items.length === 0) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ No media found at the provided link.',
+                    text: `❌ ${t('p.igsc.noMedia')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -156,7 +156,7 @@ export default {
         catch (err) {
             console.error('Error in igsc command:', err);
             await sock.sendMessage(chatId, {
-                text: 'Failed to create cropped sticker from Instagram link.',
+                text: t('p.igsc.createFailed'),
                 ...channelInfo
             }, { quoted: message });
         }

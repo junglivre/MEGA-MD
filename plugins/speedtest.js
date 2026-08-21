@@ -9,9 +9,9 @@ export default {
     usage: '.speedtest',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         await sock.sendMessage(chatId, {
-            text: '🔄 *Testing internet speed...*\n\nPlease wait, this may take a moment.',
+            text: `🔄 *${t('p.speedtest.testing')}*\n\n${t('p.speedtest.wait')}`,
             ...channelInfo
         }, { quoted: message });
         try {
@@ -19,7 +19,7 @@ export default {
             const result = (stdout || stderr || '').trim();
             if (!result) {
                 return await sock.sendMessage(chatId, {
-                    text: '❌ No output from speed test.',
+                    text: `❌ ${t('p.speedtest.noOutput')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -30,7 +30,7 @@ export default {
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ Speed test failed: ${error.message}`,
+                text: `❌ ${t('p.speedtest.failed', { error: error.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

@@ -7,18 +7,18 @@ export default {
     groupOnly: true,
     adminOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         try {
             await sock.groupSettingUpdate(chatId, 'not_announcement');
             await sock.sendMessage(chatId, {
-                text: 'The group has been unmuted.',
+                text: t('p.unmute.success'),
                 ...channelInfo
             }, { quoted: message });
         }
         catch (error) {
             console.error('Error unmuting group:', error);
             await sock.sendMessage(chatId, {
-                text: 'Failed to unmute the group.',
+                text: t('p.unmute.failed'),
                 ...channelInfo
             }, { quoted: message });
         }

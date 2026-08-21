@@ -4,8 +4,9 @@ export default {
     category: 'games',
     description: 'Roll a random dice sticker',
     usage: '.dado',
-    async handler(sock, message, _args, _context) {
+    async handler(sock, message, _args, context) {
         const chatId = message.key.remoteJid;
+        const { t } = context;
         const diceLinks = [
             'https://tinyurl.com/gdd01',
             'https://tinyurl.com/gdd02',
@@ -24,7 +25,7 @@ export default {
             console.error('Dice Plugin Error:', e);
             await sock.sendMessage(chatId, {
                 image: { url: randomDice },
-                caption: '🎲 The dice rolled!'
+                caption: `🎲 ${t('p.dado.caption')}`
             }, { quoted: message });
         }
     }

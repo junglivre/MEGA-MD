@@ -21,22 +21,23 @@ export default {
     usage: '.ringtone <search term>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const searchQuery = args.join(' ').trim();
         try {
             if (!searchQuery) {
                 return await sock.sendMessage(chatId, {
-                    text: "*Which ringtone do you want to search?*\nUsage: .ringtone <name>\n\nExample: .ringtone Nokia"
+                    text: `*${t('p.ringtone.whichRingtone')}*\nUsage: .ringtone <name>\n\nExample: .ringtone Nokia`
                 }, { quoted: message });
             }
             await sock.sendMessage(chatId, {
-                text: "🔍 *Searching for ringtones...*"
+                text: `🔍 *${t('p.ringtone.searching')}*`
             }, { quoted: message });
             await new Promise(resolve => setTimeout(resolve, 10000));
             const searchUrl = `https://discardapi.dpdns.org/api/dl/ringtone?apikey=guru&title=${encodeURIComponent(searchQuery)}`;
             const response = await axios.get(searchUrl, { timeout: 30000 });
             if (!response.data?.result || response.data.result.length === 0) {
                 return await sock.sendMessage(chatId, {
-                    text: "❌ *No ringtones found!*\nTry a different search term."
+                    text: `❌ *${t('p.ringtone.noResults')}*\n${t('p.ringtone.tryDifferent')}`
                 }, { quoted: message });
             }
             const ringtones = response.data.result;
@@ -51,8 +52,8 @@ export default {
                         fileName: `${searchQuery}_${i + 1}.mp3`,
                         contextInfo: {
                             externalAdReply: {
-                                title: `${searchQuery} Ringtone ${i + 1}`,
-                                body: `Ringtone ${i + 1} of ${limit}`,
+                                title: `${searchQuery} ${t('p.ringtone.ringtoneLabel')} ${i + 1}`,
+                                body: t('p.ringtone.ringtoneOf', { current: i + 1, total: limit }),
                                 mediaType: 2,
                                 thumbnail: null
                             }
@@ -68,22 +69,22 @@ export default {
                 }
             }
             await sock.sendMessage(chatId, {
-                text: `✅ *Sent ${limit} ringtones!*\n\n${totalFound > limit ? `📊 *${totalFound - limit} more available*\nUse the same command again for different results.` : ''}`
+                text: `✅ *${t('p.ringtone.sent', { count: limit })}*\n\n${totalFound > limit ? `📊 *${t('p.ringtone.moreAvailable', { count: totalFound - limit })}*\n${t('p.ringtone.useAgain')}` : ''}`
             }, { quoted: message });
         }
         catch (error) {
             console.error('Ringtone Command Error:', error);
-            let errorMsg = "❌ *Search failed!*\n\n";
+            let errorMsg = `❌ *${t('p.ringtone.searchFailed')}*\n\n`;
             if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-                errorMsg += "*Reason:* Connection timeout\nThe API took too long to respond.";
+                errorMsg += `*${t('p.ringtone.reason')}:* ${t('p.ringtone.connTimeout')}`;
             }
             else if (error.response) {
-                errorMsg += `*Status:* ${error.response.status}\n*Error:* ${error.response.statusText}`;
+                errorMsg += `*${t('p.ringtone.status')}:* ${error.response.status}\n*${t('p.ringtone.error')}:* ${error.response.statusText}`;
             }
             else {
-                errorMsg += `*Error:* ${error.message}`;
+                errorMsg += `*${t('p.ringtone.error')}:* ${error.message}`;
             }
-            errorMsg += "\n\nPlease try again later.";
+            errorMsg += `\n\n${t('p.ringtone.tryAgainLater')}`;
             await sock.sendMessage(chatId, {
                 text: errorMsg
             }, { quoted: message });

@@ -298,21 +298,23 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const config = await loadAntideleteConfig();
         const action = args[0]?.toLowerCase();
+        const storageLabel = HAS_DB ? t('p.antidelete.database') : t('p.antidelete.fileSystem');
         if (!action) {
             await sock.sendMessage(chatId, {
-                text: `*🔰 ANTIDELETE SETUP 🔰*\n\n` +
-                    `*Current Status:* ${config.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-                    `*Storage:* ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                    `*Commands:*\n` +
-                    `• \`.antidelete on\` - Enable\n` +
-                    `• \`.antidelete off\` - Disable\n\n` +
-                    `*Features:*\n` +
-                    `• Track deleted messages\n` +
-                    `• Save deleted media\n` +
-                    `• Auto-save ViewOnce media\n` +
-                    `• Send reports to owner`
+                text: `*🔰 ${t('p.antidelete.setupTitle')} 🔰*\n\n` +
+                    `*${t('p.antidelete.currentStatus')}:* ${config.enabled ? `✅ ${t('p.antidelete.enabled')}` : `❌ ${t('p.antidelete.disabled')}`}\n` +
+                    `*${t('p.antidelete.storage')}:* ${storageLabel}\n\n` +
+                    `*${t('p.antidelete.commandsLabel')}:*\n` +
+                    `• \`.antidelete on\` - ${t('p.antidelete.enableHint')}\n` +
+                    `• \`.antidelete off\` - ${t('p.antidelete.disableHint')}\n\n` +
+                    `*${t('p.antidelete.featuresLabel')}:*\n` +
+                    `• ${t('p.antidelete.featTrack')}\n` +
+                    `• ${t('p.antidelete.featSaveMedia')}\n` +
+                    `• ${t('p.antidelete.featViewOnce')}\n` +
+                    `• ${t('p.antidelete.featReports')}`
             }, { quoted: message });
             return;
         }
@@ -320,26 +322,26 @@ export default {
             config.enabled = true;
             await saveAntideleteConfig(config);
             await sock.sendMessage(chatId, {
-                text: `✅ *Antidelete enabled!*\n\n` +
-                    `Storage: ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                    `The bot will now:\n` +
-                    `• Track all messages\n` +
-                    `• Monitor deleted messages\n` +
-                    `• Save ViewOnce media\n` +
-                    `• Send deletion reports to owner`
+                text: `✅ *${t('p.antidelete.enabledTitle')}*\n\n` +
+                    `${t('p.antidelete.storage')}: ${storageLabel}\n\n` +
+                    `${t('p.antidelete.botWillNow')}:\n` +
+                    `• ${t('p.antidelete.trackAll')}\n` +
+                    `• ${t('p.antidelete.monitorDeleted')}\n` +
+                    `• ${t('p.antidelete.saveViewOnce')}\n` +
+                    `• ${t('p.antidelete.sendReports')}`
             }, { quoted: message });
         }
         else if (action === 'off') {
             config.enabled = false;
             await saveAntideleteConfig(config);
             await sock.sendMessage(chatId, {
-                text: `❌ *Antidelete disabled!*\n\n` +
-                    `The bot will no longer track deleted messages.`
+                text: `❌ *${t('p.antidelete.disabledTitle')}*\n\n` +
+                    `${t('p.antidelete.willNoLongerTrack')}`
             }, { quoted: message });
         }
         else {
             await sock.sendMessage(chatId, {
-                text: '❌ *Invalid command*\n\nUse: `.antidelete on/off`'
+                text: `❌ *${t('p.antidelete.invalidCommand')}*\n\n${t('p.antidelete.useOnOff')}`
             }, { quoted: message });
         }
     },

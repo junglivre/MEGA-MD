@@ -7,20 +7,21 @@ export default {
     usage: '.qrcode <text>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const text = args?.join(' ')?.trim();
         if (!text) {
-            return await sock.sendMessage(chatId, { text: '*Provide text to generate QR*\nExample: .qrcode Hello World' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: t('p.qrcode.missingText') }, { quoted: message });
         }
         try {
             const qr = await QRCode.toDataURL(text.slice(0, 2048), {
                 errorCorrectionLevel: 'H',
                 scale: 8
             });
-            await sock.sendMessage(chatId, { image: { url: qr }, caption: '✅ QR Code Generated' }, { quoted: message });
+            await sock.sendMessage(chatId, { image: { url: qr }, caption: `✅ ${t('p.qrcode.generated')}` }, { quoted: message });
         }
         catch (err) {
             console.error('QR plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to generate QR code.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.qrcode.failed')}` }, { quoted: message });
         }
     }
 };

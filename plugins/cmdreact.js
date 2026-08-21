@@ -12,10 +12,11 @@ export default {
     usage: '.creact on/off',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
+        const storage = HAS_DB ? t('p.cmdreact.database') : t('p.cmdreact.fileSystem');
         if (!args[0] || !['on', 'off'].includes(args[0])) {
             await sock.sendMessage(chatId, {
-                text: `*Usage:*\n.creact on/off\n\nStorage: ${HAS_DB ? 'Database' : 'File System'}`,
+                text: `*${t('p.cmdreact.usageTitle')}*\n.creact on/off\n\n${t('p.cmdreact.storage', { storage })}`,
                 ...channelInfo
             }, { quoted: message });
             return;
@@ -23,14 +24,14 @@ export default {
         if (args[0] === 'on') {
             await setCommandReactState(true);
             await sock.sendMessage(chatId, {
-                text: `*✅ Command reactions enabled*\n\nStorage: ${HAS_DB ? 'Database' : 'File System'}`,
+                text: `*✅ ${t('p.cmdreact.enabled')}*\n\n${t('p.cmdreact.storage', { storage })}`,
                 ...channelInfo
             }, { quoted: message });
         }
         else if (args[0] === 'off') {
             await setCommandReactState(false);
             await sock.sendMessage(chatId, {
-                text: `*❌ Command reactions disabled*\n\nStorage: ${HAS_DB ? 'Database' : 'File System'}`,
+                text: `*❌ ${t('p.cmdreact.disabled')}*\n\n${t('p.cmdreact.storage', { storage })}`,
                 ...channelInfo
             }, { quoted: message });
         }

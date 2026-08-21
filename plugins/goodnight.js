@@ -18,7 +18,7 @@ export default {
         }
         catch (error) {
             console.error('Goodnight plugin error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to get goodnight message. Please try again later!' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${context.t('p.goodnight.failed')}` }, { quoted: message });
         }
     }
 };

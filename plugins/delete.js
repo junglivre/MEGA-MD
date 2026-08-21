@@ -9,11 +9,12 @@ export default {
     adminOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const _senderId = context.senderId || message.key.participant || message.key.remoteJid;
         const isBotAdmin = context.isBotAdmin;
         if (!isBotAdmin) {
             await sock.sendMessage(chatId, {
-                text: '❌ *I need to be an admin to delete messages*'
+                text: `❌ *${t('p.delete.needAdmin')}*`
             }, { quoted: message });
             return;
         }
@@ -34,11 +35,11 @@ export default {
         }
         else if (countArg === null && !repliedParticipant && !mentioned) {
             await sock.sendMessage(chatId, {
-                text: '❌ *Please specify the number of messages to delete*\n\n' +
-                    '*Usage:*\n' +
-                    '• `.del 5` - Delete last 5 messages from group\n' +
-                    '• `.del 3 @user` - Delete last 3 messages from @user\n' +
-                    '• `.del 2` (reply to message) - Delete last 2 messages from replied user'
+                text: `❌ *${t('p.delete.specifyCount')}*\n\n` +
+                    `*${t('p.delete.usageTitle')}*\n` +
+                    `• \`.del 5\` - ${t('p.delete.usageGroup')}\n` +
+                    `• \`.del 3 @user\` - ${t('p.delete.usageUser')}\n` +
+                    `• \`.del 2\` ${t('p.delete.usageReply')}`
             }, { quoted: message });
             return;
         }
@@ -109,8 +110,8 @@ export default {
         }
         if (toDelete.length === 0) {
             const errorMsg = deleteGroupMessages
-                ? '❌ *No recent messages found in the group to delete*'
-                : '❌ *No recent messages found for the target user*';
+                ? `❌ *${t('p.delete.noMessagesGroup')}*`
+                : `❌ *${t('p.delete.noMessagesUser')}*`;
             await sock.sendMessage(chatId, { text: errorMsg }, { quoted: message });
             return;
         }

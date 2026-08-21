@@ -6,6 +6,7 @@ export default {
     usage: 'Reply to BF code with .bfdecode',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const t = context.t;
         try {
             let code = args?.join('') || "";
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
@@ -18,7 +19,7 @@ export default {
             }
             code = code.trim();
             if (!code) {
-                return await sock.sendMessage(chatId, { text: '*Please reply to a Brainfuck code or provide it after the command.*' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `*${t('p.bfdecode.noCode')}*` }, { quoted: message });
             }
             const bf = code.replace(/[^><+\-.,[\]]/g, '');
             const tape = new Uint8Array(30000);
@@ -63,11 +64,11 @@ export default {
                 pc++;
                 steps++;
             }
-            await sock.sendMessage(chatId, { text: `*🔓 Decoded Result:* \n\n${output || "_No output generated_"}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `*🔓 ${t('p.bfdecode.decodedTitle')}* \n\n${output || `_${t('p.bfdecode.noOutput')}_`}` }, { quoted: message });
         }
         catch (err) {
             console.error('BF Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Error reading quoted message.' });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.bfdecode.genericError')}` });
         }
     }
 };

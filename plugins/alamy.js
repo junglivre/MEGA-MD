@@ -21,39 +21,40 @@ export default {
     usage: '.alamy <Alamy URL>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const url = args?.[0]?.trim();
         if (!url) {
-            return await sock.sendMessage(chatId, { text: '❌ Please provide an Alamy URL.\nExample: .alamy https://www.alamy.com/video/beautiful-lake...' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `❌ ${t('p.alamy.noUrl')}` }, { quoted: message });
         }
         try {
             const apiUrl = `https://discardapi.dpdns.org/api/dl/alamy?apikey=guru&url=${encodeURIComponent(url)}`;
             const { data } = await axios.get(apiUrl, { timeout: 10000 });
             if (!data?.status || !data.result?.length) {
-                return await sock.sendMessage(chatId, { text: '❌ Failed to fetch media from the provided Alamy URL.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.alamy.fetchFailed')}` }, { quoted: message });
             }
             const isValidUrl = (u) => u && u.startsWith('http');
             let sent = false;
             for (const item of data.result) {
                 if (isValidUrl(item.video)) {
-                    await sock.sendMessage(chatId, { video: { url: item.video }, caption: '🎬 *Alamy Video*' }, { quoted: message });
+                    await sock.sendMessage(chatId, { video: { url: item.video }, caption: `🎬 *${t('p.alamy.videoCaption')}*` }, { quoted: message });
                     sent = true;
                 }
                 if (isValidUrl(item.image)) {
-                    await sock.sendMessage(chatId, { image: { url: item.image }, caption: '🖼️ *Alamy Image*' }, { quoted: message });
+                    await sock.sendMessage(chatId, { image: { url: item.image }, caption: `🖼️ *${t('p.alamy.imageCaption')}*` }, { quoted: message });
                     sent = true;
                 }
             }
             if (!sent) {
-                await sock.sendMessage(chatId, { text: '❌ No valid media found in the Alamy URL.' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `❌ ${t('p.alamy.noMedia')}` }, { quoted: message });
             }
         }
         catch (error) {
             console.error('Alamy download plugin error:', error);
             if (error.code === 'ECONNABORTED') {
-                await sock.sendMessage(chatId, { text: '❌ Request timed out. The API may be slow or unreachable.' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `❌ ${t('p.alamy.timeout')}` }, { quoted: message });
             }
             else {
-                await sock.sendMessage(chatId, { text: '❌ Failed to download media from Alamy URL.' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `❌ ${t('p.alamy.downloadFailed')}` }, { quoted: message });
             }
         }
     }

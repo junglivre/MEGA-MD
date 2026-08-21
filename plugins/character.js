@@ -45,13 +45,14 @@ export default {
     usage: '.character @user',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const t = context.t;
         const ctx = message.message?.extendedTextMessage?.contextInfo;
         let userJid = ctx?.mentionedJid?.[0] ||
             ctx?.participant ||
             message.key.participant;
         if (!userJid) {
             return sock.sendMessage(chatId, {
-                text: '❌ Please mention someone or reply to their message to analyze their character!',
+                text: `❌ ${t('p.character.noTarget')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -85,12 +86,12 @@ export default {
                 if (!selected.includes(t))
                     selected.push(t);
             }
-            const traitLines = selected.map(t => `• ${t}: ${Math.floor(Math.random() * 41) + 60}%`);
-            const analysis = `🔮 *Character Analysis* 🔮\n\n` +
-                `👤 *User:* ${displayName}\n\n` +
-                `✨ *Key Traits:*\n${traitLines.join('\n')}\n\n` +
-                `🎯 *Overall Rating:* ${Math.floor(Math.random() * 21) + 80}%\n\n` +
-                `_Note: This is a fun analysis, don't take it seriously!_`;
+            const traitLines = selected.map(trait => `• ${trait}: ${Math.floor(Math.random() * 41) + 60}%`);
+            const analysis = `🔮 *${t('p.character.title')}* 🔮\n\n` +
+                `👤 *${t('p.character.userLabel')}:* ${displayName}\n\n` +
+                `✨ *${t('p.character.traitsLabel')}:*\n${traitLines.join('\n')}\n\n` +
+                `🎯 *${t('p.character.ratingLabel')}:* ${Math.floor(Math.random() * 21) + 80}%\n\n` +
+                `_${t('p.character.note')}_`;
             await sock.sendMessage(chatId, {
                 image: { url: profilePic },
                 caption: analysis,
@@ -100,7 +101,7 @@ export default {
         }
         catch {
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to analyze character! Try again later.',
+                text: `❌ ${t('p.character.genericError')}`,
                 ...channelInfo
             }, { quoted: message });
         }

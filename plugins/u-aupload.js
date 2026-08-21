@@ -9,20 +9,21 @@ export default {
     description: 'Upload media to cloud and get URL',
     usage: '.aupload (reply to image/video/gif/sticker)',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quotedMsg) {
-                await sock.sendMessage(chatId, { text: '⚠️ Please reply to an image, video, GIF, or sticker!' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.aupload.noMedia')}` }, { quoted: message });
                 return;
             }
             const type = Object.keys(quotedMsg)[0];
             const supportedTypes = ['imageMessage', 'videoMessage', 'stickerMessage', 'documentMessage'];
             if (!supportedTypes.includes(type)) {
-                await sock.sendMessage(chatId, { text: '⚠️ Unsupported file type! Reply to image/video/gif/sticker/document' }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `⚠️ ${t('p.aupload.unsupportedType')}` }, { quoted: message });
                 return;
             }
-            await sock.sendMessage(chatId, { text: 'Uploading to cloud...' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.aupload.uploading') }, { quoted: message });
             const mediaType = type === 'stickerMessage' ? 'sticker' : type.replace('Message', '');
             const stream = await downloadContentFromMessage(quotedMsg[type], mediaType);
             let buffer = Buffer.from([]);
@@ -49,18 +50,18 @@ export default {
             const fileSizeMB = (stats.size / (1024 * 1024)).toFixed(2);
             const result = await uploadFile(tempPath);
             await sock.sendMessage(chatId, {
-                text: `✅ *Upload Successful!*\n\n` +
-                    `📊 *Service:* ${result.service}\n` +
-                    `📦 *Size:* ${fileSizeMB} MB\n` +
-                    `🔗 *URL:* ${result.url}\n\n` +
-                    `_Click the link to view/download_`
+                text: `✅ *${t('p.aupload.success')}*\n\n` +
+                    `📊 *${t('p.aupload.service')}:* ${result.service}\n` +
+                    `📦 *${t('p.aupload.size')}:* ${fileSizeMB} MB\n` +
+                    `🔗 *${t('p.aupload.url')}:* ${result.url}\n\n` +
+                    `_${t('p.aupload.clickHint')}_`
             }, { quoted: message });
             fs.unlinkSync(tempPath);
         }
         catch (error) {
             console.error('Upload Error:', error);
             await sock.sendMessage(chatId, {
-                text: `❌ Upload failed!\n\nError: ${error.message}`
+                text: `❌ ${t('p.aupload.failed')}\n\n${t('p.aupload.errorLabel', { error: error.message })}`
             }, { quoted: message });
         }
     }

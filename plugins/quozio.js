@@ -6,16 +6,17 @@ export default {
     usage: '.qmaker <text> or reply to a message',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         let text = args?.join(' ')?.trim();
         try {
             if (!text) {
                 const quotedText = message?.message?.extendedTextMessage?.contextInfo?.quotedMessage?.conversation;
                 if (!quotedText) {
-                    return await sock.sendMessage(chatId, { text: '*Provide text or reply to a message to create a quote.*' }, { quoted: message });
+                    return await sock.sendMessage(chatId, { text: t('p.qmaker.missingText') }, { quoted: message });
                 }
                 text = quotedText;
             }
-            const author = message.pushName || message?.key?.participant || 'Anonymous';
+            const author = message.pushName || message?.key?.participant || t('p.qmaker.anonymous');
             const createRes = await fetch('https://quozio.com/api/v1/quotes', {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
@@ -38,11 +39,11 @@ export default {
             const imageData = await imageRes.json();
             if (!imageData?.medium)
                 throw new Error('Image generation failed');
-            await sock.sendMessage(chatId, { image: { url: imageData.medium }, caption: `📝 Quote Created\n\nAuthor: ${author}\n\n${text}` }, { quoted: message });
+            await sock.sendMessage(chatId, { image: { url: imageData.medium }, caption: t('p.qmaker.caption', { author, text }) }, { quoted: message });
         }
         catch (error) {
             console.error('Quote plugin error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to create quote. Try again later.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.qmaker.failed') }, { quoted: message });
         }
     }
 };

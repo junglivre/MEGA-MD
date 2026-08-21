@@ -8,12 +8,13 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const m = message.message;
         const type = Object.keys(m)[0];
         const contextInfo = m[type]?.contextInfo;
         if (!contextInfo || contextInfo.remoteJid !== 'status@broadcast') {
             return await sock.sendMessage(chatId, {
-                text: "Please reply/quote a Status update to download it."
+                text: t('p.dlstatus.needQuote')
             }, { quoted: message });
         }
         const quotedMsg = contextInfo.quotedMessage;
@@ -24,7 +25,7 @@ export default {
             const mediaData = quotedMsg[quotedType];
             if (quotedType === 'conversation' || quotedType === 'extendedTextMessage') {
                 const text = quotedMsg.conversation || quotedMsg.extendedTextMessage?.text;
-                return await sock.sendMessage(chatId, { text: `📝 *Status Text:*\n\n${text}` }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `📝 *${t('p.dlstatus.statusTextLabel')}:*\n\n${text}` }, { quoted: message });
             }
             const stream = await downloadContentFromMessage(mediaData, quotedType.replace('Message', ''));
             let buffer = Buffer.from([]);
@@ -40,7 +41,7 @@ export default {
         }
         catch (e) {
             console.error('SW Download Error:', e);
-            await sock.sendMessage(chatId, { text: "❌ Failed to download status media." }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.dlstatus.downloadFailed')}` }, { quoted: message });
         }
     }
 };

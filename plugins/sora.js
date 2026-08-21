@@ -6,14 +6,14 @@ export default {
     description: 'Generate AI video from text prompt',
     usage: '.sora <prompt>',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         try {
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             const quotedText = quoted?.conversation || quoted?.extendedTextMessage?.text || '';
             const input = args.join(' ') || quotedText;
             if (!input) {
                 await sock.sendMessage(chatId, {
-                    text: 'Provide a prompt. Example: .sora anime girl with short blue hair',
+                    text: t('p.sora.noPrompt'),
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -27,14 +27,14 @@ export default {
             await sock.sendMessage(chatId, {
                 video: { url: videoUrl },
                 mimetype: 'video/mp4',
-                caption: `Prompt: ${input}`,
+                caption: `${t('p.sora.promptLabel')}: ${input}`,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (error) {
             console.error('[SORA] error:', error?.message || error);
             await sock.sendMessage(chatId, {
-                text: 'Failed to generate video. Try a different prompt later.',
+                text: t('p.sora.failed'),
                 ...channelInfo
             }, { quoted: message });
         }

@@ -11,10 +11,11 @@ export default {
     usage: 'Reply to an image with .sepia',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quoted?.imageMessage) {
-                return await sock.sendMessage(chatId, { text: '🧡 *Sepia Image*\n\nReply to an image to convert it to sepia\n\nUsage:\n.sepia' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `🧡 *${t('p.sepia.title')}*\n\n${t('p.sepia.replyHint')}\n\nUsage:\n.sepia` }, { quoted: message });
             }
             await sock.sendMessage(chatId, { react: { text: '🔄', key: message.key } });
             const stream = await downloadContentFromMessage(quoted.imageMessage, 'image');
@@ -35,13 +36,13 @@ export default {
             fs.writeFileSync(grayFile, res.data);
             await sock.sendMessage(chatId, {
                 image: { url: grayFile },
-                caption: `🧡 *Sepia Image*\n\nProcessed by: MEGA-MD`
+                caption: `🧡 *${t('p.sepia.title')}*\n\n${t('p.sepia.processedBy')}`
             }, { quoted: message });
             fs.unlinkSync(grayFile);
         }
         catch (err) {
             console.error('Sepia Plugin Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to convert image to sepia. Make sure the image is clear and try again.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.sepia.failed')}` }, { quoted: message });
         }
     }
 };

@@ -9,7 +9,7 @@ export default {
     usage: '.alive',
     isPrefixless: true,
     async handler(sock, message, args, context) {
-        const { chatId, config } = context;
+        const { chatId, config, t } = context;
         try {
             let uptime = Math.floor(process.uptime());
             const days = Math.floor(uptime / 86400);
@@ -35,12 +35,12 @@ export default {
             const platform = os.platform();
             const arch = os.arch();
             const nodeVersion = process.version;
-            const text = `*🤖 ${config.botName} IS ACTIVE!*\n\n` +
-                `*Version:* ${config.version}\n` +
-                `*Uptime:* ${uptimeText}\n` +
-                `*RAM Usage:* ${usedMem} MB / ${totalMem} MB\n` +
-                `*CPU Load:* ${cpuLoad}\n` +
-                `*Platform:* ${platform} (${arch})\n` +
+            const text = `*🤖 ${t('p.alive.active', { botName: config.botName })}*\n\n` +
+                `*${t('p.alive.version')}:* ${config.version}\n` +
+                `*${t('p.alive.uptime')}:* ${uptimeText}\n` +
+                `*${t('p.alive.ramUsage')}:* ${usedMem} MB / ${totalMem} MB\n` +
+                `*${t('p.alive.cpuLoad')}:* ${cpuLoad}\n` +
+                `*${t('p.alive.platform')}:* ${platform} (${arch})\n` +
                 `*Node.js:* ${nodeVersion}\n`;
             await sock.sendMessage(chatId, {
                 text,
@@ -49,7 +49,7 @@ export default {
         }
         catch (error) {
             console.error('Error in alive command:', error);
-            await sock.sendMessage(chatId, { text: '✅ Bot is alive and running!' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `✅ ${t('p.alive.fallback')}` }, { quoted: message });
         }
     }
 };

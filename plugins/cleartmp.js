@@ -53,19 +53,20 @@ export default {
     usage: '.cleartmp',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const senderId = message.key.participant || message.key.remoteJid;
         try {
             const isOwner = await isOwnerOrSudo(senderId, sock, chatId);
             if (!message.key.fromMe && !isOwner) {
                 await sock.sendMessage(chatId, {
-                    text: '*This command is only for the owner!*'
+                    text: `*${t('p.cleartmp.ownerOnly')}*`
                 }, { quoted: message });
                 return;
             }
             const result = await clearTmpDirectory();
             const text = result.success
-                ? `✅ *Temporary Files Cleared!*\n\n${result.message}`
-                : `❌ *Clear Failed!*\n\n${result.message}`;
+                ? `✅ *${t('p.cleartmp.clearedHeader')}*\n\n${result.message}`
+                : `❌ *${t('p.cleartmp.failedHeader')}*\n\n${result.message}`;
             await sock.sendMessage(chatId, {
                 text
             }, { quoted: message });
@@ -73,7 +74,7 @@ export default {
         catch (error) {
             console.error('Error in cleartmp command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to clear temporary files!'
+                text: `❌ ${t('p.cleartmp.failed')}`
             }, { quoted: message });
         }
     }

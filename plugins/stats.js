@@ -23,18 +23,19 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const report = CommandHandler.getDiagnostics();
             if (!report || report.length === 0) {
-                return await sock.sendMessage(chatId, { text: '_No performance data collected yet._' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `_${t('p.perf.noData')}_` }, { quoted: message });
             }
-            let text = `📊 *PLUGINS PERFORMANCE*\n\n`;
+            let text = `📊 *${t('p.perf.title')}*\n\n`;
             report.forEach((cmd, index) => {
-                const errorText = cmd.errors > 0 ? `❗ Errors: ${cmd.errors}` : `✅ Smooth`;
+                const errorText = cmd.errors > 0 ? `❗ ${t('p.perf.errorsLabel')}: ${cmd.errors}` : `✅ ${t('p.perf.smooth')}`;
                 text += `${index + 1}. *${cmd.command.toUpperCase()}*\n`;
-                text += `   ↳ Calls: ${cmd.usage}\n`;
-                text += `   ↳ Latency: ${cmd.average_speed}\n`;
-                text += `   ↳ Status: ${errorText}\n\n`;
+                text += `   ↳ ${t('p.perf.callsLabel')}: ${cmd.usage}\n`;
+                text += `   ↳ ${t('p.perf.latencyLabel')}: ${cmd.average_speed}\n`;
+                text += `   ↳ ${t('p.perf.statusLabel')}: ${errorText}\n\n`;
             });
             await sock.sendMessage(chatId, {
                 text: text.trim(),
@@ -43,7 +44,7 @@ export default {
         }
         catch (error) {
             console.error('Error in perf command:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch performance metrics.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.perf.fetchFailed')}` }, { quoted: message });
         }
     }
 };

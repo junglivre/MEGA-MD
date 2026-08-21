@@ -42,6 +42,7 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const t = context.t;
         const _isGroup = context.isGroup;
         let userToBan;
         if (message.message?.extendedTextMessage?.contextInfo?.mentionedJid?.length > 0) {
@@ -52,7 +53,7 @@ export default {
         }
         if (!userToBan) {
             await sock.sendMessage(chatId, {
-                text: '❌ *Please mention a user or reply to their message*\n\nUsage: `.ban @user` or reply with `.ban`',
+                text: `❌ *${t('p.ban.noTarget')}*`,
                 ...channelInfo
             }, { quoted: message });
             return;
@@ -61,7 +62,7 @@ export default {
             const botId = `${sock.user.id.split(':')[0] }@s.whatsapp.net`;
             if (userToBan === botId || userToBan === botId.replace('@s.whatsapp.net', '@lid')) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ *Cannot ban the bot account*',
+                    text: `❌ *${t('p.ban.cannotBanBot')}*`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -70,19 +71,20 @@ export default {
         catch (e) { }
         try {
             const bannedUsers = await getBannedUsers();
+            const storage = HAS_DB ? t('p.ban.storageDb') : t('p.ban.storageFs');
             if (!bannedUsers.includes(userToBan)) {
                 bannedUsers.push(userToBan);
                 await saveBannedUsers(bannedUsers);
                 await sock.sendMessage(chatId, {
-                    text: `🚫 *User Banned Successfully!*\n\n@${userToBan.split('@')[0]} has been banned from using the bot.\n\n` +
-                        `*Storage:* ${HAS_DB ? 'Database' : 'File System'}`,
+                    text: `🚫 *${t('p.ban.bannedTitle')}*\n\n@${userToBan.split('@')[0]} ${t('p.ban.bannedDesc')}\n\n` +
+                        `*${t('p.ban.storage')}:* ${storage}`,
                     mentions: [userToBan],
                     ...channelInfo
                 }, { quoted: message });
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: `⚠️ *Already Banned*\n\n@${userToBan.split('@')[0]} is already banned!`,
+                    text: `⚠️ *${t('p.ban.alreadyBannedTitle')}*\n\n@${userToBan.split('@')[0]} ${t('p.ban.alreadyBannedDesc')}`,
                     mentions: [userToBan],
                     ...channelInfo
                 }, { quoted: message });
@@ -91,7 +93,7 @@ export default {
         catch (error) {
             console.error('Error in ban command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ *Failed to ban user!*\n\nPlease try again.',
+                text: `❌ *${t('p.ban.genericError')}*`,
                 ...channelInfo
             }, { quoted: message });
         }

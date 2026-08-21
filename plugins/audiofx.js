@@ -2,21 +2,23 @@ import { downloadContentFromMessage } from '@whiskeysockets/baileys';
 import fs from 'fs';
 import path from 'path';
 import { exec } from 'child_process';
-const effectsMenu = '🎧 *Audio Effects* 🎧\n\n' +
-    '• *bass*\n' +
-    '• *blown*\n' +
-    '• *deep*\n' +
-    '• *earrape*\n' +
-    '• *fast*\n' +
-    '• *fat*\n' +
-    '• *nightcore*\n' +
-    '• *reverse*\n' +
-    '• *robot*\n' +
-    '• *slow*\n' +
-    '• *chipmunk*\n\n' +
-    '📌 *Usage:*\n' +
-    'Reply to an audio / voice note with:\n' +
-    'Example: *.audiofx bass*';
+function getEffectsMenu(t) {
+    return `🎧 *${t('p.audiofx.title')}* 🎧\n\n` +
+        '• *bass*\n' +
+        '• *blown*\n' +
+        '• *deep*\n' +
+        '• *earrape*\n' +
+        '• *fast*\n' +
+        '• *fat*\n' +
+        '• *nightcore*\n' +
+        '• *reverse*\n' +
+        '• *robot*\n' +
+        '• *slow*\n' +
+        '• *chipmunk*\n\n' +
+        `📌 *${t('p.audiofx.usageLabel')}:*\n` +
+        `${t('p.audiofx.replyHint')}\n` +
+        `${t('p.audiofx.exampleLabel')}: *.audiofx bass*`;
+}
 function getFilter(cmd) {
     if (/bass/i.test(cmd))
         return 'equalizer=f=94:width_type=o:width=2:g=30';
@@ -65,11 +67,12 @@ export default {
     usage: '.bass / .nightcore (reply to audio)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const cmd = message.body || args.join(' ');
         const filter = getFilter(cmd);
         const audioBuffer = await getAudio(message);
         if (!audioBuffer || !filter) {
-            return await sock.sendMessage(chatId, { text: effectsMenu }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: getEffectsMenu(t) }, { quoted: message });
         }
         try {
             const tmp = path.join(process.cwd(), 'tmp');
@@ -92,7 +95,7 @@ export default {
             });
         }
         catch {
-            await sock.sendMessage(chatId, { text: '❌ Audio processing failed. Make sure ffmpeg is installed.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.audiofx.processingFailed')}` }, { quoted: message });
         }
     }
 };

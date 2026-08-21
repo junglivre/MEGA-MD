@@ -8,12 +8,13 @@ export default {
     usage: '.fetch <url>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const url = args[0];
         if (!url || !url.startsWith('http')) {
-            return await sock.sendMessage(chatId, { text: 'Provide a valid URL starting with http/https.' });
+            return await sock.sendMessage(chatId, { text: t('p.fetch.invalidUrl') });
         }
         try {
-            await sock.sendMessage(chatId, { text: '📡 *Fetching data...*' });
+            await sock.sendMessage(chatId, { text: `📡 ${t('p.fetch.fetching')}` });
             const res = await axios.get(url, { responseType: 'arraybuffer' });
             const buffer = Buffer.from(res.data, 'binary');
             const type = await fileTypeFromBuffer(buffer);
@@ -34,7 +35,7 @@ export default {
             }
         }
         catch (err) {
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch. URL might be private or invalid.' });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.fetch.failed')}` });
         }
     }
 };

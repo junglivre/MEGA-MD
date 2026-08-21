@@ -25,20 +25,20 @@ export default {
     description: 'Download files from MediaFire',
     usage: '.mediafire <url>',
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         const text = args.join(' ');
         if (!text)
-            return await sock.sendMessage(chatId, { text: "❌ Provide a MediaFire URL.\n\nExample:\n.mfire https://www.mediafire.com/file/5e54xv2cislhfgb/twoxzhn.zip/file" }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: `❌ ${t('p.mediafire.noUrl')}\n\n${t('p.mediafire.exampleLabel')}:\n.mfire https://www.mediafire.com/file/5e54xv2cislhfgb/twoxzhn.zip/file` }, { quoted: message });
         try {
             const data = await mediafireDl(text);
             if (!data || !data.link) {
-                return await sock.sendMessage(chatId, { text: "❌ Failed to parse MediaFire page. Link might be private or broken." }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.mediafire.parseFailed')}` }, { quoted: message });
             }
-            let caption = `≡ *MEDIAFIRE DOWNLOADER*\n\n`;
-            caption += `▢ *File:* ${data.name}\n`;
-            caption += `▢ *Size:* ${data.size}\n`;
-            caption += `▢ *Extension:* ${data.ext}\n\n`;
-            caption += `*Download In Progress... Please Wait ⌛*`;
+            let caption = `≡ *${t('p.mediafire.title')}*\n\n`;
+            caption += `▢ *${t('p.mediafire.fileLabel')}:* ${data.name}\n`;
+            caption += `▢ *${t('p.mediafire.sizeLabel')}:* ${data.size}\n`;
+            caption += `▢ *${t('p.mediafire.extLabel')}:* ${data.ext}\n\n`;
+            caption += `*${t('p.mediafire.inProgress')}*`;
             await sock.sendMessage(chatId, { text: caption }, { quoted: message });
             const response = await axios({
                 method: 'get',
@@ -51,7 +51,7 @@ export default {
             });
             const buffer = Buffer.from(response.data);
             if (buffer.length < 10000) {
-                return await sock.sendMessage(chatId, { text: "❌ Error: The downloaded file is corrupt or invalid." });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.mediafire.corruptFile')}` });
             }
             let mimeType = 'application/octet-stream';
             const mimes = {
@@ -69,12 +69,12 @@ export default {
                 document: buffer,
                 fileName: data.name,
                 mimetype: mimeType,
-                caption: `✅ *Download Complete:* ${data.name}`
+                caption: `✅ *${t('p.mediafire.downloadComplete')}:* ${data.name}`
             }, { quoted: message });
         }
         catch (err) {
             console.error('MF Download Error:', err);
-            await sock.sendMessage(chatId, { text: `❌ Error: ${ err.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.mediafire.genericError', { message: err.message })}` }, { quoted: message });
         }
     }
 };

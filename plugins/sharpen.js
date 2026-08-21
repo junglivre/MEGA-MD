@@ -11,10 +11,11 @@ export default {
     usage: 'Reply to an image with .sharpen',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quoted?.imageMessage) {
-                return await sock.sendMessage(chatId, { text: '🩵 *Sharpen Image*\n\nReply to an image to convert it to sepia\n\nUsage:\n.sharpen' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `🩵 *${t('p.sharpen.title')}*\n\n${t('p.sharpen.usageHint')}\n\n${t('p.sharpen.usageLabel')}:\n.sharpen` }, { quoted: message });
             }
             await sock.sendMessage(chatId, { react: { text: '🔄', key: message.key } });
             const stream = await downloadContentFromMessage(quoted.imageMessage, 'image');
@@ -41,7 +42,7 @@ export default {
         }
         catch (err) {
             console.error('Sharpen Plugin Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to convert image to sepia. Make sure the image is clear and try again.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.sharpen.failed')}` }, { quoted: message });
         }
     }
 };

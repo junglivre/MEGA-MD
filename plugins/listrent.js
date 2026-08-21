@@ -54,23 +54,23 @@ export default {
     description: 'List all currently active sub-bots',
     usage: '.listrent',
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         const activeConns = global.conns || [];
         const storedClones = await getAllCloneSessions();
         if (activeConns.length === 0 && storedClones.length === 0) {
             return await sock.sendMessage(chatId, {
-                text: "*❌ No sub-bots are currently active or stored.*"
+                text: `*❌ ${t('p.listrent.noBots')}*`
             }, { quoted: message });
         }
-        let msg = `*─── [ CLONE BOTS ] ───*\n\n`;
-        msg += `*Storage:* ${HAS_DB ? 'Database 🗄️' : 'File System 📁'}\n\n`;
+        let msg = `*─── [ ${t('p.listrent.title')} ] ───*\n\n`;
+        msg += `*${t('p.listrent.storage')}:* ${HAS_DB ? t('p.listrent.storageDb') : t('p.listrent.storageFile')}\n\n`;
         if (activeConns.length > 0) {
-            msg += `*🟢 ONLINE CLONES:*\n\n`;
+            msg += `*🟢 ${t('p.listrent.onlineTitle')}:*\n\n`;
             activeConns.forEach((conn, i) => {
                 const user = conn.user;
                 msg += `*${i + 1}.* @${user.id.split(':')[0]}\n`;
-                msg += `   └ Name: ${user.name || 'Sub-Bot'}\n`;
-                msg += `   └ Status: Connected ✅\n\n`;
+                msg += `   └ ${t('p.listrent.nameField', { name: user.name || t('p.listrent.subBotFallback') })}\n`;
+                msg += `   └ ${t('p.listrent.statusConnected')}\n\n`;
             });
         }
         if (HAS_DB && storedClones.length > 0) {
@@ -81,22 +81,22 @@ export default {
                 });
             });
             if (offlineClones.length > 0) {
-                msg += `*⚪ STORED CLONES (Offline):*\n\n`;
+                msg += `*⚪ ${t('p.listrent.offlineTitle')}:*\n\n`;
                 offlineClones.forEach((clone, i) => {
-                    msg += `*${i + 1}.* ID: ${clone.authId}\n`;
-                    msg += `   └ Number: ${clone.userNumber || 'N/A'}\n`;
-                    msg += `   └ Status: ${clone.status || 'offline'}\n`;
+                    msg += `*${i + 1}.* ${t('p.listrent.idField', { id: clone.authId })}\n`;
+                    msg += `   └ ${t('p.listrent.numberField', { number: clone.userNumber || 'N/A' })}\n`;
+                    msg += `   └ ${t('p.listrent.statusField', { status: clone.status || t('p.listrent.offlineStatus') })}\n`;
                     if (clone.createdAt) {
                         const date = new Date(clone.createdAt);
-                        msg += `   └ Created: ${date.toLocaleString()}\n`;
+                        msg += `   └ ${t('p.listrent.createdField', { date: date.toLocaleString() })}\n`;
                     }
                     msg += `\n`;
                 });
             }
         }
-        msg += `*Total Online:* ${activeConns.length}\n`;
+        msg += `*${t('p.listrent.totalOnline')}:* ${activeConns.length}\n`;
         if (HAS_DB) {
-            msg += `*Total Stored:* ${storedClones.length}`;
+            msg += `*${t('p.listrent.totalStored')}:* ${storedClones.length}`;
         }
         const mentions = activeConns.map((c) => c.user.id);
         await sock.sendMessage(chatId, {

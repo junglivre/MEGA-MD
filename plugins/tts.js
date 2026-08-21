@@ -8,9 +8,10 @@ export default {
     description: 'Convert text to speech and send as an audio message.',
     usage: '.tts <text> [language code]',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         if (!args.length) {
-            return sock.sendMessage(chatId, { text: '*Please provide text for TTS.*\nExample: `.tts Hello world`\nWith language: `.tts Hola mundo es`' }, { quoted: message });
+            return sock.sendMessage(chatId, { text: `*${t('p.tts.noText')}*\n${t('p.tts.example')}\n${t('p.tts.exampleLang')}` }, { quoted: message });
         }
         let language = 'en';
         if (args.length > 1 && /^[a-z]{2}$/.test(args[args.length - 1])) {
@@ -39,7 +40,7 @@ export default {
         }
         catch (err) {
             console.error('TTS error:', err.message);
-            await sock.sendMessage(chatId, { text: `❌ Failed to generate TTS audio.\nReason: ${err.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.tts.generateFailed')}\n${t('p.tts.reason', { reason: err.message })}` }, { quoted: message });
         }
         finally {
             if (fs.existsSync(filePath))

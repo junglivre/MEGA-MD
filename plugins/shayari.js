@@ -6,6 +6,7 @@ export default {
     usage: '.shayari',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const response = await fetch('https://shizoapi.onrender.com/api/texts/shayari?apikey=shizo');
             const data = await response.json();
@@ -13,8 +14,8 @@ export default {
                 throw new Error('Invalid response from API');
             }
             const buttons = [
-                { buttonId: '.shayari', buttonText: { displayText: 'Shayari 🪄' }, type: 1 },
-                { buttonId: '.roseday', buttonText: { displayText: '🌹 RoseDay' }, type: 1 }
+                { buttonId: '.shayari', buttonText: { displayText: t('p.shayari.buttonShayari') }, type: 1 },
+                { buttonId: '.roseday', buttonText: { displayText: t('p.shayari.buttonRoseDay') }, type: 1 }
             ];
             await sock.sendMessage(chatId, {
                 text: data.result,
@@ -25,7 +26,7 @@ export default {
         catch (error) {
             console.error('Shayari Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to fetch shayari. Please try again later.',
+                text: `❌ ${t('p.shayari.failed')}`,
             }, { quoted: message });
         }
     }

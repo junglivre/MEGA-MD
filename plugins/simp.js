@@ -8,6 +8,7 @@ export default {
     usage: '.simp (reply to user or mention someone)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const sender = message.key.participant || message.key.remoteJid;
         const quotedMsg = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const mentionedJid = message.message?.extendedTextMessage?.contextInfo?.mentionedJid;
@@ -33,14 +34,14 @@ export default {
             const imageBuffer = Buffer.from(await response.arrayBuffer());
             await sock.sendMessage(chatId, {
                 image: imageBuffer,
-                caption: '*your religion is simping*',
+                caption: `*${t('p.simp.caption')}*`,
                 ...channelInfo
             }, { quoted: message });
         }
         catch (error) {
             console.error('Simp Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Sorry, I couldn\'t generate the simp card. Please try again later!',
+                text: `❌ ${t('p.simp.failed')}`,
                 ...channelInfo
             }, { quoted: message });
         }

@@ -10,11 +10,12 @@ export default {
     description: 'Convert an image to negative',
     usage: 'Reply to an image with .invert',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         try {
             const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quoted?.imageMessage) {
-                return await sock.sendMessage(chatId, { text: '🤍 *Invert Image*\n\nReply to an image to convert it to negative\n\nUsage:\n.invert' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `🤍 *${t('p.invert.title')}*\n\n${t('p.invert.usage')}` }, { quoted: message });
             }
             await sock.sendMessage(chatId, { react: { text: '🔄', key: message.key } });
             const stream = await downloadContentFromMessage(quoted.imageMessage, 'image');
@@ -35,13 +36,13 @@ export default {
             fs.writeFileSync(grayFile, res.data);
             await sock.sendMessage(chatId, {
                 image: { url: grayFile },
-                caption: `🤍 *Inverted Image*\n\nProcessed by: MEGA-MD`
+                caption: `🤍 *${t('p.invert.success')}*\n\nProcessed by: MEGA-MD`
             }, { quoted: message });
             fs.unlinkSync(grayFile);
         }
         catch (err) {
             console.error('Invert Plugin Error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to convert image to sepia. Make sure the image is clear and try again.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.invert.failed')}` }, { quoted: message });
         }
     }
 };

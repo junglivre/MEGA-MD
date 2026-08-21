@@ -9,6 +9,7 @@ export default {
     usage: '.terabox <terabox link>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const wait = (ms) => new Promise(resolve => setTimeout(resolve, ms));
         const apiCallWithRetry = async (url, maxRetries = 3, baseDelay = 2000) => {
             for (let attempt = 1; attempt <= maxRetries; attempt++) {
@@ -78,17 +79,17 @@ export default {
         try {
             const url = args.join(' ').trim();
             if (!url) {
-                return await sock.sendMessage(chatId, { text: '📦 *TeraBox Downloader*\n\nUsage:\n.terabox <terabox link>\n\nExample:\n.terabox https://1024terabox.com/s/xxxxx' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `📦 *${t('p.terabox.title')}*\n\n${t('p.terabox.usageLabel')}:\n.terabox <terabox link>\n\n${t('p.terabox.exampleLabel')}:\n.terabox https://1024terabox.com/s/xxxxx` }, { quoted: message });
             }
             if (!isValidTeraBoxUrl(url)) {
-                return await sock.sendMessage(chatId, { text: '❌ *Invalid TeraBox link!*\n\nPlease provide a valid TeraBox URL.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ *${t('p.terabox.invalidLink')}*\n\n${t('p.terabox.provideValidUrl')}` }, { quoted: message });
             }
-            await sock.sendMessage(chatId, { text: '⏳ *Processing TeraBox link...*\n\nPlease wait, fetching file information...' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `⏳ *${t('p.terabox.processing')}*\n\n${t('p.terabox.fetchingInfo')}` }, { quoted: message });
             // Fetch file information
             const apiUrl = `https://api.qasimdev.dpdns.org/api/terabox/download?apiKey=qasim-dev&url=${encodeURIComponent(url)}`;
             const apiResponse = await apiCallWithRetry(apiUrl, 3, 3000);
             if (!apiResponse?.data?.success || !apiResponse.data?.data?.files || apiResponse?.data?.data?.files?.length === 0) {
-                return await sock.sendMessage(chatId, { text: '❌ *Download failed!*\n\nNo files found or invalid link.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ *${t('p.terabox.downloadFailedTitle')}*\n\n${t('p.terabox.noFilesFound')}` }, { quoted: message });
             }
             const fileData = apiResponse.data.data;
             const files = fileData.files;
@@ -100,7 +101,7 @@ export default {
             const downloadUrl = file.downloadUrl;
             const fileType = file.type;
             // Show file info without thumbnail to avoid issues
-            await sock.sendMessage(chatId, { text: `📦 *TeraBox File*\n\n📄 *Name:* ${title}\n📊 *Size:* ${size}\n📁 *Type:* ${fileType}\n📂 *Total Files:* ${totalFiles}\n\n⏳ *Downloading...*\nPlease wait, this may take a while for large files...` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `📦 *${t('p.terabox.fileTitle')}*\n\n📄 *${t('p.terabox.nameLabel')}:* ${title}\n📊 *${t('p.terabox.sizeLabel')}:* ${size}\n📁 *${t('p.terabox.typeLabel')}:* ${fileType}\n📂 *${t('p.terabox.totalFilesLabel')}:* ${totalFiles}\n\n⏳ *${t('p.terabox.downloading')}*\n${t('p.terabox.waitLargeFiles')}` }, { quoted: message });
             // Create temp directory
             const tempDir = path.join(process.cwd(), 'tmp');
             if (!fs.existsSync(tempDir)) {
@@ -117,7 +118,7 @@ export default {
             // WhatsApp has file size limits
             if (fileSizeInMB > 100) {
                 fs.unlinkSync(filePath);
-                return await sock.sendMessage(chatId, { text: `❌ *File too large!*\n\n📄 *File:* ${title}\n📊 *Size:* ${size}\n\n⚠️ WhatsApp has a 100MB file limit.\nThis file is ${fileSizeInMB.toFixed(2)}MB.` }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ *${t('p.terabox.tooLarge')}*\n\n📄 *${t('p.terabox.fileLabel')}:* ${title}\n📊 *${t('p.terabox.sizeLabel')}:* ${size}\n\n⚠️ ${t('p.terabox.limitNotice', { size: fileSizeInMB.toFixed(2) })}` }, { quoted: message });
             }
             // Determine file type and send accordingly
             const fileExtension = title.split('.').pop().toLowerCase();
@@ -131,7 +132,7 @@ export default {
                     video: fileBuffer,
                     mimetype: 'video/mp4',
                     fileName: title,
-                    caption: `✅ *Download Complete!*\n\n📄 *File:* ${title}\n📊 *Size:* ${size}\n\n> *_Downloaded from TeraBox_*`
+                    caption: `✅ *${t('p.terabox.complete')}*\n\n📄 *${t('p.terabox.fileLabel')}:* ${title}\n📊 *${t('p.terabox.sizeLabel')}:* ${size}\n\n> *_${t('p.terabox.downloadedFrom')}_*`
                 }, { quoted: message });
             }
             else if (audioExtensions.includes(fileExtension)) {
@@ -142,13 +143,13 @@ export default {
                     fileName: title,
                     ptt: false
                 }, { quoted: message });
-                await sock.sendMessage(chatId, { text: `✅ *Download Complete!*\n\n📄 *File:* ${title}\n📊 *Size:* ${size}` }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `✅ *${t('p.terabox.complete')}*\n\n📄 *${t('p.terabox.fileLabel')}:* ${title}\n📊 *${t('p.terabox.sizeLabel')}:* ${size}` }, { quoted: message });
             }
             else if (imageExtensions.includes(fileExtension)) {
                 // Send as image
                 await sock.sendMessage(chatId, {
                     image: fileBuffer,
-                    caption: `✅ *Download Complete!*\n\n📄 *File:* ${title}\n📊 *Size:* ${size}`
+                    caption: `✅ *${t('p.terabox.complete')}*\n\n📄 *${t('p.terabox.fileLabel')}:* ${title}\n📊 *${t('p.terabox.sizeLabel')}:* ${size}`
                 }, { quoted: message });
             }
             else {
@@ -157,38 +158,38 @@ export default {
                     document: fileBuffer,
                     mimetype: 'application/octet-stream',
                     fileName: title,
-                    caption: `✅ *Download Complete!*\n\n📄 *File:* ${title}\n📊 *Size:* ${size}\n\n> *_Downloaded from TeraBox_*`
+                    caption: `✅ *${t('p.terabox.complete')}*\n\n📄 *${t('p.terabox.fileLabel')}:* ${title}\n📊 *${t('p.terabox.sizeLabel')}:* ${size}\n\n> *_${t('p.terabox.downloadedFrom')}_*`
                 }, { quoted: message });
             }
             // Clean up
             fs.unlinkSync(filePath);
             // If there are multiple files, notify user
             if (totalFiles > 1) {
-                await sock.sendMessage(chatId, { text: `ℹ️ *Note:* This TeraBox link contains ${totalFiles} files.\nOnly the first file was downloaded.` }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `ℹ️ *${t('p.terabox.noteLabel')}:* ${t('p.terabox.multipleFilesNote', { totalFiles })}` }, { quoted: message });
             }
         }
         catch (error) {
             console.error('[TERABOX] Command Error:', error);
-            let errorMsg = "❌ *Download failed!*\n\n";
+            let errorMsg = `❌ *${t('p.terabox.downloadFailedTitle')}*\n\n`;
             if (error.code === 'ETIMEDOUT' || error.code === 'ECONNABORTED') {
-                errorMsg += "*Reason:* Timeout - File might be too large or connection is slow";
+                errorMsg += `*${t('p.terabox.reasonLabel')}:* ${t('p.terabox.reasonTimeout')}`;
             }
             else if (error.code === 'ECONNRESET' || error.message?.includes('aborted')) {
-                errorMsg += "*Reason:* Connection reset - The download was interrupted\nPlease try again.";
+                errorMsg += `*${t('p.terabox.reasonLabel')}:* ${t('p.terabox.reasonConnReset')}`;
             }
             else if (error.response?.status === 429) {
-                errorMsg += "*Reason:* Rate limit exceeded\nPlease wait a minute and try again.";
+                errorMsg += `*${t('p.terabox.reasonLabel')}:* ${t('p.terabox.reasonRateLimit')}`;
             }
             else if (error.response?.status === 403) {
-                errorMsg += "*Reason:* Access forbidden - Link might be private or expired";
+                errorMsg += `*${t('p.terabox.reasonLabel')}:* ${t('p.terabox.reasonForbidden')}`;
             }
             else if (error.response?.status === 404) {
-                errorMsg += "*Reason:* File not found - Link might be invalid or deleted";
+                errorMsg += `*${t('p.terabox.reasonLabel')}:* ${t('p.terabox.reasonNotFound')}`;
             }
             else {
-                errorMsg += `*Error:* ${error.message || 'Unknown error'}`;
+                errorMsg += `*${t('p.terabox.errorLabel')}:* ${error.message || t('p.terabox.unknownError')}`;
             }
-            errorMsg += "\n\n💡 *Tips:*\n- Make sure the link is public\n- Check if the link hasn't expired\n- Try with smaller files first\n- Wait 10-15 seconds between requests";
+            errorMsg += `\n\n💡 ${t('p.terabox.tips')}`;
             await sock.sendMessage(chatId, { text: errorMsg }, { quoted: message });
         }
     }

@@ -7,9 +7,10 @@ export default {
     usage: '.pinstalk <username>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         if (!args.length) {
             return await sock.sendMessage(chatId, {
-                text: '*Please provide a Pinterest username.*\nExample: .pinstalk anti_establishment'
+                text: t('p.pinstalk.missingUsername')
             }, { quoted: message });
         }
         const username = args[0];
@@ -18,22 +19,24 @@ export default {
                 params: { apikey: 'guru', username }
             });
             if (!data?.result) {
-                return await sock.sendMessage(chatId, { text: '❌ Pinterest user not found.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.pinstalk.notFound')}` }, { quoted: message });
             }
             const result = data.result;
             const profileImage = result.image?.large || result.image?.original || null;
-            const caption = `📌 *Pinterest Profile Info*\n\n` +
-                `👤 Full Name: ${result.full_name || 'N/A'}\n` +
-                `🆔 Username: ${result.username || 'N/A'}\n` +
-                `📝 Bio: ${result.bio || 'N/A'}\n` +
-                `📌 Boards: ${result.stats?.boards || 0}\n` +
-                `👥 Followers: ${result.stats?.followers || 0}\n` +
-                `➡ Following: ${result.stats?.following || 0}\n` +
-                `❤️ Likes: ${result.stats?.likes || 0}\n` +
-                `📌 Pins: ${result.stats?.pins || 0}\n` +
-                `💾 Saves: ${result.stats?.saves || 0}\n` +
-                `🔗 Profile URL: ${result.profile_url || 'N/A'}\n` +
-                `🌐 Website: ${result.website || 'N/A'}`;
+            const na = t('p.pinstalk.na');
+            const caption = `📌 ${t('p.pinstalk.profileInfo', {
+                fullName: result.full_name || na,
+                username: result.username || na,
+                bio: result.bio || na,
+                boards: result.stats?.boards || 0,
+                followers: result.stats?.followers || 0,
+                following: result.stats?.following || 0,
+                likes: result.stats?.likes || 0,
+                pins: result.stats?.pins || 0,
+                saves: result.stats?.saves || 0,
+                profileUrl: result.profile_url || na,
+                website: result.website || na
+            })}`;
             if (profileImage) {
                 await sock.sendMessage(chatId, { image: { url: profileImage }, caption }, { quoted: message });
             }
@@ -43,7 +46,7 @@ export default {
         }
         catch (err) {
             console.error('Pinterest plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch Pinterest profile.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.pinstalk.fetchFailed')}` }, { quoted: message });
         }
     }
 };

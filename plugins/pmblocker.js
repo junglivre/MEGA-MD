@@ -69,28 +69,21 @@ export default {
     ownerOnly: true,
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const state = await readState();
         const sub = args[0]?.toLowerCase();
         const rest = args.slice(1);
+        const storageLabel = HAS_DB ? t('p.pmblocker.storageDb') : t('p.pmblocker.storageFile');
+        const statusLabel = state.enabled ? t('p.pmblocker.statusEnabled') : t('p.pmblocker.statusDisabled');
         if (!sub || !['on', 'off', 'status', 'setmsg'].includes(sub)) {
             await sock.sendMessage(chatId, {
-                text: `📵 *PM BLOCKER*\n\n` +
-                    `*Storage:* ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                    `*Commands:*\n` +
-                    `• \`.pmblocker on\` - Enable DM blocking\n` +
-                    `• \`.pmblocker off\` - Disable DM blocking\n` +
-                    `• \`.pmblocker status\` - Current status\n` +
-                    `• \`.pmblocker setmsg <text>\` - Set warning message\n\n` +
-                    `*Current Status:* ${state.enabled ? '✅ ENABLED' : '❌ DISABLED'}`
+                text: `📵 ${t('p.pmblocker.menu', { storage: storageLabel, status: statusLabel })}`
             }, { quoted: message });
             return;
         }
         if (sub === 'status') {
             await sock.sendMessage(chatId, {
-                text: `📵 *PM BLOCKER STATUS*\n\n` +
-                    `*Status:* ${state.enabled ? '✅ ENABLED' : '❌ DISABLED'}\n` +
-                    `*Storage:* ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                    `*Warning Message:*\n${state.message}`
+                text: `📵 ${t('p.pmblocker.statusMenu', { status: statusLabel, storage: storageLabel, message: state.message })}`
             }, { quoted: message });
             return;
         }
@@ -98,21 +91,23 @@ export default {
             const newMsg = rest.join(' ').trim();
             if (!newMsg) {
                 await sock.sendMessage(chatId, {
-                    text: '*Please provide a message*\n\nUsage: `.pmblocker setmsg <your message>`'
+                    text: t('p.pmblocker.setmsgMissing')
                 }, { quoted: message });
                 return;
             }
             await writeState(state.enabled, newMsg);
             await sock.sendMessage(chatId, {
-                text: `✅ *PM blocker message updated!*\n\n*New message:*\n${newMsg}`
+                text: `✅ ${t('p.pmblocker.setmsgUpdated', { message: newMsg })}`
             }, { quoted: message });
             return;
         }
         const enable = sub === 'on';
         await writeState(enable, undefined);
         await sock.sendMessage(chatId, {
-            text: `📵 *PM Blocker ${enable ? 'ENABLED' : 'DISABLED'}*\n\n` +
-                `${enable ? '✅ Users who DM the bot will be warned and blocked.' : '❌ Private messages are now allowed.'}`
+            text: `📵 ${t('p.pmblocker.toggled', {
+                statusWord: enable ? t('p.pmblocker.enabledWord') : t('p.pmblocker.disabledWord'),
+                subtext: enable ? t('p.pmblocker.enabledSubtext') : t('p.pmblocker.disabledSubtext')
+            })}`
         }, { quoted: message });
     },
     readState,

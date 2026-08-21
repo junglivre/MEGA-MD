@@ -25,10 +25,10 @@ export default {
     usage: '.autoreact on/off',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         if (!args[0] || !['on', 'off'].includes(args[0])) {
             await sock.sendMessage(chatId, {
-                text: '*Usage:*\n.autoreact on/off',
+                text: `*${t('p.autoreact.usageLabel')}:*\n.autoreact on/off`,
                 ...channelInfo
             }, { quoted: message });
             return;
@@ -36,7 +36,7 @@ export default {
         AUTO_REACT_MESSAGES = args[0] === 'on';
         await store.saveSetting('global', 'autoReaction', { enabled: AUTO_REACT_MESSAGES });
         await sock.sendMessage(chatId, {
-            text: AUTO_REACT_MESSAGES ? '*✅ Auto-react enabled*' : '*❌ Auto-react disabled*',
+            text: AUTO_REACT_MESSAGES ? `*✅ ${t('p.autoreact.enabled')}*` : `*❌ ${t('p.autoreact.disabled')}*`,
             ...channelInfo
         }, { quoted: message });
         if (sock.__autoReactAttached)

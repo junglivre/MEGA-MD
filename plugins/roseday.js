@@ -6,6 +6,7 @@ export default {
     usage: '.roseday',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const res = await fetch(`https://api.princetechn.com/api/fun/roseday?apikey=prince`);
             if (!res.ok) {
@@ -17,7 +18,7 @@ export default {
         }
         catch (error) {
             console.error('RoseDay Command Error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to get Rose Day quote. Please try again later!' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.roseday.failed')}` }, { quoted: message });
         }
     }
 };

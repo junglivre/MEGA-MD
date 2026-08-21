@@ -119,23 +119,27 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const channelInfo = context.channelInfo || {};
+        const t = context.t;
         try {
             const config = await initConfig();
             const action = args[0]?.toLowerCase();
             if (!action) {
                 const ghostMode = await store.getSetting('global', 'stealthMode');
                 const ghostActive = ghostMode && ghostMode.enabled;
+                const status = config.enabled ? `✅ ${t('p.autoread.enabledLabel')}` : `❌ ${t('p.autoread.disabledLabel')}`;
+                const stealth = ghostActive ? `👻 ${t('p.autoread.stealthActive')}` : `❌ ${t('p.autoread.stealthInactive')}`;
+                const storage = HAS_DB ? t('p.autoread.storageDb') : t('p.autoread.storageFs');
                 await sock.sendMessage(chatId, {
-                    text: `*📖 AUTOREAD STATUS*\n\n` +
-                        `*Current Status:* ${config.enabled ? '✅ Enabled' : '❌ Disabled'}\n` +
-                        `*Stealth Mode:* ${ghostActive ? '👻 Active (overrides autoread)' : '❌ Inactive'}\n` +
-                        `*Storage:* ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                        `*Commands:*\n` +
-                        `• \`.autoread on\` - Enable auto-read\n` +
-                        `• \`.autoread off\` - Disable auto-read\n\n` +
-                        `*What it does:*\n` +
-                        `When enabled, the bot automatically marks all messages as read (blue ticks).\n\n` +
-                        `*Note:* Ghost mode takes priority over autoread. If ghost mode is active, no read receipts will be sent.`,
+                    text: `*📖 ${t('p.autoread.statusTitle')}*\n\n` +
+                        `*${t('p.autoread.currentStatus')}:* ${status}\n` +
+                        `*${t('p.autoread.stealthMode')}:* ${stealth}\n` +
+                        `*${t('p.autoread.storage')}:* ${storage}\n\n` +
+                        `*${t('p.autoread.commands')}:*\n` +
+                        `• \`.autoread on\` - ${t('p.autoread.cmdOn')}\n` +
+                        `• \`.autoread off\` - ${t('p.autoread.cmdOff')}\n\n` +
+                        `*${t('p.autoread.whatItDoes')}:*\n` +
+                        `${t('p.autoread.whatItDoesDesc')}\n\n` +
+                        `*${t('p.autoread.note')}:* ${t('p.autoread.ghostNote')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -143,7 +147,7 @@ export default {
             if (action === 'on' || action === 'enable') {
                 if (config.enabled) {
                     await sock.sendMessage(chatId, {
-                        text: '⚠️ *Autoread is already enabled*',
+                        text: `⚠️ *${t('p.autoread.alreadyEnabled')}*`,
                         ...channelInfo
                     }, { quoted: message });
                     return;
@@ -153,14 +157,14 @@ export default {
                 const ghostMode = await store.getSetting('global', 'stealthMode');
                 const ghostActive = ghostMode && ghostMode.enabled;
                 await sock.sendMessage(chatId, {
-                    text: `✅ *Auto-read enabled!*\n\nAll messages will now be automatically marked as read.${ghostActive ? '\n\n⚠️ *Note:* Ghost mode is currently active and will override autoread.' : ''}`,
+                    text: `✅ *${t('p.autoread.enabledMsg')}*${ghostActive ? `\n\n⚠️ *${t('p.autoread.note')}:* ${t('p.autoread.ghostOverrideNote')}` : ''}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             else if (action === 'off' || action === 'disable') {
                 if (!config.enabled) {
                     await sock.sendMessage(chatId, {
-                        text: '⚠️ *Autoread is already disabled*',
+                        text: `⚠️ *${t('p.autoread.alreadyDisabled')}*`,
                         ...channelInfo
                     }, { quoted: message });
                     return;
@@ -168,13 +172,13 @@ export default {
                 config.enabled = false;
                 await saveConfig(config);
                 await sock.sendMessage(chatId, {
-                    text: '❌ *Auto-read disabled!*\n\nMessages will no longer be automatically marked as read.',
+                    text: `❌ *${t('p.autoread.disabledMsg')}*`,
                     ...channelInfo
                 }, { quoted: message });
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: '❌ *Invalid option!*\n\nUse: `.autoread on/off`',
+                    text: `❌ *${t('p.autoread.invalidOption')}*`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -182,7 +186,7 @@ export default {
         catch (error) {
             console.error('Error in autoread command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ *Error processing command!*',
+                text: `❌ *${t('p.autoread.genericError')}*`,
                 ...channelInfo
             }, { quoted: message });
         }

@@ -31,9 +31,10 @@ export default {
     usage: '.song <song name | youtube link>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const query = args.join(' ').trim();
         if (!query)
-            return sock.sendMessage(chatId, { text: '🎵 *Song Downloader*\n\nUsage:\n.song <song name | YouTube link>' }, { quoted: message });
+            return sock.sendMessage(chatId, { text: `🎵 *${t('p.song.title')}*\n\n${t('p.song.usageLabel')}:\n.song <song name | YouTube link>` }, { quoted: message });
         try {
             let video;
             if (query.includes('youtube.com') || query.includes('youtu.be')) {
@@ -42,13 +43,13 @@ export default {
             else {
                 const { videos } = await yts(query);
                 if (!videos?.length)
-                    return sock.sendMessage(chatId, { text: '❌ No results found.' }, { quoted: message });
+                    return sock.sendMessage(chatId, { text: `❌ ${t('p.song.noResults')}` }, { quoted: message });
                 video = videos[0];
             }
             if (video.thumbnail) {
                 await sock.sendMessage(chatId, {
                     image: { url: video.thumbnail },
-                    caption: `🎶 *${video.title || query}*\n⏱ ${video.timestamp || ''}\n\n⏳ Downloading... *(may take up to 30s)*`
+                    caption: `🎶 *${video.title || query}*\n⏱ ${video.timestamp || ''}\n\n⏳ ${t('p.song.downloading')}`
                 }, { quoted: message });
             }
             const audio = await downloadWithRetry(video.url);
@@ -62,9 +63,9 @@ export default {
         catch (err) {
             console.error('Song plugin error:', err.message);
             const reason = err.response?.status === 408
-                ? 'Download timed out. Try again.'
+                ? t('p.song.timeoutReason')
                 : err.message;
-            await sock.sendMessage(chatId, { text: `❌ Failed: ${reason}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.song.failed')}: ${reason}` }, { quoted: message });
         }
     }
 };

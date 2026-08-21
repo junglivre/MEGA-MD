@@ -6,13 +6,14 @@ export default {
     description: 'Show detailed git repository information',
     usage: '.gitinfo',
     ownerOnly: true,
-    async handler(sock, message) {
+    async handler(sock, message, args, context) {
         const chatId = message.key.remoteJid;
+        const { t } = context;
         const git = simpleGit();
         try {
             const isRepo = await git.checkIsRepo();
             if (!isRepo) {
-                return sock.sendMessage(chatId, { text: '❌ This project is not a git repository.' });
+                return sock.sendMessage(chatId, { text: `❌ ${t('p.gitinfo.notRepo')}` });
             }
             const status = await git.status();
             const branch = status.current || 'unknown';
@@ -24,20 +25,22 @@ export default {
             const remotes = await git.getRemotes(true);
             const remoteText = remotes.length
                 ? remotes.map((r) => `• ${r.name}: ${r.refs.fetch}`).join('\n')
-                : 'None';
-            const warning = dirty ? '⚠️ Warning: Working tree has uncommitted changes!' : '';
-            const text = `📦 *Git Repository Info*\n\n` +
-                `🌿 Branch: ${branch}\n` +
-                `🔖 Commit: ${commitHash}\n` +
-                `🧼 Working tree: ${dirty ? 'Dirty' : 'Clean'}\n` +
-                `${dirty ? `${warning }\n\n` : ''}` +
-                `📊 Ahead: ${ahead}, Behind: ${behind}\n` +
-                `📁 Modified/Untracked files: ${modifiedCount}\n\n` +
-                `🔗 Remotes:\n${remoteText}`;
+                : t('p.gitinfo.noRemotes');
+            const warning = dirty ? t('p.gitinfo.warning') : '';
+            const text = t('p.gitinfo.info', {
+                branch,
+                commit: commitHash,
+                treeStatus: dirty ? t('p.gitinfo.dirty') : t('p.gitinfo.clean'),
+                warningBlock: dirty ? `${warning}\n\n` : '',
+                ahead,
+                behind,
+                modified: modifiedCount,
+                remotes: remoteText
+            });
             await sock.sendMessage(chatId, { text });
         }
         catch (err) {
-            await sock.sendMessage(chatId, { text: `❌ Git error: ${err.message}` });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.gitinfo.error', { message: err.message })}` });
         }
     }
 };

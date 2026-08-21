@@ -7,23 +7,23 @@ export default {
     description: 'Search movie info, ratings, cast, plot',
     usage: '.movie <movie name>\n.movie Pathaan\n.movie Jawan 2023',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const input = args.join(' ').trim();
         if (!input) {
             return await sock.sendMessage(chatId, {
-                text: `🎬 *Movie Info*\n\n` +
-                    `*Usage:* \`.movie <name>\`\n\n` +
-                    `*Examples:*\n` +
+                text: `🎬 *${t('p.movie.title')}*\n\n` +
+                    `*${t('p.movie.usageLabel')}:* \`.movie <name>\`\n\n` +
+                    `*${t('p.movie.examplesLabel')}:*\n` +
                     `• \`.movie Pathaan\`\n` +
                     `• \`.movie Jawan 2023\`\n` +
                     `• \`.movie Avengers Endgame\`\n` +
                     `• \`.movie RRR\`\n` +
                     `• \`.movie Black Panther\`\n\n` +
-                    `Works for Bollywood, Hollywood, and all languages!`,
+                    `${t('p.movie.worksNote')}`,
                 ...channelInfo
             }, { quoted: message });
         }
-        await sock.sendMessage(chatId, { text: `🔍 Searching *${input}*...`, ...channelInfo }, { quoted: message });
+        await sock.sendMessage(chatId, { text: `🔍 ${t('p.movie.searching', { input })}`, ...channelInfo }, { quoted: message });
         try {
             // Try exact title first, then search
             const year = input.match(/\b(19|20)\d{2}\b/)?.[0];
@@ -45,7 +45,7 @@ export default {
             }
             if (data.Response === 'False') {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ Movie not found: *${input}*`,
+                    text: `❌ ${t('p.movie.notFound', { input })}`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -54,22 +54,22 @@ export default {
                 ? `${'⭐'.repeat(Math.round(parseFloat(data.imdbRating) / 2)) } (${data.imdbRating}/10)`
                 : 'N/A';
             const text = `🎬 *${data.Title}* (${data.Year})\n\n` +
-                `🎭 *Genre:* ${data.Genre}\n` +
-                `🌍 *Language:* ${data.Language}\n` +
-                `🎬 *Director:* ${data.Director}\n` +
-                `🎭 *Cast:* ${data.Actors}\n` +
-                `⏱️ *Runtime:* ${data.Runtime}\n` +
-                `🏆 *Awards:* ${data.Awards}\n\n` +
+                `🎭 *${t('p.movie.genreLabel')}:* ${data.Genre}\n` +
+                `🌍 *${t('p.movie.languageLabel')}:* ${data.Language}\n` +
+                `🎬 *${t('p.movie.directorLabel')}:* ${data.Director}\n` +
+                `🎭 *${t('p.movie.castLabel')}:* ${data.Actors}\n` +
+                `⏱️ *${t('p.movie.runtimeLabel')}:* ${data.Runtime}\n` +
+                `🏆 *${t('p.movie.awardsLabel')}:* ${data.Awards}\n\n` +
                 `${imdbStars}\n` +
                 `${ratings}\n\n` +
-                `📝 *Plot:*\n${data.Plot}\n\n${ 
-                data.BoxOffice && data.BoxOffice !== 'N/A' ? `💰 *Box Office:* ${data.BoxOffice}\n` : '' 
+                `📝 *${t('p.movie.plotLabel')}:*\n${data.Plot}\n\n${
+                data.BoxOffice && data.BoxOffice !== 'N/A' ? `💰 *${t('p.movie.boxOfficeLabel')}:* ${data.BoxOffice}\n` : ''
                 }🔗 imdb.com/title/${data.imdbID}`;
             await sock.sendMessage(chatId, { text, ...channelInfo }, { quoted: message });
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ Failed: ${error.message}`,
+                text: `❌ ${t('p.movie.failed', { message: error.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

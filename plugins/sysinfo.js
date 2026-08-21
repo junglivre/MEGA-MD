@@ -10,7 +10,7 @@ export default {
     usage: '.sysinfo',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         try {
             // Memory via os module (works everywhere, no free command needed)
             const totalMem = os.totalmem();
@@ -54,28 +54,28 @@ export default {
             const nodeVer = process.version;
             const hostname = os.hostname();
             const text = `╔══════════════════════════════╗
-║     🖥️  *SERVER STATS*        ║
+║     🖥️  *${t('p.sysinfo.title')}*        ║
 ╚══════════════════════════════╝
 
-🏠 *Host:* ${hostname}
-🐧 *OS:* ${platform} (${arch})
-⏱️ *Uptime:* ${uptimeOut}
-🟢 *Node.js:* ${nodeVer}
+🏠 *${t('p.sysinfo.host')}:* ${hostname}
+🐧 *${t('p.sysinfo.os')}:* ${platform} (${arch})
+⏱️ *${t('p.sysinfo.uptime')}:* ${uptimeOut}
+🟢 *${t('p.sysinfo.node')}:* ${nodeVer}
 
-━━━━━━ 🧠 CPU ━━━━━━
-🔧 *Model:* ${cpuModel}
-⚙️ *Cores:* ${cpuCores}
-📊 *Load Avg:* ${loadAvg}
+━━━━━━ 🧠 ${t('p.sysinfo.cpuSection')} ━━━━━━
+🔧 *${t('p.sysinfo.model')}:* ${cpuModel}
+⚙️ *${t('p.sysinfo.cores')}:* ${cpuCores}
+📊 *${t('p.sysinfo.loadAvg')}:* ${loadAvg}
 
-━━━━━━ 💾 Memory ━━━━━━
-📦 *Total:* ${memTotal}
-🔴 *Used:* ${memUsed}
-🟢 *Free:* ${memFree}
+━━━━━━ 💾 ${t('p.sysinfo.memorySection')} ━━━━━━
+📦 *${t('p.sysinfo.total')}:* ${memTotal}
+🔴 *${t('p.sysinfo.used')}:* ${memUsed}
+🟢 *${t('p.sysinfo.free')}:* ${memFree}
 
-━━━━━━ 💿 Disk (/) ━━━━━━
-📦 *Total:* ${diskTotal}
-🔴 *Used:* ${diskUsed} (${diskPct})
-🟢 *Free:* ${diskFree}`;
+━━━━━━ 💿 ${t('p.sysinfo.diskSection')} ━━━━━━
+📦 *${t('p.sysinfo.total')}:* ${diskTotal}
+🔴 *${t('p.sysinfo.used')}:* ${diskUsed} (${diskPct})
+🟢 *${t('p.sysinfo.free')}:* ${diskFree}`;
             await sock.sendMessage(chatId, {
                 text,
                 ...channelInfo
@@ -83,7 +83,7 @@ export default {
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ Failed to get system info: ${error.message}`,
+                text: `❌ ${t('p.sysinfo.failed', { error: error.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

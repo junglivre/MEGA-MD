@@ -6,6 +6,7 @@ export default {
     usage: '.channelid <url>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const t = context.t;
         let url = args[0] || "";
         const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         if (quoted) {
@@ -13,21 +14,21 @@ export default {
         }
         if (!url || !url.includes('whatsapp.com/channel/')) {
             return await sock.sendMessage(chatId, {
-                text: 'Please provide a valid WhatsApp Channel URL.\n\n*Example:* .channelid https://whatsapp.com/channel/xxxxx'
+                text: `${t('p.channelid.invalidUrl')}\n\n*${t('p.channelid.exampleLabel')}:* .channelid https://whatsapp.com/channel/xxxxx`
             }, { quoted: message });
         }
         const code = url.split('/').pop();
         try {
             const metadata = await sock.newsletterMetadata("invite", code);
             const response = `
-🆔 *JID:* ${metadata.id}
+🆔 *${t('p.channelid.jidLabel')}:* ${metadata.id}
       `.trim();
             await sock.sendMessage(chatId, { text: response }, { quoted: message });
         }
         catch (err) {
             console.error('Channel ID Error:', err);
             await sock.sendMessage(chatId, {
-                text: '❌ *Failed to resolve:* This channel might be private, deleted, or the link is invalid.'
+                text: `❌ *${t('p.channelid.failedLabel')}:* ${t('p.channelid.failedDesc')}`
             }, { quoted: message });
         }
     }

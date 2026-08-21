@@ -220,13 +220,13 @@ export default {
     description: 'Convert Instagram post/reel to sticker',
     usage: '.igs <instagram URL>',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         try {
             const text = message.message?.conversation || message.message?.extendedTextMessage?.text || '';
             const urlMatch = text.match(/https?:\/\/\S+/);
             if (!urlMatch) {
                 await sock.sendMessage(chatId, {
-                    text: `Send an Instagram post/reel link.\nUsage: .igs <url>`,
+                    text: t('p.igs.usage'),
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -235,7 +235,7 @@ export default {
             const downloadData = await igdl(urlMatch[0]).catch(() => null);
             if (!downloadData || !downloadData.data) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Failed to fetch media from Instagram link.',
+                    text: `❌ ${t('p.igs.fetchFailed')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -251,7 +251,7 @@ export default {
             }
             if (items.length === 0) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ No media found at the provided link.',
+                    text: `❌ ${t('p.igs.noMedia')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -289,7 +289,7 @@ export default {
         catch (err) {
             console.error('Error in igs command:', err);
             await sock.sendMessage(chatId, {
-                text: 'Failed to create sticker from Instagram link.',
+                text: t('p.igs.createFailed'),
                 ...channelInfo
             }, { quoted: message });
         }

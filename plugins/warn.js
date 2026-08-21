@@ -49,7 +49,7 @@ export default {
     groupOnly: true,
     adminOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, senderId, channelInfo } = context;
+        const { chatId, senderId, channelInfo, t } = context;
         try {
             initializeWarningsFile();
             let userToWarn;
@@ -62,7 +62,7 @@ export default {
             }
             if (!userToWarn) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ Error: Please mention the user or reply to their message to warn!',
+                    text: `❌ ${t('p.warn.noTarget')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -76,12 +76,13 @@ export default {
                     warnings[chatId][userToWarn] = 0;
                 warnings[chatId][userToWarn]++;
                 await saveWarnings(warnings);
-                const warningMessage = `*『 WARNING ALERT 』*\n\n` +
-                    `👤 *Warned User:* @${userToWarn.split('@')[0]}\n` +
-                    `⚠️ *Warning Count:* ${warnings[chatId][userToWarn]}/3\n` +
-                    `👑 *Warned By:* @${senderId.split('@')[0]}\n` +
-                    `🗄️ *Storage:* ${HAS_DB ? 'Database' : 'File System'}\n\n` +
-                    `📅 *Date:* ${new Date().toLocaleString()}`;
+                const storage = HAS_DB ? t('p.warn.storageDb') : t('p.warn.storageFile');
+                const warningMessage = `*『 ${t('p.warn.alertTitle')} 』*\n\n` +
+                    `👤 *${t('p.warn.warnedUser')}:* @${userToWarn.split('@')[0]}\n` +
+                    `⚠️ *${t('p.warn.warningCount')}:* ${warnings[chatId][userToWarn]}/3\n` +
+                    `👑 *${t('p.warn.warnedBy')}:* @${senderId.split('@')[0]}\n` +
+                    `🗄️ *${t('p.warn.storage')}:* ${storage}\n\n` +
+                    `📅 *${t('p.warn.date')}:* ${new Date().toLocaleString()}`;
                 await sock.sendMessage(chatId, {
                     text: warningMessage,
                     mentions: [userToWarn, senderId],
@@ -92,8 +93,8 @@ export default {
                     await sock.groupParticipantsUpdate(chatId, [userToWarn], "remove");
                     delete warnings[chatId][userToWarn];
                     await saveWarnings(warnings);
-                    const kickMessage = `*『 AUTO-KICK 』*\n\n` +
-                        `@${userToWarn.split('@')[0]} has been removed from the group after receiving 3 warnings! ⚠️`;
+                    const kickMessage = `*『 ${t('p.warn.autoKickTitle')} 』*\n\n` +
+                        `@${userToWarn.split('@')[0]} ${t('p.warn.autoKickMessage')} ⚠️`;
                     await sock.sendMessage(chatId, {
                         text: kickMessage,
                         mentions: [userToWarn],
@@ -104,7 +105,7 @@ export default {
             catch (error) {
                 console.error('Error in warn command:', error);
                 await sock.sendMessage(chatId, {
-                    text: '❌ Failed to warn user!',
+                    text: `❌ ${t('p.warn.failedGeneric')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -115,7 +116,7 @@ export default {
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 try {
                     await sock.sendMessage(chatId, {
-                        text: '❌ Rate limit reached. Please try again in a few seconds.',
+                        text: `❌ ${t('p.warn.rateLimited')}`,
                         ...channelInfo
                     }, { quoted: message });
                 }
@@ -126,7 +127,7 @@ export default {
             else {
                 try {
                     await sock.sendMessage(chatId, {
-                        text: '❌ Failed to warn user. Make sure the bot is admin and has sufficient permissions.',
+                        text: `❌ ${t('p.warn.failedPermissions')}`,
                         ...channelInfo
                     }, { quoted: message });
                 }

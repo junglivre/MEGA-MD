@@ -7,11 +7,12 @@ export default {
     groupOnly: true,
     adminOnly: true,
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         const isBotAdmin = context.isBotAdmin;
         if (!isBotAdmin) {
             await sock.sendMessage(chatId, {
-                text: '❌ *Please make the bot an admin first*'
+                text: `❌ *${t('p.kick.botNotAdmin')}*`
             }, { quoted: message });
             return;
         }
@@ -25,7 +26,7 @@ export default {
         }
         if (usersToKick.length === 0) {
             await sock.sendMessage(chatId, {
-                text: '❌ *Please mention a user or reply to their message*\n\nUsage: `.kick @user` or reply with `.kick`'
+                text: `❌ *${t('p.kick.noTarget')}*\n\n${t('p.kick.usage')}`
             }, { quoted: message });
             return;
         }
@@ -77,7 +78,7 @@ export default {
         });
         if (isTryingToKickBot) {
             await sock.sendMessage(chatId, {
-                text: "❌ *I can't kick myself* 🤖"
+                text: `❌ *${t('p.kick.cantKickSelf')}* 🤖`
             }, { quoted: message });
             return;
         }
@@ -86,15 +87,16 @@ export default {
             const usernames = await Promise.all(usersToKick.map(async (jid) => {
                 return `@${jid.split('@')[0]}`;
             }));
+            const title = usersToKick.length > 1 ? t('p.kick.usersRemoved') : t('p.kick.userRemoved');
             await sock.sendMessage(chatId, {
-                text: `🚫 *User${usersToKick.length > 1 ? 's' : ''} Removed*\n\n${usernames.join(', ')} has been kicked from the group!`,
+                text: `🚫 *${title}*\n\n${t('p.kick.kickedFromGroup', { users: usernames.join(', ') })}`,
                 mentions: usersToKick
             }, { quoted: message });
         }
         catch (error) {
             console.error('Error in kick command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ *Failed to kick user(s)*\n\nMake sure the bot has sufficient permissions.'
+                text: `❌ *${t('p.kick.failed')}*\n\n${t('p.kick.permissionsHint')}`
             }, { quoted: message });
         }
     }

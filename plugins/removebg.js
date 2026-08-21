@@ -20,19 +20,18 @@ export default {
     usage: '.removebg (reply to image or send image with caption)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const imageBuffer = await getImageBuffer(message);
             if (!imageBuffer) {
                 return await sock.sendMessage(chatId, {
-                    text: '📸 *Remove Background*\n\nUsage:\n' +
-                        '• Reply to an image with `.removebg`\n' +
-                        '• Send image with caption `.removebg`'
+                    text: `📸 *${t('p.removebg.title')}*\n\n${t('p.removebg.usage')}`
                 }, { quoted: message });
             }
             const apiKey = process.env.REMOVEBG_KEY;
             if (!apiKey) {
                 return await sock.sendMessage(chatId, {
-                    text: '❌ RemoveBG API key not configured.'
+                    text: `❌ ${t('p.removebg.noApiKey')}`
                 }, { quoted: message });
             }
             const form = new FormData();
@@ -48,18 +47,18 @@ export default {
             });
             await sock.sendMessage(chatId, {
                 image: response.data,
-                caption: '✨ *Background removed successfully*\n\n𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 𝗠𝗘𝗚𝗔-𝗠𝗗'
+                caption: `✨ *${t('p.removebg.success')}*\n\n𝗣𝗢𝗪𝗘𝗥𝗘𝗗 𝗕𝗬 𝗠𝗘𝗚𝗔-𝗠𝗗`
             }, { quoted: message });
         }
         catch (err) {
             console.error('RemoveBG Error:', err?.response?.data || err.message);
-            let msg = '❌ Failed to remove background.';
+            let msg = `❌ ${t('p.removebg.failed')}`;
             if (err.response?.status === 402)
-                msg = '💳 API quota exceeded.';
+                msg = `💳 ${t('p.removebg.quotaExceeded')}`;
             else if (err.response?.status === 401)
-                msg = '🔑 Invalid API key.';
+                msg = `🔑 ${t('p.removebg.invalidApiKey')}`;
             else if (err.code === 'ECONNABORTED')
-                msg = '⏰ Request timeout. Try again.';
+                msg = `⏰ ${t('p.removebg.timeout')}`;
             await sock.sendMessage(chatId, { text: msg }, { quoted: message });
         }
     }

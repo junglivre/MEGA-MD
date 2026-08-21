@@ -7,24 +7,24 @@ export default {
     description: 'Get session id for MEGA-MD',
     usage: '.pair 92305395XXXX',
     async handler(sock, message, args, context) {
-        const { chatId } = context;
+        const { chatId, t } = context;
         const forwardInfo = channelInfo.contextInfo;
         const query = args.join('').trim();
         if (!query) {
             return await sock.sendMessage(chatId, {
-                text: "❌ *Missing Number*\nExample: .pair 92305395XXXX",
+                text: `❌ ${t('p.pair.missingNumber')}`,
                 contextInfo: forwardInfo
             }, { quoted: message });
         }
         const number = query.replace(/[^0-9]/g, '');
         if (number.length < 10 || number.length > 15) {
             return await sock.sendMessage(chatId, {
-                text: "❌ *Invalid Format*\nPlease provide the number with country code but without + or spaces.",
+                text: `❌ ${t('p.pair.invalidFormat')}`,
                 contextInfo: forwardInfo
             }, { quoted: message });
         }
         await sock.sendMessage(chatId, {
-            text: "⚡ *Requesting code from server...*",
+            text: `⚡ ${t('p.pair.requesting')}`,
             contextInfo: forwardInfo
         }, { quoted: message });
         try {
@@ -36,14 +36,7 @@ export default {
                 if (pairingCode.includes("Unavailable") || pairingCode.includes("Error")) {
                     throw new Error("Server is busy");
                 }
-                const successText = `✅ *MEGA-MD PAIRING CODE*\n\n` +
-                    `Code: *${pairingCode}*\n\n` +
-                    `*How to use:*\n` +
-                    `1. Open WhatsApp Settings\n` +
-                    `2. Tap 'Linked Devices'\n` +
-                    `3. Tap 'Link a Device'\n` +
-                    `4. Select 'Link with phone number instead'\n` +
-                    `5. Enter the code above.`;
+                const successText = `✅ ${t('p.pair.success', { code: pairingCode })}`;
                 await sock.sendMessage(chatId, {
                     text: successText,
                     contextInfo: forwardInfo
@@ -55,18 +48,18 @@ export default {
         }
         catch (error) {
             console.error('Pairing Plugin Error:', error.message);
-            let errorMsg = "❌ *Pairing Failed*\nReason: ";
+            let errorKey;
             if (error.code === 'ECONNABORTED') {
-                errorMsg += "Server timeout. Please try again in 1 minute.";
+                errorKey = 'p.pair.failedTimeout';
             }
             else if (error.response?.status === 400) {
-                errorMsg += "Invalid phone number format.";
+                errorKey = 'p.pair.failedInvalid';
             }
             else {
-                errorMsg += "The server is currently offline or busy. Try again later.";
+                errorKey = 'p.pair.failedGeneric';
             }
             await sock.sendMessage(chatId, {
-                text: errorMsg,
+                text: `❌ ${t(errorKey)}`,
                 contextInfo: forwardInfo
             }, { quoted: message });
         }

@@ -7,11 +7,12 @@ export default {
     description: 'Search Wikipedia for a topic!',
     usage: '.wiki <query>',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         const query = args.join(' ').trim();
         if (!query) {
             return await sock.sendMessage(chatId, {
-                text: "*Enter what you want to search for on Wikipedia.*\nExample: .wiki Pakistan",
+                text: `*${t('p.wiki.noQuery')}*\nExample: .wiki Pakistan`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -26,13 +27,13 @@ export default {
             const data = res.data;
             if (data.extract) {
                 await sock.sendMessage(chatId, {
-                    text: `▢ *Wikipedia*\n\n‣ Search: ${data.title}\n\n${data.extract}\n\nRead more: ${data.content_urls.desktop.page}`,
+                    text: `▢ *${t('p.wiki.title')}*\n\n‣ ${t('p.wiki.searchLabel')}: ${data.title}\n\n${data.extract}\n\n${t('p.wiki.readMore')}: ${data.content_urls.desktop.page}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: "⚠️ No results found.",
+                    text: `⚠️ ${t('p.wiki.noResults')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -40,7 +41,7 @@ export default {
         catch (e) {
             console.error('Wikipedia plugin error:', e.message || e);
             await sock.sendMessage(chatId, {
-                text: "⚠️ No results found or Wikipedia blocked the request.",
+                text: `⚠️ ${t('p.wiki.blockedOrNoResults')}`,
                 ...channelInfo
             }, { quoted: message });
         }

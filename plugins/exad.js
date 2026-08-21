@@ -6,13 +6,14 @@ export default {
     usage: '.excard Title | Body | ImageURL',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const input = args.join(' ');
         if (!input.includes('|')) {
             return await sock.sendMessage(chatId, {
-                text: '*Usage:* .excard Title | Body | ImageURL\n\n*Example:* .excard Google | Search anything | https://google.com/logo.png'
+                text: t('p.excard.usage')
             }, { quoted: message });
         }
-        const [title, body, url] = input.split('|').map((t) => t.trim());
+        const [title, body, url] = input.split('|').map((s) => s.trim());
         const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
         const _hasQuotedImage = quoted?.imageMessage;
         await sock.sendMessage(chatId, {
@@ -20,7 +21,7 @@ export default {
             contextInfo: {
                 externalAdReply: {
                     title,
-                    body: 'Shared via Mega Md',
+                    body: t('p.excard.sharedVia'),
                     thumbnailUrl: url || 'https://i.ibb.co/3S6f0mS/default.jpg',
                     mediaType: 1,
                     renderLargerThumbnail: true,

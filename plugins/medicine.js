@@ -6,29 +6,29 @@ export default {
     description: 'Get medicine/drug info: uses, side effects, warnings',
     usage: '.medicine aspirin\n.medicine paracetamol',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const query = args.join(' ').trim();
         if (!query) {
             return await sock.sendMessage(chatId, {
-                text: `💊 *Medicine Info*\n\n` +
-                    `*Usage:* \`.medicine <name>\`\n\n` +
-                    `*Examples:*\n` +
+                text: `💊 *${t('p.medicine.title')}*\n\n` +
+                    `*${t('p.medicine.usageLabel')}:* \`.medicine <name>\`\n\n` +
+                    `*${t('p.medicine.examplesLabel')}:*\n` +
                     `• \`.medicine aspirin\`\n` +
                     `• \`.medicine paracetamol\`\n` +
                     `• \`.medicine amoxicillin\`\n` +
                     `• \`.medicine ibuprofen\`\n` +
                     `• \`.medicine metformin\`\n\n` +
-                    `⚠️ _Information is from FDA database. Always consult a doctor._`,
+                    `⚠️ _${t('p.medicine.disclaimer')}_`,
                 ...channelInfo
             }, { quoted: message });
         }
-        await sock.sendMessage(chatId, { text: `🔍 Looking up *${query}*...`, ...channelInfo }, { quoted: message });
+        await sock.sendMessage(chatId, { text: `🔍 ${t('p.medicine.lookingUp', { query })}`, ...channelInfo }, { quoted: message });
         try {
             const res = await axios.get(`https://api.fda.gov/drug/label.json?search=${encodeURIComponent(query)}&limit=1`, { timeout: 15000 });
             const result = res.data.results?.[0];
             if (!result) {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ No information found for: *${query}*\n\nTry the generic name (e.g. paracetamol instead of Panadol)`,
+                    text: `❌ ${t('p.medicine.notFound', { query })}\n\n${t('p.medicine.tryGeneric')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -56,33 +56,33 @@ export default {
                 text += `_(${genericName})_\n`;
             text += `\n`;
             if (substanceName !== 'N/A')
-                text += `🧪 *Active Substance:* ${substanceName}\n`;
-            text += `🏭 *Manufacturer:* ${manufacturer}\n`;
-            text += `💉 *Route:* ${route}\n\n`;
+                text += `🧪 *${t('p.medicine.activeSubstanceLabel')}:* ${substanceName}\n`;
+            text += `🏭 *${t('p.medicine.manufacturerLabel')}:* ${manufacturer}\n`;
+            text += `💉 *${t('p.medicine.routeLabel')}:* ${route}\n\n`;
             if (purpose !== 'N/A')
-                text += `🎯 *Purpose:*\n${purpose}\n\n`;
+                text += `🎯 *${t('p.medicine.purposeLabel')}:*\n${purpose}\n\n`;
             if (indications !== 'N/A')
-                text += `✅ *Uses:*\n${indications}\n\n`;
+                text += `✅ *${t('p.medicine.usesLabel')}:*\n${indications}\n\n`;
             if (dosage !== 'N/A')
-                text += `📏 *Dosage:*\n${dosage}\n\n`;
+                text += `📏 *${t('p.medicine.dosageLabel')}:*\n${dosage}\n\n`;
             if (warnings !== 'N/A')
-                text += `⚠️ *Warnings:*\n${warnings}\n\n`;
+                text += `⚠️ *${t('p.medicine.warningsLabel')}:*\n${warnings}\n\n`;
             if (sideEffects !== 'N/A')
-                text += `🔴 *Side Effects:*\n${sideEffects}\n\n`;
+                text += `🔴 *${t('p.medicine.sideEffectsLabel')}:*\n${sideEffects}\n\n`;
             if (storage !== 'N/A')
-                text += `📦 *Storage:* ${storage}\n\n`;
-            text += `⚕️ _Always consult a qualified doctor before taking any medication._`;
+                text += `📦 *${t('p.medicine.storageLabel')}:* ${storage}\n\n`;
+            text += `⚕️ _${t('p.medicine.finalDisclaimer')}_`;
             await sock.sendMessage(chatId, { text, ...channelInfo }, { quoted: message });
         }
         catch (error) {
             if (error.response?.status === 404) {
                 return await sock.sendMessage(chatId, {
-                    text: `❌ Medicine not found: *${query}*\n\nTry using the generic/scientific name.`,
+                    text: `❌ ${t('p.medicine.medNotFound', { query })}\n\n${t('p.medicine.tryScientific')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             await sock.sendMessage(chatId, {
-                text: `❌ Failed: ${error.message}`,
+                text: `❌ ${t('p.medicine.failed', { message: error.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

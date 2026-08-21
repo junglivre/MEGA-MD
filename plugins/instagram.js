@@ -16,6 +16,7 @@ export default {
     description: 'Download Instagram posts, reels & videos',
     usage: '.ig <instagram link>',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         const text = args.join(' ') ||
             message.message?.conversation ||
@@ -26,22 +27,22 @@ export default {
             processedMessages.add(message.key.id);
             setTimeout(() => processedMessages.delete(message.key.id), 5 * 60 * 1000);
             if (!text) {
-                return await sock.sendMessage(chatId, { text: '📸 *Instagram Downloader*\n\nUsage:\n.ig <post | reel | video link>' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `📸 *${t('p.instagram.title')}*\n\n${t('p.instagram.usage')}` }, { quoted: message });
             }
             const igRegex = /https?:\/\/(www\.)?(instagram\.com|instagr\.am)\/(p|reel|tv)\//i;
             if (!igRegex.test(text)) {
-                return await sock.sendMessage(chatId, { text: '❌ Invalid Instagram link.\nPlease send a valid post, reel, or video URL.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.instagram.invalidLink')}` }, { quoted: message });
             }
             await sock.sendMessage(chatId, {
                 react: { text: '🔄', key: message.key }
             });
             const res = await igdl(text);
             if (!res?.data?.length) {
-                return await sock.sendMessage(chatId, { text: '❌ No media found.\nThe post may be private or unavailable.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.instagram.noMedia')}` }, { quoted: message });
             }
             const mediaList = extractUniqueMedia(res.data).slice(0, 20);
             if (!mediaList.length) {
-                return await sock.sendMessage(chatId, { text: '❌ No downloadable media found.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.instagram.noDownloadable')}` }, { quoted: message });
             }
             for (let i = 0; i < mediaList.length; i++) {
                 const media = mediaList[i];
@@ -54,13 +55,13 @@ export default {
                     await sock.sendMessage(chatId, {
                         video: { url },
                         mimetype: 'video/mp4',
-                        caption: '📥 *Downloaded by MEGA-MD*'
+                        caption: `📥 *${t('p.instagram.downloadedBy')}*`
                     }, { quoted: message });
                 }
                 else {
                     await sock.sendMessage(chatId, {
                         image: { url },
-                        caption: '📥 *Downloaded by MEGA-MD*'
+                        caption: `📥 *${t('p.instagram.downloadedBy')}*`
                     }, { quoted: message });
                 }
                 if (i < mediaList.length - 1) {
@@ -70,7 +71,7 @@ export default {
         }
         catch (err) {
             console.error('Instagram plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to download Instagram media. Please try again later.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.instagram.failed')}` }, { quoted: message });
         }
     }
 };

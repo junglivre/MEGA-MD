@@ -40,10 +40,11 @@ export default {
     usage: '.shazam (reply to audio or video)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const media = getAudioOrVideo(message);
             if (!media) {
-                return await sock.sendMessage(chatId, { text: '⚠️ *RESPOND TO AN AUDIO OR VIDEO*' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `⚠️ *${t('p.shazam.noMedia')}*` }, { quoted: message });
             }
             const buffer = await downloadMedia(media.msg, media.type);
             const tmpDir = path.join(process.cwd(), 'tmp');
@@ -59,19 +60,20 @@ export default {
             const music = res.metadata.music?.[0];
             if (!music)
                 throw new Error('No match found');
+            const notFound = t('p.shazam.notFound');
             const text = `
-𝚁𝙴𝚂𝚄𝙻𝚃
-• 📌 *TITLE*: ${music.title || 'NOT FOUND'}
-• 👨‍🎤 *ARTIST*: ${music.artists?.map((a) => a.name).join(', ') || 'NOT FOUND'}
-• 💾 *ALBUM*: ${music.album?.name || 'NOT FOUND'}
-• 🌐 *GENRE*: ${music.genres?.map((g) => g.name).join(', ') || 'NOT FOUND'}
-• 📆 *RELEASE DATE*: ${music.release_date || 'NOT FOUND'}
+${t('p.shazam.resultHeader')}
+• 📌 *${t('p.shazam.title')}*: ${music.title || notFound}
+• 👨‍🎤 *${t('p.shazam.artist')}*: ${music.artists?.map((a) => a.name).join(', ') || notFound}
+• 💾 *${t('p.shazam.album')}*: ${music.album?.name || notFound}
+• 🌐 *${t('p.shazam.genre')}*: ${music.genres?.map((g) => g.name).join(', ') || notFound}
+• 📆 *${t('p.shazam.releaseDate')}*: ${music.release_date || notFound}
 `.trim();
             await sock.sendMessage(chatId, { text }, { quoted: message });
         }
         catch (err) {
             console.error('[SHZ]', err);
-            await sock.sendMessage(chatId, { text: `❌ Error: ${err}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.shazam.errorLabel')}: ${err}` }, { quoted: message });
         }
     }
 };

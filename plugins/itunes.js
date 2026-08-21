@@ -5,11 +5,12 @@ export default {
     description: 'Get detailed information about a song from iTunes',
     usage: '.itunes <song name>',
     async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
         const text = args.join(' ').trim();
         if (!text) {
             await sock.sendMessage(chatId, {
-                text: '*Please provide a song name.*\nExample: `.itunes Blinding Lights`',
+                text: `*${t('p.itunes.noQuery')}*\nExample: \`.itunes Blinding Lights\``,
                 quoted: message
             });
             return;
@@ -20,15 +21,16 @@ export default {
             if (!res.ok)
                 throw new Error(`API request failed with status ${res.status}`);
             const json = await res.json();
+            const na = t('p.itunes.notAvailable');
             const songInfo = `
-🎵 *${json.name || 'N/A'}*
-👤 *Artist:* ${json.artist || 'N/A'}
-💿 *Album:* ${json.album || 'N/A'}
-📅 *Release Date:* ${json.release_date || 'N/A'}
-💰 *Price:* ${json.price || 'N/A'}
-⏱️ *Length:* ${json.length || 'N/A'}
-🎼 *Genre:* ${json.genre || 'N/A'}
-🔗 *URL:* ${json.url || 'N/A'}
+🎵 *${json.name || na}*
+👤 *${t('p.itunes.artist')}:* ${json.artist || na}
+💿 *${t('p.itunes.album')}:* ${json.album || na}
+📅 *${t('p.itunes.releaseDate')}:* ${json.release_date || na}
+💰 *${t('p.itunes.price')}:* ${json.price || na}
+⏱️ *${t('p.itunes.length')}:* ${json.length || na}
+🎼 *${t('p.itunes.genre')}:* ${json.genre || na}
+🔗 *URL:* ${json.url || na}
       `.trim();
             if (json.thumbnail) {
                 await sock.sendMessage(chatId, {
@@ -44,7 +46,7 @@ export default {
         catch (error) {
             console.error('iTunes Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ An error occurred while fetching the song info. Please try again later.',
+                text: `❌ ${t('p.itunes.error')}`,
                 quoted: message
             });
         }

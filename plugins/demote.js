@@ -49,9 +49,10 @@ export default {
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const isBotAdmin = context.isBotAdmin;
+        const { t } = context;
         if (!isBotAdmin) {
             await sock.sendMessage(chatId, {
-                text: '❌ *Please make the bot an admin first*'
+                text: `❌ *${t('p.demote.needAdmin')}*`
             }, { quoted: message });
             return;
         }
@@ -65,7 +66,7 @@ export default {
         }
         if (userToDemote.length === 0) {
             await sock.sendMessage(chatId, {
-                text: '❌ *Please mention a user or reply to their message*\n\nUsage: `.demote @user` or reply with `.demote`'
+                text: `❌ *${t('p.demote.noTarget')}*\n\n${t('p.demote.usage')}`
             }, { quoted: message });
             return;
         }
@@ -76,11 +77,12 @@ export default {
                 return `@${jid.split('@')[0]}`;
             }));
             await new Promise(resolve => setTimeout(resolve, 1000));
-            const demotionMessage = `*『 GROUP DEMOTION 』*\n\n` +
-                `👤 *Demoted User${userToDemote.length > 1 ? 's' : ''}:*\n` +
+            const demotedUserLabel = userToDemote.length > 1 ? t('p.demote.demotedUsers') : t('p.demote.demotedUser');
+            const demotionMessage = `*『 ${t('p.demote.title')} 』*\n\n` +
+                `👤 *${demotedUserLabel}:*\n` +
                 `${usernames.map(name => `• ${name}`).join('\n')}\n\n` +
-                `👑 *Demoted By:* @${message.key.participant ? message.key.participant.split('@')[0] : message.key.remoteJid.split('@')[0]}\n\n` +
-                `📅 *Date:* ${new Date().toLocaleString()}`;
+                `👑 *${t('p.demote.demotedBy')}:* @${message.key.participant ? message.key.participant.split('@')[0] : message.key.remoteJid.split('@')[0]}\n\n` +
+                `📅 *${t('p.demote.date')}:* ${new Date().toLocaleString()}`;
             await sock.sendMessage(chatId, {
                 text: demotionMessage,
                 mentions: [...userToDemote, message.key.participant || message.key.remoteJid]
@@ -92,7 +94,7 @@ export default {
                 await new Promise(resolve => setTimeout(resolve, 2000));
                 try {
                     await sock.sendMessage(chatId, {
-                        text: '❌ *Rate limit reached*\n\nPlease try again in a few seconds.'
+                        text: `❌ *${t('p.demote.rateLimitTitle')}*\n\n${t('p.demote.rateLimitBody')}`
                     }, { quoted: message });
                 }
                 catch (retryError) {
@@ -102,7 +104,7 @@ export default {
             else {
                 try {
                     await sock.sendMessage(chatId, {
-                        text: '❌ *Failed to demote user(s)*\n\nMake sure the bot has sufficient permissions.'
+                        text: `❌ *${t('p.demote.failedTitle')}*\n\n${t('p.demote.failedBody')}`
                     }, { quoted: message });
                 }
                 catch (sendError) {

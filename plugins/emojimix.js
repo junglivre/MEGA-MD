@@ -9,16 +9,17 @@ export default {
     usage: '.emojimix 😎+🥰',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             if (!args[0]) {
                 await sock.sendMessage(chatId, {
-                    text: '🎴 Example: .emojimix 😎+🥰'
+                    text: `🎴 ${t('p.emojimix.example')}`
                 }, { quoted: message });
                 return;
             }
             if (!args[0].includes('+')) {
                 await sock.sendMessage(chatId, {
-                    text: '✳️ Separate the emoji with a *+* sign\n\n📌 Example:\n.emojimix 😎+🥰'
+                    text: `✳️ ${t('p.emojimix.needPlus')}`
                 }, { quoted: message });
                 return;
             }
@@ -32,7 +33,7 @@ export default {
             const data = await response.json();
             if (!data.results || data.results.length === 0) {
                 await sock.sendMessage(chatId, {
-                    text: '❌ These emojis cannot be mixed! Try different ones.'
+                    text: `❌ ${t('p.emojimix.notFound')}`
                 }, { quoted: message });
                 return;
             }
@@ -80,8 +81,7 @@ export default {
         catch (error) {
             console.error('Error in emojimix command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to mix emojis!\n\n' +
-                    '📌 Example:\n.emojimix 😎+🥰'
+                text: `❌ ${t('p.emojimix.failed')}`
             }, { quoted: message });
         }
     }

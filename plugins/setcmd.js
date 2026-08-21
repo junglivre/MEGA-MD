@@ -64,35 +64,35 @@ export default {
     usage: '.setcmd <text>',
     ownerOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, senderId } = context;
+        const { chatId, senderId, t } = context;
         if (!message.message?.extendedTextMessage?.contextInfo?.quotedMessage) {
             return await sock.sendMessage(chatId, {
-                text: '✳️ Please reply to a sticker to set a command'
+                text: `✳️ ${t('p.setcmd.noQuoted')}`
             }, { quoted: message });
         }
         const quotedMsg = message.message.extendedTextMessage.contextInfo.quotedMessage;
         if (!quotedMsg.stickerMessage) {
             return await sock.sendMessage(chatId, {
-                text: '⚠️ Please reply to a sticker, not a regular message'
+                text: `⚠️ ${t('p.setcmd.notSticker')}`
             }, { quoted: message });
         }
         const fileSha256 = quotedMsg.stickerMessage.fileSha256;
         if (!fileSha256) {
             return await sock.sendMessage(chatId, {
-                text: '⚠️ File SHA256 not found'
+                text: `⚠️ ${t('p.setcmd.noSha256')}`
             }, { quoted: message });
         }
         const text = args.join(' ');
         if (!text) {
             return await sock.sendMessage(chatId, {
-                text: 'Command text is missing'
+                text: t('p.setcmd.noText')
             }, { quoted: message });
         }
         const stickers = await getStickerCommands();
         const hash = Buffer.from(fileSha256).toString('base64');
         if (stickers[hash] && stickers[hash].locked) {
             return await sock.sendMessage(chatId, {
-                text: '⚠️ You do not have permission to change this sticker command'
+                text: `⚠️ ${t('p.setcmd.locked')}`
             }, { quoted: message });
         }
         stickers[hash] = {
@@ -104,7 +104,7 @@ export default {
         };
         await saveStickerCommands(stickers);
         await sock.sendMessage(chatId, {
-            text: '✅ Command saved successfully'
+            text: `✅ ${t('p.setcmd.saved')}`
         }, { quoted: message });
     }
 };

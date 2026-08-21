@@ -42,7 +42,7 @@ export default {
     groupOnly: true,
     adminOnly: true,
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         let userToPromote = [];
         const mentionedJids = message.message?.extendedTextMessage?.contextInfo?.mentionedJid;
         if (mentionedJids && mentionedJids.length > 0) {
@@ -53,7 +53,7 @@ export default {
         }
         if (userToPromote.length === 0) {
             await sock.sendMessage(chatId, {
-                text: 'Please mention the user or reply to their message to promote!',
+                text: t('p.promote.missingTarget'),
                 ...channelInfo
             }, { quoted: message });
             return;
@@ -64,11 +64,13 @@ export default {
                 return `@${jid.split('@')[0]}`;
             }));
             const promoterJid = sock.user.id;
-            const promotionMessage = `*『 GROUP PROMOTION 』*\n\n` +
-                `👥 *Promoted User${userToPromote.length > 1 ? 's' : ''}:*\n` +
-                `${usernames.map(name => `• ${name}`).join('\n')}\n\n` +
-                `👑 *Promoted By:* @${promoterJid.split('@')[0]}\n\n` +
-                `📅 *Date:* ${new Date().toLocaleString()}`;
+            const userLabel = userToPromote.length > 1 ? t('p.promote.userPlural') : t('p.promote.userSingular');
+            const promotionMessage = t('p.promote.notice', {
+                userLabel,
+                list: usernames.map(name => `• ${name}`).join('\n'),
+                promotedBy: `@${promoterJid.split('@')[0]}`,
+                date: new Date().toLocaleString()
+            });
             await sock.sendMessage(chatId, {
                 text: promotionMessage,
                 mentions: [...userToPromote, promoterJid],
@@ -78,7 +80,7 @@ export default {
         catch (error) {
             console.error('Error in promote command:', error);
             await sock.sendMessage(chatId, {
-                text: 'Failed to promote user(s)!',
+                text: t('p.promote.failed'),
                 ...channelInfo
             }, { quoted: message });
         }

@@ -12,29 +12,30 @@ export default {
      */
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const target = args?.[0] || 'target';
         try {
-            await sock.sendMessage(chatId, { text: '*💻 Initializing hack sequence...*' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.hack.init') }, { quoted: message });
             await delay(1500);
-            await sock.sendMessage(chatId, { text: '*🔌 Establishing secure connection to the server...*' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.hack.connect') }, { quoted: message });
             await delay(1500);
-            await sock.sendMessage(chatId, { text: '*🛡 Bypassing firewalls and security protocols...*' }, { quoted: message });
-            await displayProgressBar(sock, message, 'Bypassing firewalls', 4, chatId);
-            await sock.sendMessage(chatId, { text: '*🔐 Gaining access to encrypted database...*' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.hack.bypass') }, { quoted: message });
+            await displayProgressBar(sock, message, t('p.hack.bypassLabel'), 4, chatId);
+            await sock.sendMessage(chatId, { text: t('p.hack.access') }, { quoted: message });
             await delay(2000);
-            await sock.sendMessage(chatId, { text: '*🔑 Cracking encryption keys...*' }, { quoted: message });
-            await displayProgressBar(sock, message, 'Cracking encryption', 6, chatId);
-            await sock.sendMessage(chatId, { text: '*📥 Downloading sensitive data from server...*' }, { quoted: message });
-            await displayProgressBar(sock, message, 'Downloading files', 5, chatId);
-            await sock.sendMessage(chatId, { text: '*🔒 Planting a backdoor for future access...*' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.hack.crack') }, { quoted: message });
+            await displayProgressBar(sock, message, t('p.hack.crackLabel'), 6, chatId);
+            await sock.sendMessage(chatId, { text: t('p.hack.download') }, { quoted: message });
+            await displayProgressBar(sock, message, t('p.hack.downloadLabel'), 5, chatId);
+            await sock.sendMessage(chatId, { text: t('p.hack.backdoor') }, { quoted: message });
             await delay(2500);
-            await sock.sendMessage(chatId, { text: `*💥 Hack complete! 🎯 Target "${target}" successfully compromised.*` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.hack.complete', { target }) }, { quoted: message });
             await delay(1000);
-            await sock.sendMessage(chatId, { text: '*🤖 Mission accomplished. Logging off...*' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.hack.done') }, { quoted: message });
         }
         catch (error) {
             console.error('Error in hack sequence:', error);
-            await sock.sendMessage(chatId, { text: '*⚠️ An error occurred during the hack sequence. Please try again later.*' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: t('p.hack.error') }, { quoted: message });
         }
     }
 };

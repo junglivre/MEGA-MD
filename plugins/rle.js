@@ -27,35 +27,35 @@ export default {
     description: 'Compress or decompress text/files using Run-Length Encoding (C++ powered)',
     usage: '.rle compress <text or reply to media>\n.rle decompress <encoded or reply to compressed file>',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         const quoted = getQuoted(message);
         const quotedText = quoted?.conversation || quoted?.extendedTextMessage?.text || '';
         const mediaType = getMediaType(quoted);
         if (!args.length) {
             return await sock.sendMessage(chatId, {
-                text: `🗜️ *RLE Compressor*\n\n` +
-                    `*Text:*\n` +
+                text: `🗜️ *${t('p.rle.title')}*\n\n` +
+                    `*${t('p.rle.textLabel')}:*\n` +
                     `\`.rle compress AAABBBCCDDDD\`\n` +
                     `\`.rle decompress <encoded>\`\n\n` +
-                    `*File/Media (reply to any file or media):*\n` +
-                    `\`.rle compress\` — reply to image/video/audio/doc\n` +
-                    `\`.rle decompress\` — reply to .rle compressed file\n\n` +
-                    `⚠️ RLE works best on data with repeated bytes.\n` +
-                    `For photos/videos, compression may increase size.`,
+                    `*${t('p.rle.fileMediaLabel')}*\n` +
+                    `\`.rle compress\` — ${t('p.rle.replyToMedia')}\n` +
+                    `\`.rle decompress\` — ${t('p.rle.replyToCompressed')}\n\n` +
+                    `⚠️ ${t('p.rle.hint1')}\n` +
+                    `${t('p.rle.hint2')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         const mode = args[0]?.toLowerCase();
         if (mode !== 'compress' && mode !== 'decompress') {
             return await sock.sendMessage(chatId, {
-                text: `❌ Use \`compress\` or \`decompress\``,
+                text: `❌ ${t('p.rle.useCompressOrDecompress')}`,
                 ...channelInfo
             }, { quoted: message });
         }
         const binPath = path.join(process.cwd(), 'lib', 'bin', 'rle');
         if (!fs.existsSync(binPath)) {
             return await sock.sendMessage(chatId, {
-                text: `❌ RLE binary not available on this server (g++ not installed).`,
+                text: `❌ ${t('p.rle.binaryUnavailable')}`,
                 ...channelInfo
             }, { quoted: message });
         }
@@ -68,27 +68,27 @@ export default {
                 let sourceLabel;
                 let originalName = `file_${id}`;
                 if (mediaType && quoted) {
-                    await sock.sendMessage(chatId, { text: '⏳ Downloading media...', ...channelInfo }, { quoted: message });
+                    await sock.sendMessage(chatId, { text: `⏳ ${t('p.rle.downloadingMedia')}`, ...channelInfo }, { quoted: message });
                     const msgObj = { message: { [`${mediaType}Message`]: quoted[`${mediaType}Message`] } };
                     inputBuffer = await downloadMediaMessage(msgObj, 'buffer', {});
-                    sourceLabel = `${mediaType} (${inputBuffer.length.toLocaleString()} bytes)`;
+                    sourceLabel = `${mediaType} (${inputBuffer.length.toLocaleString()} ${t('p.rle.bytes')})`;
                     originalName = `${mediaType}_${id}`;
                 }
                 else {
                     const textInput = args.slice(1).join(' ').trim() || quotedText;
                     if (!textInput) {
                         return await sock.sendMessage(chatId, {
-                            text: `❌ No input. Provide text or reply to a media message.`,
+                            text: `❌ ${t('p.rle.noInput')}`,
                             ...channelInfo
                         }, { quoted: message });
                     }
                     inputBuffer = Buffer.from(textInput, 'utf8');
-                    sourceLabel = `text (${inputBuffer.length} bytes)`;
+                    sourceLabel = `${t('p.rle.text')} (${inputBuffer.length} ${t('p.rle.bytes')})`;
                 }
                 const inFile = path.join(tempDir, `rle_in_${id}`);
                 const outFile = path.join(tempDir, `rle_out_${id}.rle`);
                 fs.writeFileSync(inFile, inputBuffer);
-                await sock.sendMessage(chatId, { text: '🗜️ Compressing...', ...channelInfo }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `🗜️ ${t('p.rle.compressing')}`, ...channelInfo }, { quoted: message });
                 const { stdout, stderr } = await execAsync(`"${binPath}" compress file "${inFile}"`, { timeout: 60000, maxBuffer: 100 * 1024 * 1024 });
                 const result = stdout.trim();
                 fs.writeFileSync(outFile, result);
@@ -102,17 +102,17 @@ export default {
                         const saved = orig - comp;
                         const pct = ((1 - comp / orig) * 100).toFixed(1);
                         statsLine = saved > 0
-                            ? `\n💾 Saved: ${Math.abs(saved).toLocaleString()} bytes (${pct}%)`
-                            : `\n⚠️ File grew by ${Math.abs(saved).toLocaleString()} bytes (RLE not ideal for this data)`;
+                            ? `\n💾 ${t('p.rle.saved', { bytes: Math.abs(saved).toLocaleString(), pct })}`
+                            : `\n⚠️ ${t('p.rle.grew', { bytes: Math.abs(saved).toLocaleString() })}`;
                     }
                 }
                 await sock.sendMessage(chatId, {
                     document: fs.readFileSync(outFile),
                     mimetype: 'application/octet-stream',
                     fileName: `${originalName}.rle`,
-                    caption: `🗜️ *RLE Compressed*\n\n` +
-                        `📥 *Source:* ${sourceLabel}${statsLine}\n\n` +
-                        `_Reply with \`.rle decompress\` to restore_`,
+                    caption: `🗜️ *${t('p.rle.compressedTitle')}*\n\n` +
+                        `📥 *${t('p.rle.source')}:* ${sourceLabel}${statsLine}\n\n` +
+                        `_${t('p.rle.replyToRestore')}_`,
                     ...channelInfo
                 }, { quoted: message });
                 for (const f of [inFile, outFile])
@@ -125,7 +125,7 @@ export default {
                 // DECOMPRESS
                 let encodedData;
                 if (quoted?.documentMessage) {
-                    await sock.sendMessage(chatId, { text: '⏳ Reading compressed file...', ...channelInfo }, { quoted: message });
+                    await sock.sendMessage(chatId, { text: `⏳ ${t('p.rle.readingFile')}`, ...channelInfo }, { quoted: message });
                     const msgObj = { message: { documentMessage: quoted.documentMessage } };
                     const buf = await downloadMediaMessage(msgObj, 'buffer', {});
                     encodedData = buf.toString('utf8').trim();
@@ -135,11 +135,11 @@ export default {
                 }
                 if (!encodedData) {
                     return await sock.sendMessage(chatId, {
-                        text: `❌ No compressed input. Reply to an .rle file or provide encoded text.`,
+                        text: `❌ ${t('p.rle.noCompressedInput')}`,
                         ...channelInfo
                     }, { quoted: message });
                 }
-                await sock.sendMessage(chatId, { text: '📦 Decompressing...', ...channelInfo }, { quoted: message });
+                await sock.sendMessage(chatId, { text: `📦 ${t('p.rle.decompressing')}`, ...channelInfo }, { quoted: message });
                 const inFile = path.join(tempDir, `rle_dec_in_${id}.txt`);
                 fs.writeFileSync(inFile, encodedData);
                 const { stdout, stderr } = await execAsync(`"${binPath}" decompress text "${encodedData.replace(/"/g, '\\"')}"`, { timeout: 60000, maxBuffer: 100 * 1024 * 1024 });
@@ -156,13 +156,13 @@ export default {
                         document: resultBuf,
                         mimetype: 'application/octet-stream',
                         fileName: `rle_decompressed_${id}`,
-                        caption: `📦 *RLE Decompressed*\n\n📤 *Size:* ${resultBuf.length.toLocaleString()} bytes`,
+                        caption: `📦 *${t('p.rle.decompressedTitle')}*\n\n📤 *${t('p.rle.size')}:* ${resultBuf.length.toLocaleString()} ${t('p.rle.bytes')}`,
                         ...channelInfo
                     }, { quoted: message });
                 }
                 else {
                     await sock.sendMessage(chatId, {
-                        text: `📦 *RLE Decompressed*\n\n\`\`\`\n${result.trim()}\n\`\`\``,
+                        text: `📦 *${t('p.rle.decompressedTitle')}*\n\n\`\`\`\n${result.trim()}\n\`\`\``,
                         ...channelInfo
                     }, { quoted: message });
                 }
@@ -175,7 +175,7 @@ export default {
         }
         catch (error) {
             await sock.sendMessage(chatId, {
-                text: `❌ Failed: ${error.message}`,
+                text: `❌ ${t('p.rle.failed', { error: error.message })}`,
                 ...channelInfo
             }, { quoted: message });
         }

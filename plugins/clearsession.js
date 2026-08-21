@@ -10,20 +10,21 @@ export default {
     usage: '.clearsession',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const t = context.t;
         try {
             const senderId = message.key.participant || message.key.remoteJid;
             const isOwner = await isOwnerOrSudo(senderId, sock, chatId);
             if (!message.key.fromMe && !isOwner) {
-                return await sock.sendMessage(chatId, { text: '*This command can only be used by the owner!*', ...channelInfo });
+                return await sock.sendMessage(chatId, { text: `*${t('p.clearsession.ownerOnly')}*`, ...channelInfo });
             }
             const sessionDir = path.join(process.cwd(), 'session');
             if (!fs.existsSync(sessionDir)) {
-                return await sock.sendMessage(chatId, { text: '*Session directory not found!*', ...channelInfo });
+                return await sock.sendMessage(chatId, { text: `*${t('p.clearsession.dirNotFound')}*`, ...channelInfo });
             }
             let filesCleared = 0;
             let errors = 0;
             const errorDetails = [];
-            await sock.sendMessage(chatId, { text: '🔍 Optimizing session files for better performance...', ...channelInfo });
+            await sock.sendMessage(chatId, { text: `🔍 ${t('p.clearsession.optimizing')}`, ...channelInfo });
             const files = fs.readdirSync(sessionDir);
             let appStateSyncCount = 0;
             let preKeyCount = 0;
@@ -44,19 +45,19 @@ export default {
                 }
                 catch (err) {
                     errors++;
-                    errorDetails.push(`Failed to delete ${file}: ${err.message}`);
+                    errorDetails.push(t('p.clearsession.deleteFailed', { file, error: err.message }));
                 }
             }
-            const msgText = `✅ Session files cleared successfully!\n\n` +
-                `📊 Statistics:\n` +
-                `• Total files cleared: ${filesCleared}\n` +
-                `• App state sync files: ${appStateSyncCount}\n` +
-                `• Pre-key files: ${preKeyCount}\n${ 
-                errors > 0 ? `\n⚠️ Errors encountered: ${errors}\n${errorDetails.join('\n')}` : ''}`;
+            const msgText = `✅ ${t('p.clearsession.successTitle')}\n\n` +
+                `📊 ${t('p.clearsession.statsLabel')}:\n` +
+                `• ${t('p.clearsession.totalCleared')}: ${filesCleared}\n` +
+                `• ${t('p.clearsession.appStateSyncFiles')}: ${appStateSyncCount}\n` +
+                `• ${t('p.clearsession.preKeyFiles')}: ${preKeyCount}\n${
+                errors > 0 ? `\n⚠️ ${t('p.clearsession.errorsEncountered', { count: errors })}\n${errorDetails.join('\n')}` : ''}`;
             await sock.sendMessage(chatId, { text: msgText, ...channelInfo });
         }
         catch {
-            await sock.sendMessage(chatId, { text: '❌ Failed to clear session files!', ...channelInfo });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.clearsession.genericError')}`, ...channelInfo });
         }
     }
 };

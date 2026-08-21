@@ -28,8 +28,9 @@ export default {
     category: 'tools',
     description: 'Upload media and get a URL.',
     usage: '.tourl (reply to media or send media with caption)',
-    async handler(sock, message) {
+    async handler(sock, message, args, context) {
         const chatId = message.key.remoteJid;
+        const { t } = context;
         try {
             let targetMsg = null;
             if (message.message?.imageMessage ||
@@ -45,13 +46,13 @@ export default {
                     targetMsg = quoted;
             }
             if (!targetMsg) {
-                return sock.sendMessage(chatId, { text: 'Reply to a media or send media with `.tourl`' }, { quoted: message });
+                return sock.sendMessage(chatId, { text: t('p.tourl.noMedia') }, { quoted: message });
             }
             const buffer = await getMediaBuffer(targetMsg, sock);
             if (!buffer)
                 throw new Error('Failed to download media');
             if (buffer.length > 10 * 1024 * 1024) {
-                return sock.sendMessage(chatId, { text: '✴️ Media exceeds 10 MB limit.' }, { quoted: message });
+                return sock.sendMessage(chatId, { text: `✴️ ${t('p.tourl.tooLarge')}` }, { quoted: message });
             }
             const type = await fileTypeFromBuffer(buffer);
             if (!type)
@@ -65,11 +66,11 @@ export default {
                 throw new Error('Invalid upload URL');
             }
             const sizeMB = (buffer.length / 1024 / 1024).toFixed(2);
-            await sock.sendMessage(chatId, { text: `✅ Upload Successful\n🔗 ${url}\n💾 ${sizeMB} MB` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `✅ ${t('p.tourl.success', { url, size: sizeMB })}` }, { quoted: message });
         }
         catch (e) {
             console.error('Catbox upload error:', e);
-            await sock.sendMessage(chatId, { text: `❌ Upload failed: ${e.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.tourl.failed', { error: e.message })}` }, { quoted: message });
         }
     }
 };

@@ -8,11 +8,12 @@ export default {
     usage: '.stext <text>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         const text = args.join(' ');
         try {
             if (!text || text.trim() === '') {
                 await sock.sendMessage(chatId, {
-                    text: "*Please provide a text to style.*\nExample: .stext Hello"
+                    text: `*${t('p.stext.provideText')}*\n${t('p.stext.example')}`
                 }, { quoted: message });
                 return;
             }
@@ -20,7 +21,7 @@ export default {
             if (!Array.isArray(styledResult) || styledResult.length === 0) {
                 throw new Error('No styled text found.');
             }
-            let messageText = 'Reply with choosen number:\n\n';
+            let messageText = `${t('p.stext.replyWithNumber')}\n\n`;
             styledResult.forEach((item, index) => {
                 const styledText = item.result || item;
                 messageText += `*${index + 1}.* ${styledText}\n`;
@@ -61,7 +62,7 @@ export default {
                 }
                 else {
                     await sock.sendMessage(m.key.remoteJid, {
-                        text: `Invalid selection. Please choose a number between 1 and ${styledResult.length}.`
+                        text: t('p.stext.invalidSelection', { max: styledResult.length })
                     }, { quoted: m });
                 }
             };
@@ -70,7 +71,7 @@ export default {
         catch (error) {
             console.error('Error in styleTextCommand:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to style the text. Please try again later.'
+                text: `❌ ${t('p.stext.styleFailed')}`
             }, { quoted: message });
         }
     }

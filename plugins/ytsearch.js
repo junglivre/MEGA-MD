@@ -20,12 +20,12 @@ export default {
     description: 'Search YouTube',
     usage: '.yts [query]',
     async handler(sock, message, args, context) {
-        const { chatId, config } = context;
+        const { chatId, config, t } = context;
         const query = args.join(' ');
         const prefix = config.prefix;
         if (!query) {
             return sock.sendMessage(chatId, {
-                text: `Example: *${prefix}yts* Lil Peep`
+                text: t('p.ytsearch.exampleQuery', { prefix })
             }, { quoted: message });
         }
         try {
@@ -33,14 +33,14 @@ export default {
             const result = await yts(query);
             const videos = result.videos.slice(0, 10);
             if (videos.length === 0) {
-                return sock.sendMessage(chatId, { text: '❌ No results found.' });
+                return sock.sendMessage(chatId, { text: `❌ ${t('p.ytsearch.noResults')}` });
             }
-            let searchText = `✨ *MUSIC SEARCH* ✨\n\n`;
+            let searchText = `✨ *${t('p.ytsearch.title')}* ✨\n\n`;
             videos.forEach((v, index) => {
                 searchText += `*${index + 1}.🎧 ${v.title}*\n`;
-                searchText += `*⌚ Duration:* ${v.timestamp}\n`;
-                searchText += `*👀 Views:* ${v.views}\n`;
-                searchText += `*🔗 URL:* ${v.url}\n`;
+                searchText += `*⌚ ${t('p.ytsearch.duration')}:* ${v.timestamp}\n`;
+                searchText += `*👀 ${t('p.ytsearch.views')}:* ${v.views}\n`;
+                searchText += `*🔗 ${t('p.ytsearch.url')}:* ${v.url}\n`;
                 searchText += `──────────────────\n`;
             });
             await sock.sendMessage(chatId, {
@@ -50,7 +50,7 @@ export default {
         }
         catch (error) {
             console.error('YouTube Search Error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Error searching YouTube.' });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.ytsearch.error')}` });
         }
     }
 };

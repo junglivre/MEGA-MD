@@ -7,11 +7,11 @@ export default {
     description: 'Start a trivia game or answer the question',
     usage: '.trivia [answer]',
     async handler(sock, message, args, context) {
-        const { chatId, channelInfo } = context;
+        const { chatId, channelInfo, t } = context;
         if (args.length === 0) {
             if (triviaGames[chatId]) {
                 await sock.sendMessage(chatId, {
-                    text: 'A trivia game is already in progress!',
+                    text: t('p.trivia.alreadyInProgress'),
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -25,13 +25,13 @@ export default {
                     options: [...questionData.incorrect_answers, questionData.correct_answer].sort(),
                 };
                 await sock.sendMessage(chatId, {
-                    text: `🎯 *Trivia Time!*\n\n*Question:* ${triviaGames[chatId].question}\n\n*Options:*\n${triviaGames[chatId].options.join('\n')}\n\nUse .trivia <answer> to answer!`,
+                    text: `🎯 *${t('p.trivia.title')}*\n\n*${t('p.trivia.questionLabel')}:* ${triviaGames[chatId].question}\n\n*${t('p.trivia.optionsLabel')}:*\n${triviaGames[chatId].options.join('\n')}\n\n${t('p.trivia.answerHint')}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             catch (error) {
                 await sock.sendMessage(chatId, {
-                    text: 'Error fetching trivia question. Try again later.',
+                    text: t('p.trivia.fetchError'),
                     ...channelInfo
                 }, { quoted: message });
             }
@@ -39,7 +39,7 @@ export default {
         else {
             if (!triviaGames[chatId]) {
                 await sock.sendMessage(chatId, {
-                    text: 'No trivia game is in progress. Use .trivia to start one!',
+                    text: t('p.trivia.noGame'),
                     ...channelInfo
                 }, { quoted: message });
                 return;
@@ -48,13 +48,13 @@ export default {
             const answer = args.join(' ');
             if (answer.toLowerCase() === game.correctAnswer.toLowerCase()) {
                 await sock.sendMessage(chatId, {
-                    text: `✅ Correct! The answer is *${game.correctAnswer}*`,
+                    text: `✅ ${t('p.trivia.correct', { answer: game.correctAnswer })}`,
                     ...channelInfo
                 }, { quoted: message });
             }
             else {
                 await sock.sendMessage(chatId, {
-                    text: `❌ Wrong! The correct answer was *${game.correctAnswer}*`,
+                    text: `❌ ${t('p.trivia.wrong', { answer: game.correctAnswer })}`,
                     ...channelInfo
                 }, { quoted: message });
             }

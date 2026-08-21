@@ -7,9 +7,10 @@ export default {
     usage: '.tgstalk <username>',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         if (!args.length) {
             return await sock.sendMessage(chatId, {
-                text: '*Please provide a Telegram username.*\nExample: .tginfo GlobalTechBots'
+                text: t('p.tgstalk.usage')
             }, { quoted: message });
         }
         const username = args[0];
@@ -22,14 +23,14 @@ export default {
                 }
             });
             if (!data?.result) {
-                return await sock.sendMessage(chatId, { text: '❌ Telegram user/channel not found.' }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.tgstalk.notFound')}` }, { quoted: message });
             }
             const result = data.result;
             const profileImage = result.image_url || null;
-            const caption = `📱 *Telegram Info*\n\n` +
-                `👤 Title: ${result.title || 'N/A'}\n` +
-                `📝 Description: ${result.description || 'N/A'}\n` +
-                `🔗 Link: ${result.url || `https://t.me/${username}`}`;
+            const caption = `📱 *${t('p.tgstalk.infoTitle')}*\n\n` +
+                `👤 ${t('p.tgstalk.titleLabel')}: ${result.title || t('p.tgstalk.notAvailable')}\n` +
+                `📝 ${t('p.tgstalk.descriptionLabel')}: ${result.description || t('p.tgstalk.notAvailable')}\n` +
+                `🔗 ${t('p.tgstalk.linkLabel')}: ${result.url || `https://t.me/${username}`}`;
             if (profileImage) {
                 await sock.sendMessage(chatId, { image: { url: profileImage }, caption }, { quoted: message });
             }
@@ -39,7 +40,7 @@ export default {
         }
         catch (err) {
             console.error('Telegram plugin error:', err);
-            await sock.sendMessage(chatId, { text: '❌ Failed to fetch Telegram info.' }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.tgstalk.fetchFailed')}` }, { quoted: message });
         }
     }
 };

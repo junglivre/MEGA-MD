@@ -21,11 +21,12 @@ export default {
     description: 'Read the source code of a specific plugin',
     usage: '.inspect [plugin_name]',
     ownerOnly: true,
-    async handler(sock, message, args, _context) {
+    async handler(sock, message, args, context) {
         const chatId = message.key.remoteJid;
+        const { t } = context;
         const pluginName = args[0];
         if (!pluginName) {
-            return await sock.sendMessage(chatId, { text: 'Which plugin do you want to inspect?\n\n*Examples:*\n- .inspect ping\n- .inspect ping.ts\n- .inspect ping.js' }, { quoted: message });
+            return await sock.sendMessage(chatId, { text: t('p.inspect.usage') }, { quoted: message });
         }
         try {
             const base = pluginName.replace(/\.(ts|js)$/, '');
@@ -44,16 +45,16 @@ export default {
                 }
             }
             if (!fs.existsSync(filePath)) {
-                return await sock.sendMessage(chatId, { text: `❌ Plugin "${base}" not found.` }, { quoted: message });
+                return await sock.sendMessage(chatId, { text: `❌ ${t('p.inspect.notFound', { name: base })}` }, { quoted: message });
             }
             const code = fs.readFileSync(filePath, 'utf8');
-            const formattedCode = `💻 *SOURCE CODE: ${fileName}*\n\n\`\`\`javascript\n${code}\n\`\`\``;
+            const formattedCode = `💻 *${t('p.inspect.sourceHeader', { fileName })}*\n\n\`\`\`javascript\n${code}\n\`\`\``;
             if (formattedCode.length > 4000) {
                 await sock.sendMessage(chatId, {
                     document: Buffer.from(code),
                     fileName,
                     mimetype: 'text/javascript',
-                    caption: `📄 Code for *${fileName}* (File too large for text message)`
+                    caption: `📄 ${t('p.inspect.tooLarge', { fileName })}`
                 }, { quoted: message });
             }
             else {
@@ -62,7 +63,7 @@ export default {
         }
         catch (error) {
             console.error('Inspect Error:', error);
-            await sock.sendMessage(chatId, { text: '❌ Failed to read the plugin file.' });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.inspect.failed')}` });
         }
     }
 };

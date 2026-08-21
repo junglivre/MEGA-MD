@@ -6,6 +6,7 @@ export default {
     usage: '.dare',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const shizokeys = 'shizo';
             const res = await fetch(`https://shizoapi.onrender.com/api/texts/dare?apikey=${shizokeys}`);
@@ -21,7 +22,7 @@ export default {
         catch (error) {
             console.error('Error in dare command:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to get dare. Please try again later!'
+                text: `❌ ${t('p.dare.failed')}`
             }, { quoted: message });
         }
     }

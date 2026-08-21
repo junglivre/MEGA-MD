@@ -10,26 +10,27 @@ export default {
     usage: '.setpp (reply to an image)',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
+        const { t } = context;
         try {
             const senderId = message.key.participant || message.key.remoteJid;
             const isOwner = await isOwnerOrSudo(senderId, sock, chatId);
             if (!message.key.fromMe && !isOwner) {
                 await sock.sendMessage(chatId, {
-                    text: '*This command is only available for the owner!*'
+                    text: `*${t('p.setpp.ownerOnly')}*`
                 }, { quoted: message });
                 return;
             }
             const quotedMessage = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
             if (!quotedMessage) {
                 await sock.sendMessage(chatId, {
-                    text: '⚠️ Please reply to an image with the .setpp command!'
+                    text: `⚠️ ${t('p.setpp.noQuoted')}`
                 }, { quoted: message });
                 return;
             }
             const imageMessage = quotedMessage.imageMessage || quotedMessage.stickerMessage;
             if (!imageMessage) {
                 await sock.sendMessage(chatId, {
-                    text: '*The replied message must contain an image!*'
+                    text: `*${t('p.setpp.noImage')}*`
                 }, { quoted: message });
                 return;
             }
@@ -45,13 +46,13 @@ export default {
             await sock.updateProfilePicture(sock.user.id, { url: imagePath });
             fs.unlinkSync(imagePath);
             await sock.sendMessage(chatId, {
-                text: '✅ Successfully updated bot profile picture!'
+                text: `✅ ${t('p.setpp.success')}`
             }, { quoted: message });
         }
         catch (error) {
             console.error('SetPP Command Error:', error);
             await sock.sendMessage(chatId, {
-                text: '❌ Failed to update profile picture!'
+                text: `❌ ${t('p.setpp.failed')}`
             }, { quoted: message });
         }
     }

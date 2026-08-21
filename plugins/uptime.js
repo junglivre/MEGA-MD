@@ -19,7 +19,8 @@ export default {
     description: 'Show bot status information',
     usage: '.uptime',
     isPrefixless: true,
-    async handler(sock, message) {
+    async handler(sock, message, args, context) {
+        const { t } = context;
         const chatId = message.key.remoteJid;
         const commandHandler = (await import('../lib/commandHandler.js')).default;
         const uptimeMs = process.uptime() * 1000;
@@ -41,11 +42,12 @@ export default {
         const startedAt = new Date(Date.now() - uptimeMs).toLocaleString();
         const ramMb = (process.memoryUsage().rss / 1024 / 1024).toFixed(1);
         const commandCount = commandHandler.commands.size;
-        const text = `🤖 *MEGA-MD STATUS*\n\n` +
-            `⏱ Uptime: ${formatUptime(uptimeMs)}\n` +
-            `🚀 Started: ${startedAt}\n` +
-            `📦 Plugins: ${commandCount}\n` +
-            `💾 RAM: ${ramMb} MB`;
+        const text = t('p.uptime.status', {
+            uptime: formatUptime(uptimeMs),
+            startedAt,
+            count: commandCount,
+            ram: ramMb
+        });
         await sock.sendMessage(chatId, { text });
     }
 };
