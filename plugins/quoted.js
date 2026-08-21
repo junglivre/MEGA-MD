@@ -1,6 +1,7 @@
 import axios from 'axios';
 import { Sticker, StickerTypes } from 'stickers-formatter';
 import config from '../config.js';
+import store from '../lib/lightweight_store.js';
 
 const QUOTE_API_URL = config.quoteApiUrl;
 const DEFAULT_AVATAR = 'https://i.ibb.co/9HY4wjz/a4c0b1af253197d4837ff6760d5b81c0.jpg';
@@ -33,11 +34,33 @@ function extractText(message, fallback) {
         || fallback;
 }
 
+function getContextInfo(message) {
+    const current = unwrapMessage(message);
+    return current.extendedTextMessage?.contextInfo
+        || current.imageMessage?.contextInfo
+        || current.videoMessage?.contextInfo
+        || current.documentMessage?.contextInfo
+        || {};
+}
+
 function parseOptions(args) {
-    const options = { backgroundColor: '#FFFFFF', format: 'webp', type: 'quote', scale: 2, output: 'sticker', text: [] };
+    const options = {
+        backgroundColor: '#FFFFFF',
+        format: 'webp',
+        type: 'quote',
+        scale: 2,
+        output: 'sticker',
+        reply: false,
+        count: 1,
+        text: []
+    };
     for (const token of args) {
         const lower = token.toLowerCase();
-        if (lower === 'img' || lower === 'image' || lower === 'jpg' || lower === 'png') {
+        if (lower === 'r' || lower === 'reply')
+            options.reply = true;
+        else if (/^\d+$/.test(lower))
+            options.count = Math.min(20, Math.max(1, Number(lower)));
+        else if (lower === 'img' || lower === 'image' || lower === 'jpg' || lower === 'png') {
             options.type = 'image';
             options.format = 'png';
             options.output = 'image';
@@ -47,15 +70,12 @@ function parseOptions(args) {
             options.format = 'png';
             options.output = 'document';
         }
-        else if (/^s(?:cale)?[+-]?(?:\d*\.)?\d+$/i.test(lower)) {
+        else if (/^s(?:cale)?[+-]?(?:\d*\.)?\d+$/i.test(lower))
             options.scale = Number(lower.replace(/^s(?:cale)?/i, '')) || 2;
-        }
-        else if (lower === 'random' || lower === 'transparent' || COLOR_NAMES.has(lower) || /^#?[0-9a-f]{6}$/i.test(token) || /^#?[0-9a-f]{3}$/i.test(token)) {
+        else if (lower === 'random' || lower === 'transparent' || COLOR_NAMES.has(lower) || /^#?[0-9a-f]{6}$/i.test(token) || /^#?[0-9a-f]{3}$/i.test(token))
             options.backgroundColor = lower === 'random' ? 'random' : token;
-        }
-        else {
+        else
             options.text.push(token);
-        }
     }
     options.scale = Math.min(20, Math.max(1, options.scale));
     return options;
@@ -78,19 +98,60 @@ async function getSender(sock, jid, fallback) {
     ]);
     return {
         name: getContactName(sock, jid, contact.status === 'fulfilled' ? contact.value : null, fallback),
-        avatar: profile.status === 'fulfilled' ? profile.value : DEFAULT_AVATAR
+        avatar: profile.status === 'fulfilled' ? profile.value : DEFAULT_AVATAR,
+        id: Math.abs([...String(jid || 'user')].reduce((sum, char) => sum * 31 + char.charCodeAt(0), 7))
     };
 }
 
-function getQuotedContext(message) {
-    return message.message?.extendedTextMessage?.contextInfo
-        || message.message?.imageMessage?.contextInfo
-        || message.message?.videoMessage?.contextInfo
-        || message.message?.documentMessage?.contextInfo
-        || {};
+function sourceFromStored(stored) {
+    return stored?.message ? stored : null;
 }
 
-async function renderQuote(options, sender, text) {
+function selectSources(message, chatId, count) {
+    const quotedContext = getContextInfo(message);
+    const quoted = quotedContext.quotedMessage;
+    if (!quoted)
+        return [];
+    const quotedId = quotedContext.stanzaId;
+    const stored = (store.messages?.[chatId] || []).map(sourceFromStored).filter(Boolean);
+    if (count <= 1 || stored.length === 0)
+        return [{ key: { participant: quotedContext.participant || message.key.participant || chatId }, message: quoted }];
+    const index = stored.findIndex(item => item.key?.id === quotedId);
+    if (index === -1)
+        return [{ key: { participant: quotedContext.participant || message.key.participant || chatId }, message: quoted }];
+    return stored.slice(Math.max(0, index - count + 1), index + 1);
+}
+
+function makeReplyPreview(source) {
+    const nested = getContextInfo(source.message).quotedMessage;
+    if (!nested)
+        return {};
+    return {
+        name: source.pushName || 'WhatsApp user',
+        text: extractText(nested, 'Mensagem respondida')
+    };
+}
+
+async function buildQuoteMessages(sock, sources, typedText, options, fallbackName) {
+    return Promise.all(sources.map(async (source, index) => {
+        const context = getContextInfo(source.message);
+        const who = source.key?.participant || source.participant || context.participant || source.key?.remoteJid;
+        const sender = await getSender(sock, who, source.pushName || fallbackName);
+        const text = typedText && sources.length === 1
+            ? typedText
+            : extractText(source.message, 'Mensagem de mídia');
+        return {
+            entities: [],
+            avatar: index === 0 || sources[index - 1]?.key?.participant !== source.key?.participant,
+            chatId: sender.id,
+            from: { id: sender.id, name: sender.name, photo: { url: sender.avatar } },
+            text,
+            replyMessage: options.reply ? makeReplyPreview(source) : {}
+        };
+    }));
+}
+
+async function renderQuote(options, messages) {
     const width = options.output === 'sticker' ? 512 : 1800;
     const height = options.output === 'sticker' ? 768 : 1200;
     const response = await axios.post(QUOTE_API_URL, {
@@ -100,13 +161,7 @@ async function renderQuote(options, sender, text) {
         width,
         height,
         scale: options.scale,
-        messages: [{
-            entities: [],
-            avatar: true,
-            from: { id: 1, name: sender.name, photo: { url: sender.avatar } },
-            text,
-            replyMessage: {}
-        }]
+        messages
     }, { headers: { 'Content-Type': 'application/json' }, timeout: 30000 });
     const encoded = response.data?.result?.image;
     if (!encoded)
@@ -119,29 +174,29 @@ export default {
     aliases: ['q', 'quotely', 'fakereply'],
     category: 'stickers',
     description: 'Generate a QuotLy-style quote sticker or image',
-    usage: '.q [img|png|doc|color|s2] <text> or reply to a message',
+    usage: '.q [count] [r] [img|png|doc|color|s2] <text> or reply to a message',
     async handler(sock, message, args, context) {
         const chatId = context.chatId || message.key.remoteJid;
         const { t } = context;
-        const quotedContext = getQuotedContext(message);
-        const quotedMessage = quotedContext.quotedMessage;
         const options = parseOptions(args);
         const typedText = options.text.join(' ').trim();
-        const text = typedText || extractText(quotedMessage, t('p.quoted.mediaFallback'));
-        if (!typedText && !quotedMessage)
+        const sources = selectSources(message, chatId, options.count);
+        if (!typedText && sources.length === 0)
             return sock.sendMessage(chatId, { text: t('p.quoted.missingText') }, { quoted: message });
-
-        const who = quotedContext.participant || message.key.participant || message.key.remoteJid;
+        const sourceList = sources.length > 0
+            ? sources
+            : [{ key: { participant: message.key.participant || chatId }, message: { conversation: typedText } }];
         try {
-            const sender = await getSender(sock, who, t('p.quoted.userFallback'));
-            const bufferImage = await renderQuote(options, sender, text);
+            const messages = await buildQuoteMessages(sock, sourceList, typedText, options, t('p.quoted.userFallback'));
+            const bufferImage = await renderQuote(options, messages);
+            const author = messages[0]?.from?.name || t('p.quoted.userFallback');
             if (options.output === 'image')
                 return sock.sendMessage(chatId, { image: bufferImage, caption: t('p.quoted.imageCaption') }, { quoted: message });
             if (options.output === 'document')
                 return sock.sendMessage(chatId, { document: bufferImage, mimetype: 'image/png', fileName: 'quote.png' }, { quoted: message });
             try {
                 const stickerBuffer = await new Sticker(bufferImage, {
-                    pack: 'MEGA-MD', author: sender.name, type: StickerTypes.FULL,
+                    pack: 'MEGA-MD', author, type: StickerTypes.FULL,
                     categories: ['🤩', '🎉'], quality: 100, background: '#00000000'
                 }).toBuffer();
                 return sock.sendMessage(chatId, { sticker: stickerBuffer }, { quoted: message });
