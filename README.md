@@ -610,7 +610,7 @@ DB_URL=./data/baileys.db
 | `COMMAND_MODE` | ❌ | `public` | `public` or `private` |
 | `TIMEZONE` | ❌ | `Asia/Karachi` | Your timezone |
 | `PORT` | ❌ | `5000` | HTTP server port |
-| `MAX_STORE_MESSAGES` | ❌ | `20` | Messages stored per chat |
+| `MAX_STORE_MESSAGES` | ❌ | `100` | Recent messages kept per chat for commands such as `.q 2` |
 | `REMOVEBG_KEY` | ❌ | — | [remove.bg](https://remove.bg) API key |
 | `GIPHY_API_KEY` | ❌ | — | [Giphy](https://developers.giphy.com) API key |
 | `MONGO_URL` | ❌ | — | MongoDB connection string |
