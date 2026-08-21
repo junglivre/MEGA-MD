@@ -8,7 +8,9 @@ const DEFAULT_AVATAR = 'https://i.ibb.co/9HY4wjz/a4c0b1af253197d4837ff6760d5b81c
 const COLOR_NAMES = new Set(['black', 'white', 'red', 'green', 'blue', 'yellow', 'orange', 'purple', 'pink', 'gray', 'grey', 'brown', 'cyan', 'magenta', 'transparent', 'random']);
 
 function unwrapMessage(message) {
-    let current = message || {};
+    // Baileys passes a full WAMessage to plugins, while stored/quoted
+    // messages are often already the inner `message` content object.
+    let current = message?.message || message || {};
     for (let i = 0; i < 4; i += 1) {
         const wrapped = current.ephemeralMessage?.message
             || current.viewOnceMessage?.message
