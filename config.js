@@ -32,6 +32,12 @@ const config = {
     maxStoreMessages: Number(process.env.MAX_STORE_MESSAGES) || 20,
     tempCleanupInterval: Number(process.env.CLEANUP_INTERVAL) || 1 * 60 * 60 * 1000,
     storeWriteInterval: Number(process.env.STORE_WRITE_INTERVAL) || 10000,
+    backupEnabled: process.env.BACKUP_ENABLED !== 'false',
+    backupInterval: Number(process.env.BACKUP_INTERVAL) || 24 * 60 * 60 * 1000,
+    backupRetention: Number(process.env.BACKUP_RETENTION) || 7,
+    backupDirectory: process.env.BACKUP_DIR || 'backups',
+    groqChatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
+    groqTranscriptionModel: process.env.GROQ_TRANSCRIPTION_MODEL || 'whisper-large-v3-turbo',
     // API Keys
     giphyApiKey: process.env.GIPHY_API_KEY || 'qnl7ssQChTdPjsKta2Ax2LMaGXz303tq',
     removeBgKey: process.env.REMOVEBG_KEY || '',

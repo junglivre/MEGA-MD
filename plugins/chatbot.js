@@ -3,6 +3,7 @@ import path from 'path';
 import { dataFile } from '../lib/paths.js';
 import store from '../lib/lightweight_store.js';
 import { createTranslator, getUserLanguage, languageLabel } from '../lib/i18n.js';
+import { groqChat, hasGroqKey } from '../lib/groq.js';
 const MONGO_URL = process.env.MONGO_URL;
 const POSTGRES_URL = process.env.POSTGRES_URL;
 const MYSQL_URL = process.env.MYSQL_URL;
@@ -228,6 +229,18 @@ ${JSON.stringify(userContext.userInfo, null, 2)}
 User: ${userMessage}
 You:
     `.trim();
+    if (hasGroqKey()) {
+        try {
+            const result = await groqChat([{ role: 'user', content: prompt }]);
+            if (result) {
+                console.log('✅ Groq success');
+                return cleanAIResponse(result);
+            }
+        }
+        catch (error) {
+            console.log(`Groq error: ${error.message}`);
+        }
+    }
     for (const api of API_ENDPOINTS) {
         try {
             console.log(`Trying ${api.name}...`);
@@ -249,27 +262,7 @@ You:
                 continue;
             }
             console.log(`✅ ${api.name} success`);
-            const cleanedResponse = result.trim()
-                .replace(/winks/g, '😉')
-                .replace(/eye roll/g, '🙄')
-                .replace(/shrug/g, '🤷‍♂️')
-                .replace(/raises eyebrow/g, '🤨')
-                .replace(/smiles/g, '😊')
-                .replace(/laughs/g, '😂')
-                .replace(/cries/g, '😢')
-                .replace(/thinks/g, '🤔')
-                .replace(/sleeps/g, '😴')
-                .replace(/google/gi, 'MEGA Bot')
-                .replace(/a large language model/gi, 'just a person')
-                .replace(/Remember:.*$/g, '')
-                .replace(/IMPORTANT:.*$/g, '')
-                .replace(/^[A-Z\s]+:.*$/gm, '')
-                .replace(/^[•-]\s.*$/gm, '')
-                .replace(/^✅.*$/gm, '')
-                .replace(/^❌.*$/gm, '')
-                .replace(/\n\s*\n/g, '\n')
-                .trim();
-            return cleanedResponse;
+            return cleanAIResponse(result);
         }
         catch (error) {
             console.log(`${api.name} error: ${error.message}`);
@@ -278,6 +271,28 @@ You:
     }
     console.error("All AI APIs failed");
     return null;
+}
+function cleanAIResponse(result) {
+    return result.trim()
+        .replace(/winks/g, '😉')
+        .replace(/eye roll/g, '🙄')
+        .replace(/shrug/g, '🤷‍♂️')
+        .replace(/raises eyebrow/g, '🤨')
+        .replace(/smiles/g, '😊')
+        .replace(/laughs/g, '😂')
+        .replace(/cries/g, '😢')
+        .replace(/thinks/g, '🤔')
+        .replace(/sleeps/g, '😴')
+        .replace(/google/gi, 'MEGA Bot')
+        .replace(/a large language model/gi, 'just a person')
+        .replace(/Remember:.*$/g, '')
+        .replace(/IMPORTANT:.*$/g, '')
+        .replace(/^[A-Z\s]+:.*$/gm, '')
+        .replace(/^[•-]\s.*$/gm, '')
+        .replace(/^✅.*$/gm, '')
+        .replace(/^❌.*$/gm, '')
+        .replace(/\n\s*\n/g, '\n')
+        .trim();
 }
 export default {
     command: 'chatbot',

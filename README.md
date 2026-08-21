@@ -612,6 +612,13 @@ DB_URL=./data/baileys.db
 | `DB_URL` | ❌ | — | SQLite file path |
 | `CLEANUP_INTERVAL` | ❌ | `3600000` | Temp cleanup interval (ms) |
 | `STORE_WRITE_INTERVAL` | ❌ | `10000` | Store write interval (ms) |
+| `GROQ_API_KEY` | ❌ | — | Groq API key for chatbot and audio transcription |
+| `GROQ_CHAT_MODEL` | ❌ | `openai/gpt-oss-120b` | Groq chat model |
+| `GROQ_TRANSCRIPTION_MODEL` | ❌ | `whisper-large-v3-turbo` | Groq Whisper model |
+| `BACKUP_ENABLED` | ❌ | `true` | Enable automatic ZIP backups |
+| `BACKUP_INTERVAL` | ❌ | `86400000` | Backup interval (ms) |
+| `BACKUP_RETENTION` | ❌ | `7` | Number of ZIP backups to keep |
+| `BACKUP_DIR` | ❌ | `backups` | Backup output directory |
 
 ---
 

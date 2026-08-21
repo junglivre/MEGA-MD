@@ -44,6 +44,9 @@ logs/
 logs/
 !logs/.gitkeep
 
+# Local backups
+backups/
+
 # Test coverage
 coverage/
 

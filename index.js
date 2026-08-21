@@ -25,8 +25,10 @@ import { handleMessages, handleGroupParticipantUpdate, handleStatus, handleCall 
 import { channelInfo } from './lib/messageConfig.js';
 import { rememberLidMapping } from './lib/jid.js';
 import commandHandler from './lib/commandHandler.js';
+import { startBackupScheduler } from './lib/backup.js';
 store.readFromFile();
 setInterval(() => store.writeToFile(), config.storeWriteInterval || 10000);
+startBackupScheduler();
 setInterval(() => {
     if (global.gc) {
         global.gc();
