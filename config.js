@@ -7,13 +7,15 @@ const configuredChatSize = String(process.env.GROQ_CHAT_RESPONSE_SIZE || 'medium
 const groqChatResponseSize = chatResponseSizes.has(configuredChatSize) ? configuredChatSize : 'medium';
 const defaultChatTokens = { short: 300, medium: 700, big: 1400 };
 const configuredChatTemperature = Number(process.env.GROQ_CHAT_TEMPERATURE);
+const configuredPackName = process.env.PACK_OWNER || process.env.PACKNAME || 'MEGA-MD';
 const config = {
     // Bot Identity
     botName: process.env.BOT_NAME || 'MEGA-MD',
-    botOwner: process.env.BOT_OWNER || 'Qasim Ali',
+    botOwner: process.env.OWNER || process.env.BOT_OWNER || 'Qasim Ali',
     ownerNumber: process.env.OWNER_NUMBER || '923051391007',
-    author: process.env.AUTHOR || process.env.BOT_OWNER || 'Qasim Ali',
-    packname: process.env.PACKNAME || 'MEGA-MD',
+    author: process.env.AUTHOR || process.env.OWNER || process.env.BOT_OWNER || 'Qasim Ali',
+    packOwner: configuredPackName,
+    packname: configuredPackName,
     description: process.env.DESCRIPTION || 'High performance multi-device WhatsApp bot',
     version: '6.0.0',
     // Bot Config

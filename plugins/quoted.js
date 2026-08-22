@@ -2,6 +2,7 @@ import axios from 'axios';
 import { Sticker, StickerTypes } from 'stickers-formatter';
 import config from '../config.js';
 import store from '../lib/lightweight_store.js';
+import { getStickerAuthor, getStickerPackName } from '../lib/stickerMetadata.js';
 
 const QUOTE_API_URL = config.quoteApiUrl;
 const COLOR_NAMES = new Set(['black', 'white', 'red', 'green', 'blue', 'yellow', 'orange', 'purple', 'pink', 'gray', 'grey', 'brown', 'cyan', 'magenta', 'transparent', 'random']);
@@ -283,14 +284,13 @@ export default {
         try {
             const messages = await buildQuoteMessages(sock, sourceList, typedText, options, t('p.quoted.userFallback'));
             const bufferImage = await renderQuote(options, messages);
-            const author = messages[0]?.from?.name || t('p.quoted.userFallback');
             if (options.output === 'image')
                 return sock.sendMessage(chatId, { image: bufferImage, caption: t('p.quoted.imageCaption') }, { quoted: message });
             if (options.output === 'document')
                 return sock.sendMessage(chatId, { document: bufferImage, mimetype: 'image/png', fileName: 'quote.png' }, { quoted: message });
             try {
                 const stickerBuffer = await new Sticker(bufferImage, {
-                    pack: 'MEGA-MD', author, type: StickerTypes.FULL,
+                    pack: getStickerPackName(), author: getStickerAuthor(), type: StickerTypes.FULL,
                     categories: ['🤩', '🎉'], quality: 100, background: '#00000000'
                 }).toBuffer();
                 return sock.sendMessage(chatId, { sticker: stickerBuffer }, { quoted: message });

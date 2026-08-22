@@ -5,6 +5,7 @@ import path from 'path';
 import crypto from 'crypto';
 import webp from 'node-webpmux';
 import config from '../config.js';
+import { getStickerAuthor, getStickerPackName } from '../lib/stickerMetadata.js';
 
 // Matches a single (possibly ZWJ-joined, variation-selector-terminated) emoji,
 // and nothing else in the token.
@@ -151,8 +152,8 @@ export async function stickercropFromBuffer(inputBuffer, isAnimated) {
     fs.writeFileSync(tempInput, inputBuffer);
     try {
         await convertToSticker(tempInput, tempOutput, 'crop', isAnimated);
-        const pack = config.packname || 'MEGA-MD';
-        return await addExifToBuffer(fs.readFileSync(tempOutput), pack, config.author || 'MEGA-MD', ['✂️']);
+        const pack = getStickerPackName();
+        return await addExifToBuffer(fs.readFileSync(tempOutput), pack, getStickerAuthor(), ['✂️']);
     }
     finally {
         for (const f of [tempInput, tempOutput]) {
@@ -225,12 +226,12 @@ export default {
                 await sock.sendMessage(chatId, { text: t('p.sticker.downloadFailed'), ...channelInfo }, { quoted: message });
                 return;
             }
-            const author = customAuthor || config.author || 'MEGA-MD';
+            const author = getStickerAuthor(customAuthor);
             let finalBuffer;
             if (isExistingSticker && !shape) {
                 // Rename-only mode (what .take used to do): rewrite the EXIF pack/author
                 // in place, no re-encoding, so the sticker's pixels never change.
-                const pack = customPack || bareText || config.packname || 'MEGA-MD';
+                const pack = getStickerPackName(customPack || bareText);
                 finalBuffer = await addExifToBuffer(mediaBuffer, pack, author, emojiTokens);
             }
             else {
@@ -245,7 +246,7 @@ export default {
                 if (!fs.existsSync(tempOutput) || fs.statSync(tempOutput).size === 0) {
                     throw new Error('ffmpeg produced no output');
                 }
-                const pack = customPack || config.packname || 'MEGA-MD';
+                const pack = getStickerPackName(customPack);
                 finalBuffer = await addExifToBuffer(fs.readFileSync(tempOutput), pack, author, emojiTokens);
             }
             await sock.sendMessage(chatId, { sticker: finalBuffer, ...channelInfo }, { quoted: message });

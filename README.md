@@ -224,8 +224,10 @@ OWNER_NUMBER=923000000000        # No + sign
 
 # ── BOT IDENTITY ─────────────────────────────────────────────
 BOT_NAME=MEGA-MD-PRO
+OWNER=GlobalTechInfo
 BOT_OWNER=GlobalTechInfo
 PACKNAME=MEGA-MD
+PACK_OWNER=Bixo
 
 # ── BEHAVIOUR ────────────────────────────────────────────────
 PREFIXES=.,!,/                   # Comma-separated
@@ -605,7 +607,9 @@ DB_URL=./data/baileys.db
 | `OWNER_NUMBER` | ✅ | `923051391007` | Your number, no `+` |
 | `BOT_NAME` | ❌ | `MEGA-MD` | Bot display name |
 | `BOT_OWNER` | ❌ | `Qasim Ali` | Owner display name |
+| `OWNER` | ❌ | `Qasim Ali` | Bot owner display name; takes priority over `BOT_OWNER` |
 | `PACKNAME` | ❌ | `MEGA-MD` | Sticker pack name |
+| `PACK_OWNER` | ❌ | `Bixo` | Sticker pack name; takes priority over `PACKNAME` |
 | `PREFIXES` | ❌ | `.,!,/,#` | Comma-separated prefixes |
 | `COMMAND_MODE` | ❌ | `public` | `public` or `private` |
 | `TIMEZONE` | ❌ | `Asia/Karachi` | Your timezone |
