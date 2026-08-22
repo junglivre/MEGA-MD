@@ -2,7 +2,7 @@
   "name": "mega-md",
   "description": "High performance multi-device WhatsApp bot",
   "keywords": ["whatsapp-bot", "baileys", "mega-md"],
-  "repository": "https://github.com/GlobalTechInfo/MEGA-MD",
+  "repository": "https://github.com/junglivre/MEGA-MD",
   "stack": "container",
   "env": {
     "SESSION_ID": {
@@ -38,7 +38,12 @@
     "BOT_OWNER": {
       "description": "Owner display name",
       "required": false,
-      "value": "GlobalTech"
+      "value": "jung"
+    },
+    "OWNER": {
+      "description": "Bot owner display name",
+      "required": false,
+      "value": "jung"
     },
     "PREFIXES": {
       "description": "Command prefixes separated by comma (e.g. .,!,/)",
@@ -49,6 +54,11 @@
       "description": "Sticker pack name",
       "required": false,
       "value": "MEGA-MD"
+    },
+    "PACK_OWNER": {
+      "description": "Sticker pack name",
+      "required": false,
+      "value": "Bixo"
     },
     "COMMAND_MODE": {
       "description": "Bot mode: public or private",

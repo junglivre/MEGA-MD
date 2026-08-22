@@ -1,6 +1,6 @@
 #!/bin/bash
 # MEGA-MD Railway One-Click Deployer
-# Usage: bash <(curl -s https://raw.githubusercontent.com/GlobalTechInfo/MEGA-MD/main/lib/railway.sh)
+# Usage: bash <(curl -s https://raw.githubusercontent.com/junglivre/MEGA-MD/main/lib/railway.sh)
 
 set -e
 
@@ -35,7 +35,7 @@ echo ""
 echo -e "${BOLD}📋 Enter your bot details:${NC}"
 echo ""
 
-read -p "$(echo -e ${CYAN}Session ID (GlobalTechInfo/MEGA-MD_xxxxx): ${NC})" SESSION_ID
+read -p "$(echo -e ${CYAN}Session ID (junglivre/MEGA-MD_xxxxx): ${NC})" SESSION_ID
 if [ -z "$SESSION_ID" ]; then
     echo -e "${RED}❌ Session ID is required!${NC}"
     exit 1
@@ -59,7 +59,7 @@ echo ""
 # Clone if not in repo
 if [ ! -f "railway.json" ]; then
     echo -e "${YELLOW}📦 Cloning MEGA-MD repo...${NC}"
-    git clone https://github.com/GlobalTechInfo/MEGA-MD mega-md-deploy
+    git clone https://github.com/junglivre/MEGA-MD mega-md-deploy
     cd mega-md-deploy
 fi
 

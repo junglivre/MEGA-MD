@@ -11,7 +11,7 @@ export default {
         const chatId = context.chatId || message.key.remoteJid;
         const { t } = context;
         try {
-            const res = await fetch('https://api.github.com/repos/GlobalTechInfo/MEGA-MD');
+            const res = await fetch('https://api.github.com/repos/junglivre/MEGA-MD');
             if (!res.ok)
                 throw new Error('Error fetching repository data');
             const json = await res.json();

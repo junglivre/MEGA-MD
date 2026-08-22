@@ -31,7 +31,7 @@ const config = {
         : -1,
     // Links
     channelLink: process.env.CHANNEL_LINK || 'https://whatsapp.com/channel/0029VagJIAr3bbVBCpEkAM07',
-    updateZipUrl: process.env.UPDATE_URL || 'https://github.com/GlobalTechInfo/MEGA-MD/archive/refs/heads/main.zip',
+    updateZipUrl: process.env.UPDATE_URL || 'https://github.com/junglivre/MEGA-MD/archive/refs/heads/main.zip',
     ytChannel: process.env.YT_CHANNEL || 'GlobalTechInfo',
     // Session
     sessionId: process.env.SESSION_ID || '',

@@ -34,13 +34,13 @@
     "nodejs-bot",
     "javascript-bot"
   ],
-  "homepage": "https://github.com/GlobalTechInfo/MEGA-MD",
+  "homepage": "https://github.com/junglivre/MEGA-MD",
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/GlobalTechInfo/MEGA-MD.git"
+    "url": "git+https://github.com/junglivre/MEGA-MD.git"
   },
   "bugs": {
-    "url": "https://github.com/GlobalTechInfo/MEGA-MD/issues"
+    "url": "https://github.com/junglivre/MEGA-MD/issues"
   },
   "license": "MIT",
   "author": "Qasim Ali",

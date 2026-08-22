@@ -27,7 +27,7 @@ echo "✅ Node.js $(node -v) installed"
 
 # Clone repo
 echo "📥 Cloning MEGA-MD..."
-git clone https://github.com/GlobalTechInfo/MEGA-MD /root/MEGA-MD
+git clone https://github.com/junglivre/MEGA-MD /root/MEGA-MD
 cd /root/MEGA-MD
 
 # Install npm packages
@@ -40,7 +40,7 @@ npm run reset-data
 
 # Create .env
 if [ ! -f .env ]; then
-  cp sample.env .env
+  cp .env.example .env
   echo ""
   echo "# Database (optional - use one):" >> .env
   echo "# MONGO_URL=" >> .env

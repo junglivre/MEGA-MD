@@ -1,6 +1,6 @@
 #!/bin/bash
 # MEGA-MD Heroku One-Click Deployer
-# Usage: bash <(curl -s https://raw.githubusercontent.com/GlobalTechInfo/MEGA-MD/main/lib/heroku.sh)
+# Usage: bash <(curl -s https://raw.githubusercontent.com/junglivre/MEGA-MD/main/lib/heroku.sh)
 
 set -e
 
@@ -42,7 +42,7 @@ read -p "$(echo -e ${CYAN}App name (e.g. my-mega-md): ${NC})" APP_NAME
 APP_NAME=${APP_NAME:-mega-md-bot}
 
 # Session ID
-read -p "$(echo -e ${CYAN}Session ID (GlobalTechInfo/MEGA-MD_xxxxx): ${NC})" SESSION_ID
+read -p "$(echo -e ${CYAN}Session ID (junglivre/MEGA-MD_xxxxx): ${NC})" SESSION_ID
 if [ -z "$SESSION_ID" ]; then
     echo -e "${RED}❌ Session ID is required!${NC}"
     exit 1
@@ -70,7 +70,7 @@ echo ""
 # Clone if not in repo
 if [ ! -f "heroku.yml" ]; then
     echo -e "${YELLOW}📦 Cloning MEGA-MD repo...${NC}"
-    git clone https://github.com/GlobalTechInfo/MEGA-MD mega-md-deploy
+    git clone https://github.com/junglivre/MEGA-MD mega-md-deploy
     cd mega-md-deploy
 fi
 

@@ -91,7 +91,7 @@ export default {
                     externalAdReply: {
                         title: t('p.settings.adTitle'),
                         body: t('p.settings.adBody'),
-                        thumbnailUrl: "https://github.com/GlobalTechInfo.png",
+                        thumbnailUrl: "https://github.com/junglivre.png",
                         mediaType: 1,
                         renderLargerThumbnail: true
                     }
