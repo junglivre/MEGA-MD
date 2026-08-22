@@ -127,9 +127,9 @@ function sourceFromQuoted(quoted, context, fallbackParticipant) {
     };
 }
 
-function getReplyChain(message, quotedContext) {
+function getReplyChainFromSource(initial) {
     const chain = [];
-    let current = sourceFromQuoted(quotedContext.quotedMessage, quotedContext, message.key?.participant);
+    let current = initial;
     const seen = new Set();
     while (current && chain.length < 20) {
         const id = current.key?.id || `nested-${chain.length}`;
@@ -143,6 +143,14 @@ function getReplyChain(message, quotedContext) {
     return chain;
 }
 
+function getReplyChain(message, quotedContext, stored) {
+    const quotedId = String(quotedContext.stanzaId || '');
+    const storedSource = stored.find(item => String(item.key?.id || '') === quotedId);
+    const initial = storedSource
+        || sourceFromQuoted(quotedContext.quotedMessage, quotedContext, message.key?.participant);
+    return getReplyChainFromSource(initial);
+}
+
 function selectSources(message, chatId, count, includeReplyChain = false) {
     const quotedContext = getContextInfo(message);
     const quoted = quotedContext.quotedMessage;
@@ -154,7 +162,7 @@ function selectSources(message, chatId, count, includeReplyChain = false) {
     if (!quoted)
         return stored.slice(-count);
     if (includeReplyChain)
-        return getReplyChain(message, quotedContext);
+        return getReplyChain(message, quotedContext, stored);
     const quotedId = quotedContext.stanzaId;
     if (count <= 1 || stored.length === 0)
         return [{ key: { participant: quotedContext.participant || message.key.participant || chatId }, message: quoted }];
@@ -186,7 +194,9 @@ async function buildQuoteMessages(sock, sources, typedText, options, fallbackNam
             : extractText(source.message, 'Mensagem de mídia');
         return {
             entities: [],
-            avatar: index === 0 || sources[index - 1]?.key?.participant !== source.key?.participant,
+            // QuotLy renders the avatar on the last message of a sender run.
+            avatar: index === sources.length - 1
+                || sources[index + 1]?.key?.participant !== source.key?.participant,
             chatId: sender.id,
             from: { id: sender.id, name: sender.name, photo: sender.avatar ? { url: sender.avatar } : {} },
             text,
