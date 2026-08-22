@@ -18,6 +18,7 @@ const config = {
     botName: process.env.BOT_NAME || 'MEGA-MD',
     botOwner: process.env.OWNER || process.env.BOT_OWNER || 'Qasim Ali',
     ownerNumber: process.env.OWNER_NUMBER || '923051391007',
+    ownerLid: process.env.OWNER_LID || '',
     author: process.env.AUTHOR || process.env.OWNER || process.env.BOT_OWNER || 'Qasim Ali',
     packOwner: configuredPackName,
     packname: configuredPackName,
