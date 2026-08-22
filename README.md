@@ -622,6 +622,11 @@ DB_URL=./data/baileys.db
 | `GROQ_API_KEY` | ❌ | — | Groq API key for chatbot and audio transcription |
 | `GROQ_CHAT_MODEL` | ❌ | `openai/gpt-oss-120b` | Groq chat model |
 | `GROQ_TRANSCRIPTION_MODEL` | ❌ | `whisper-large-v3-turbo` | Groq Whisper model |
+| `GROQ_CHAT_INSTRUCTIONS` | ❌ | — | Additional owner instructions for the chatbot; use `\n` for line breaks |
+| `GROQ_CHAT_RESPONSE_SIZE` | ❌ | `medium` | Response style: `short`, `medium` or `big` |
+| `GROQ_CHAT_MAX_TOKENS` | ❌ | `700` | Maximum Groq response tokens; size defaults are `300/700/1400` |
+| `GROQ_CHAT_TEMPERATURE` | ❌ | `0.7` | Groq response creativity, from `0` to `2` |
+| `GROQ_CHAT_HISTORY_LIMIT` | ❌ | `20` | Conversation messages kept for the chatbot |
 | `QUOTE_API_URL` | ❌ | `https://quoapi.jung.moe/generate` | QuotLy-compatible quote renderer; `/generate` is added when omitted |
 | `LASTFM_API_KEY` | ❌ | — | Last.fm API key for `.lastfm` |
 | `LASTFM_API_URL` | ❌ | `https://ws.audioscrobbler.com/2.0/` | Last.fm API endpoint |

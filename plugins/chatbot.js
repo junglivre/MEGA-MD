@@ -156,7 +156,7 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         }
         const messages = chatMemory.messages.get(senderId);
         messages.push(cleanedMessage);
-        if (messages.length > 20)
+        if (messages.length > config.groqChatHistoryLimit)
             messages.shift();
         chatMemory.messages.set(senderId, messages);
         await showTyping(sock, chatId);
@@ -200,12 +200,18 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
 }
 async function getAIResponse(userMessage, userContext) {
     const replyLanguage = languageLabel(userContext.language);
+    const responseGuidance = {
+        short: 'Keep the response concise: usually 1-3 sentences, focusing only on the essential answer.',
+        medium: 'Give a clear, useful response in a few paragraphs when needed. Explain the reasoning briefly, without being excessive.',
+        big: 'Give a detailed and well-structured response. Cover important context, steps, examples, and caveats when useful.'
+    }[config.groqChatResponseSize];
+    const customInstructions = String(config.groqChatInstructions || '').replace(/\\n/g, '\n').trim();
     const prompt = `
 You are a casual, friendly human chatting on WhatsApp. Reply in ${replyLanguage}.
 
 RULES:
 1. Always respond in ${replyLanguage}, unless the user explicitly asks for another language
-2. Keep responses short — 1-2 lines max
+2. ${responseGuidance}
 3. Be casual and natural, not robotic
 4. Use emojis naturally
 5. Never reveal you are an AI or bot
@@ -220,6 +226,8 @@ PERSONALITY:
 - If they are funny, joke around
 - If they are sad, be supportive
 
+${customInstructions ? `ADDITIONAL INSTRUCTIONS FROM THE BOT OWNER:\n${customInstructions}\n` : ''}
+
 Previous conversation:
 ${userContext.messages.join('\n')}
 
@@ -231,7 +239,11 @@ You:
     `.trim();
     if (hasGroqKey()) {
         try {
-            const result = await groqChat([{ role: 'user', content: prompt }]);
+            const systemPrompt = `You are the system instruction layer for a WhatsApp assistant. Follow the response style and owner instructions below.\n\n${prompt}`;
+            const result = await groqChat([
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userMessage }
+            ]);
             if (result) {
                 console.log('✅ Groq success');
                 return cleanAIResponse(result);
