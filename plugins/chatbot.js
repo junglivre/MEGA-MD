@@ -6,6 +6,7 @@ import store from '../lib/lightweight_store.js';
 import { createTranslator, getUserLanguage, languageLabel } from '../lib/i18n.js';
 import { groqChat, hasGroqKey } from '../lib/groq.js';
 import { findInsideJokes, loadInsideJokes } from '../lib/insideJokes.js';
+import { hasPendingInsideJokeWizard } from './insidejokes.js';
 const MONGO_URL = process.env.MONGO_URL;
 const POSTGRES_URL = process.env.POSTGRES_URL;
 const MYSQL_URL = process.env.MYSQL_URL;
@@ -143,6 +144,8 @@ async function replaceMentionedJids(sock, chatId, text, mentionedJids) {
 }
 
 export async function handleChatbotResponse(sock, chatId, message, userMessage, senderId) {
+    if (hasPendingInsideJokeWizard(chatId))
+        return;
     const data = await loadUserGroupData();
     const insideJokeState = await loadInsideJokes();
     const insideJokes = findInsideJokes(insideJokeState, chatId, userMessage);

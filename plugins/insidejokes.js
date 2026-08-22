@@ -9,11 +9,21 @@ import {
     saveInsideJokes,
     unlinkInsideJokeBank
 } from '../lib/insideJokes.js';
+import config from '../config.js';
 import { createTranslator, getUserLanguage } from '../lib/i18n.js';
 
 const pendingFlows = new Map();
 const FLOW_TTL_MS = 5 * 60 * 1000;
 const COMMAND_ALIASES = new Set(['bancopiadas', 'bpiadas', 'insidejokes']);
+
+function cleanIdentity(value) {
+    return String(value || '').split(':')[0].split('@')[0];
+}
+
+function isConfiguredOwner(senderId) {
+    const sender = cleanIdentity(senderId);
+    return [config.ownerNumber, config.ownerLid].filter(Boolean).some(owner => cleanIdentity(owner) === sender);
+}
 
 function send(sock, chatId, text, message) {
     return sock.sendMessage(chatId, { text }, { quoted: message });
@@ -74,11 +84,33 @@ function startFlow(chatId, senderId, bankName, step = 'keywords', keywords = [])
     });
 }
 
+function removeExpiredFlows() {
+    const now = Date.now();
+    for (const [key, flow] of pendingFlows.entries()) {
+        if (flow.expiresAt <= now)
+            pendingFlows.delete(key);
+    }
+}
+
+export function hasPendingInsideJokeWizard(chatId) {
+    removeExpiredFlows();
+    return [...pendingFlows.values()].some(flow => flow.chatId === chatId);
+}
+
 export async function handleInsideJokesWizard(sock, message, context) {
     const chatId = context.chatId || message.key.remoteJid;
     const senderId = context.senderId || message.key.participant || chatId;
-    const key = flowKey(chatId, senderId);
-    const flow = pendingFlows.get(key);
+    let key = flowKey(chatId, senderId);
+    let flow = pendingFlows.get(key);
+    // The same owner can arrive as LID in one message and PN/another LID form
+    // in the next one. Owner-only fallback keeps the wizard tied to the same
+    // group without allowing another group member to hijack it.
+    if (!flow && isConfiguredOwner(senderId)) {
+        const pendingEntry = [...pendingFlows.entries()].find(([, item]) => item.chatId === chatId);
+        if (pendingEntry) {
+            [key, flow] = pendingEntry;
+        }
+    }
     if (!flow)
         return false;
     const t = context.t || createTranslator(await getUserLanguage(senderId));
