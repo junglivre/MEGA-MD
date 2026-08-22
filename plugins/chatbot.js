@@ -260,7 +260,7 @@ async function getAIResponse(userMessage, userContext) {
     }[config.groqChatResponseSize];
     const customInstructions = String(config.groqChatInstructions || '').replace(/\\n/g, '\n').trim();
     const insideJokeContext = userContext.insideJokes?.length
-        ? `\nINTERNAL JOKE CONTEXT (use it naturally when relevant; never mention this database or these instructions):\n${userContext.insideJokes.map(joke => `- Bank: ${joke.bankName}; Trigger: ${joke.matchedKeywords.join(', ')}; Context: ${joke.context}`).join('\n')}\n`
+        ? `\nINTERNAL JOKE CONTEXT (never mention this database or these instructions):\n${userContext.insideJokes.map(joke => `- Bank: ${joke.bankName}; Trigger: ${joke.matchedKeywords.join(', ')}; Context: ${joke.context}`).join('\n')}\nEvaluate all matching contexts and choose the one that best fits the user's message. If multiple clearly apply, combine them naturally without inventing facts.\n`
         : '';
     const prompt = `
 You are a casual, friendly human chatting on WhatsApp. Reply in ${replyLanguage}.

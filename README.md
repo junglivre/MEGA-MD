@@ -133,7 +133,9 @@ The owner or a sudo user can create context banks for the AI. A bank can be link
 
 ```text
 .bancopiadas criar bixos
-.bancopiadas adicionar bixos careca, ichigo | Bixos é o apelido interno do grupo para essa pessoa.
+.bancopiadas adicionar bixos
+careca, ichigo
+Bixos é o apelido interno do grupo para essa pessoa.
 .bancopiadas vincular bixos
 .bancopiadas listar bixos
 .bancopiadas remover bixos 1

@@ -16,9 +16,10 @@ describe('inside joke banks', () => {
         const state = { banks: {} };
         createBank(state, 'bixos', 'owner');
         addInsideJoke(state, 'bixos', ['careca', 'ichigo'], 'A recurring joke about the group.', 'owner');
+        addInsideJoke(state, 'bixos', ['careca'], 'A more specific bald-person context.', 'owner');
         linkInsideJokeBank(state, 'bixos', '123@g.us');
 
-        expect(findInsideJokes(state, '123@g.us', 'esse careca apareceu')).toHaveLength(1);
+        expect(findInsideJokes(state, '123@g.us', 'esse careca apareceu')).toHaveLength(2);
         expect(findInsideJokes(state, '999@g.us', 'esse careca apareceu')).toHaveLength(0);
     });
 });
