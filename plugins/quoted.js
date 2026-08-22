@@ -151,6 +151,29 @@ function getReplyChain(message, quotedContext, stored) {
     return getReplyChainFromSource(initial);
 }
 
+function includeMissingReplyParents(sources, count) {
+    if (sources.length >= count)
+        return sources;
+    const result = [];
+    const knownIds = new Set(sources.map(source => String(source.key?.id || '')).filter(Boolean));
+    for (const source of sources) {
+        const context = getContextInfo(source.message);
+        const parentId = String(context.stanzaId || '');
+        if (context.quotedMessage && (!parentId || !knownIds.has(parentId))) {
+            const parent = sourceFromQuoted(context.quotedMessage, context, source.key?.participant);
+            if (parent) {
+                result.push(parent);
+                if (parent.key?.id)
+                    knownIds.add(String(parent.key.id));
+            }
+        }
+        result.push(source);
+        if (result.length >= count)
+            break;
+    }
+    return result.slice(0, count);
+}
+
 function selectSources(message, chatId, count, includeReplyChain = false) {
     const quotedContext = getContextInfo(message);
     const quoted = quotedContext.quotedMessage;
@@ -159,8 +182,10 @@ function selectSources(message, chatId, count, includeReplyChain = false) {
         .map(sourceFromStored)
         .filter(item => item && item.key?.id !== currentId)
         .sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0));
-    if (!quoted)
-        return stored.slice(-count);
+    if (!quoted) {
+        const selected = stored.slice(-count);
+        return includeReplyChain ? includeMissingReplyParents(selected, count) : selected;
+    }
     // With a single count, `r` means follow the reply chain. When a count is
     // provided (e.g. `.q 4 r`), keep the normal message window and only add
     // reply previews to the messages that contain one.
@@ -173,8 +198,9 @@ function selectSources(message, chatId, count, includeReplyChain = false) {
     // Count forward from the selected message. This matches the chat order:
     // replying to message 1 with `.q 2` quotes message 1 and message 2.
     if (index === -1)
-        return stored.slice(-count);
-    return stored.slice(index, index + count);
+        return includeReplyChain ? includeMissingReplyParents(stored.slice(-count), count) : stored.slice(-count);
+    const selected = stored.slice(index, index + count);
+    return includeReplyChain ? includeMissingReplyParents(selected, count) : selected;
 }
 
 function makeReplyPreview(source) {
