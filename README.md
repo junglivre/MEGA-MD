@@ -621,6 +621,7 @@ DB_URL=./data/baileys.db
 | `STORE_WRITE_INTERVAL` | ❌ | `10000` | Store write interval (ms) |
 | `GROQ_API_KEY` | ❌ | — | Groq API key for chatbot and audio transcription |
 | `GROQ_CHAT_MODEL` | ❌ | `openai/gpt-oss-120b` | Groq chat model |
+| `GROQ_VISION_MODEL` | ❌ | `qwen/qwen3.6-27b` | Groq multimodal model used by `/vision` |
 | `GROQ_TRANSCRIPTION_MODEL` | ❌ | `whisper-large-v3-turbo` | Groq Whisper model |
 | `GROQ_CHAT_INSTRUCTIONS` | ❌ | — | Additional owner instructions for the chatbot; use `\n` for line breaks |
 | `GROQ_CHAT_RESPONSE_SIZE` | ❌ | `medium` | Response style: `short`, `medium` or `big` |

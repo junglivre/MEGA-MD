@@ -44,6 +44,7 @@ const config = {
     backupRetention: Number(process.env.BACKUP_RETENTION) || 7,
     backupDirectory: process.env.BACKUP_DIR || 'backups',
     groqChatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
+    groqVisionModel: process.env.GROQ_VISION_MODEL || 'qwen/qwen3.6-27b',
     groqTranscriptionModel: process.env.GROQ_TRANSCRIPTION_MODEL || 'whisper-large-v3-turbo',
     groqChatInstructions: process.env.GROQ_CHAT_INSTRUCTIONS || '',
     groqChatResponseSize,
