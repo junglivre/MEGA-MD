@@ -6,6 +6,11 @@ const chatResponseSizes = new Set(['short', 'medium', 'big']);
 const configuredChatSize = String(process.env.GROQ_CHAT_RESPONSE_SIZE || 'medium').trim().toLowerCase();
 const groqChatResponseSize = chatResponseSizes.has(configuredChatSize) ? configuredChatSize : 'medium';
 const defaultChatTokens = { short: 300, medium: 700, big: 1400 };
+const visionResponseSizes = new Set(['small', 'medium', 'big']);
+const configuredVisionSize = String(process.env.GROQ_VISION_REASONING || process.env.GROQ_VISION_RESPONSE_SIZE || 'medium').trim().toLowerCase();
+const groqVisionResponseSize = visionResponseSizes.has(configuredVisionSize) ? configuredVisionSize : 'medium';
+const defaultVisionTokens = { small: 300, medium: 600, big: 1000 };
+const defaultVisionChars = { small: 1200, medium: 2400, big: 4800 };
 const configuredChatTemperature = Number(process.env.GROQ_CHAT_TEMPERATURE);
 const configuredPackName = process.env.PACK_OWNER || process.env.PACKNAME || 'MEGA-MD';
 const config = {
@@ -47,6 +52,9 @@ const config = {
     backupDirectory: process.env.BACKUP_DIR || 'backups',
     groqChatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
     groqVisionModel: process.env.GROQ_VISION_MODEL || 'qwen/qwen3.6-27b',
+    groqVisionResponseSize,
+    groqVisionMaxTokens: Math.max(100, Number(process.env.GROQ_VISION_MAX_TOKENS) || defaultVisionTokens[groqVisionResponseSize]),
+    groqVisionMaxChars: Math.max(400, Number(process.env.GROQ_VISION_MAX_CHARS) || defaultVisionChars[groqVisionResponseSize]),
     groqTranscriptionModel: process.env.GROQ_TRANSCRIPTION_MODEL || 'whisper-large-v3-turbo',
     groqChatInstructions: process.env.GROQ_CHAT_INSTRUCTIONS || '',
     groqChatResponseSize,

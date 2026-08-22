@@ -11,8 +11,8 @@
 [![Version](https://img.shields.io/badge/Version-6.0.0-blue?style=for-the-badge&logo=github)](https://github.com/junglivre/MEGA-MD)
 [![Node.js](https://img.shields.io/badge/Node.js-20%2B-339933?style=for-the-badge&logo=node.js&logoColor=white)](https://nodejs.org)
 [![WhatsApp](https://img.shields.io/badge/Baileys-7.x-25D366?style=for-the-badge&logo=whatsapp&logoColor=white)](https://github.com/WhiskeySockets/Baileys)
-[![Stars](https://img.shields.io/github/stars/junglivre/MEGA-MD?style=for-the-badge&logo=starship&color=gold)](https://github.com/junglivre/MEGA-MD/stargazers)
-[![Forks](https://img.shields.io/github/forks/junglivre/MEGA-MD?style=for-the-badge&logo=git&color=orange)](https://github.com/junglivre/MEGA-MD/network/members)
+[![Stars](https://img.shields.io/github/stars/GlobalTechInfo/MEGA-MD?style=for-the-badge&logo=starship&color=gold)](https://github.com/GlobalTechInfo/MEGA-MD/stargazers)
+[![Forks](https://img.shields.io/github/forks/GlobalTechInfo/MEGA-MD?style=for-the-badge&logo=git&color=orange)](https://github.com/GlobalTechInfo/MEGA-MD/network/members)
 
 <br/>
 
@@ -626,6 +626,9 @@ DB_URL=./data/baileys.db
 | `GROQ_API_KEY` | ❌ | — | Groq API key for chatbot and audio transcription |
 | `GROQ_CHAT_MODEL` | ❌ | `openai/gpt-oss-120b` | Groq chat model |
 | `GROQ_VISION_MODEL` | ❌ | `qwen/qwen3.6-27b` | Groq multimodal model used by `/vision` |
+| `GROQ_VISION_REASONING` | ❌ | `medium` | Vision response size: `small`, `medium` or `big` |
+| `GROQ_VISION_MAX_TOKENS` | ❌ | size-based | Optional hard limit for Vision output tokens |
+| `GROQ_VISION_MAX_CHARS` | ❌ | size-based | Optional hard limit for Vision output characters |
 | `GROQ_TRANSCRIPTION_MODEL` | ❌ | `whisper-large-v3-turbo` | Groq Whisper model |
 | `GROQ_CHAT_INSTRUCTIONS` | ❌ | — | Additional owner instructions for the chatbot; use `\n` for line breaks |
 | `GROQ_CHAT_RESPONSE_SIZE` | ❌ | `medium` | Response style: `short`, `medium` or `big` |
