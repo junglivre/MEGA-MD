@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import config from '../config.js';
 import { dataFile } from '../lib/paths.js';
 import store from '../lib/lightweight_store.js';
 import { createTranslator, getUserLanguage, languageLabel } from '../lib/i18n.js';
