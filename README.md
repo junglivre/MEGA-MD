@@ -224,8 +224,10 @@ OWNER_NUMBER=923000000000        # No + sign
 
 # ── BOT IDENTITY ─────────────────────────────────────────────
 BOT_NAME=MEGA-MD-PRO
+OWNER=GlobalTechInfo
 BOT_OWNER=GlobalTechInfo
 PACKNAME=MEGA-MD
+PACK_OWNER=Bixo
 
 # ── BEHAVIOUR ────────────────────────────────────────────────
 PREFIXES=.,!,/                   # Comma-separated
@@ -605,12 +607,14 @@ DB_URL=./data/baileys.db
 | `OWNER_NUMBER` | ✅ | `923051391007` | Your number, no `+` |
 | `BOT_NAME` | ❌ | `MEGA-MD` | Bot display name |
 | `BOT_OWNER` | ❌ | `Qasim Ali` | Owner display name |
+| `OWNER` | ❌ | `Qasim Ali` | Bot owner display name; takes priority over `BOT_OWNER` |
 | `PACKNAME` | ❌ | `MEGA-MD` | Sticker pack name |
+| `PACK_OWNER` | ❌ | `Bixo` | Sticker pack name; takes priority over `PACKNAME` |
 | `PREFIXES` | ❌ | `.,!,/,#` | Comma-separated prefixes |
 | `COMMAND_MODE` | ❌ | `public` | `public` or `private` |
 | `TIMEZONE` | ❌ | `Asia/Karachi` | Your timezone |
 | `PORT` | ❌ | `5000` | HTTP server port |
-| `MAX_STORE_MESSAGES` | ❌ | `20` | Messages stored per chat |
+| `MAX_STORE_MESSAGES` | ❌ | `100` | Recent messages kept per chat for commands such as `.q 2` |
 | `REMOVEBG_KEY` | ❌ | — | [remove.bg](https://remove.bg) API key |
 | `GIPHY_API_KEY` | ❌ | — | [Giphy](https://developers.giphy.com) API key |
 | `MONGO_URL` | ❌ | — | MongoDB connection string |
@@ -621,7 +625,14 @@ DB_URL=./data/baileys.db
 | `STORE_WRITE_INTERVAL` | ❌ | `10000` | Store write interval (ms) |
 | `GROQ_API_KEY` | ❌ | — | Groq API key for chatbot and audio transcription |
 | `GROQ_CHAT_MODEL` | ❌ | `openai/gpt-oss-120b` | Groq chat model |
+| `GROQ_VISION_MODEL` | ❌ | `qwen/qwen3.6-27b` | Groq multimodal model used by `/vision` |
 | `GROQ_TRANSCRIPTION_MODEL` | ❌ | `whisper-large-v3-turbo` | Groq Whisper model |
+| `GROQ_CHAT_INSTRUCTIONS` | ❌ | — | Additional owner instructions for the chatbot; use `\n` for line breaks |
+| `GROQ_CHAT_RESPONSE_SIZE` | ❌ | `medium` | Response style: `short`, `medium` or `big` |
+| `GROQ_CHAT_MAX_TOKENS` | ❌ | `700` | Maximum Groq response tokens; size defaults are `300/700/1400` |
+| `GROQ_CHAT_TEMPERATURE` | ❌ | `0.7` | Groq response creativity, from `0` to `2` |
+| `GROQ_CHAT_HISTORY_LIMIT` | ❌ | `20` | Conversation messages kept for the chatbot |
+| `QUOTE_API_URL` | ❌ | `https://quoapi.jung.moe/generate` | QuotLy-compatible quote renderer; `/generate` is added when omitted |
 | `LASTFM_API_KEY` | ❌ | — | Last.fm API key for `.lastfm` |
 | `LASTFM_API_URL` | ❌ | `https://ws.audioscrobbler.com/2.0/` | Last.fm API endpoint |
 | `BACKUP_ENABLED` | ❌ | `true` | Enable automatic ZIP backups |

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import path from 'path';
+import config from '../config.js';
 import { dataFile } from '../lib/paths.js';
 import store from '../lib/lightweight_store.js';
 import { createTranslator, getUserLanguage, languageLabel } from '../lib/i18n.js';
@@ -94,6 +95,52 @@ function extractUserInfo(message) {
     }
     return info;
 }
+
+function jidToken(jid) {
+    return String(jid || '').split('@')[0].split(':')[0];
+}
+
+function sameJid(left, right) {
+    return jidToken(left) && jidToken(left) === jidToken(right);
+}
+
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function getMentionName(sock, chatId, jid) {
+    const contacts = sock.store?.contacts || {};
+    const direct = contacts[jid] || Object.values(contacts).find(contact =>
+        sameJid(contact?.id, jid) || sameJid(contact?.lid, jid));
+    if (direct?.name || direct?.notify)
+        return direct.name || direct.notify;
+    if (chatId?.endsWith('@g.us')) {
+        try {
+            const metadata = await sock.groupMetadata(chatId);
+            const participant = metadata?.participants?.find(item =>
+                sameJid(item?.id, jid) || sameJid(item?.lid, jid) || sameJid(item?.phoneNumber, jid));
+            if (participant?.name || participant?.notify)
+                return participant.name || participant.notify;
+        }
+        catch {
+            // Contact cache remains a valid fallback when group metadata fails.
+        }
+    }
+    return 'alguém';
+}
+
+async function replaceMentionedJids(sock, chatId, text, mentionedJids) {
+    let result = text;
+    for (const jid of mentionedJids || []) {
+        const token = jidToken(jid);
+        if (!token)
+            continue;
+        const name = await getMentionName(sock, chatId, jid);
+        result = result.replace(new RegExp(`@${escapeRegExp(token)}\\b`, 'g'), name);
+    }
+    return result.replace(/\s{2,}/g, ' ').trim();
+}
+
 export async function handleChatbotResponse(sock, chatId, message, userMessage, senderId) {
     const data = await loadUserGroupData();
     if (!data.chatbot[chatId])
@@ -116,10 +163,11 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         ];
         let isBotMentioned = false;
         let isReplyToBot = false;
+        let mentionedJids = [];
         if (message.message?.extendedTextMessage) {
-            const mentionedJid = message.message.extendedTextMessage.contextInfo?.mentionedJid || [];
+            mentionedJids = message.message.extendedTextMessage.contextInfo?.mentionedJid || [];
             const quotedParticipant = message.message.extendedTextMessage.contextInfo?.participant;
-            isBotMentioned = mentionedJid.some((jid) => {
+            isBotMentioned = mentionedJids.some((jid) => {
                 const jidNumber = jid.split('@')[0].split(':')[0];
                 return botJids.some((botJid) => {
                     const botJidNumber = botJid.split('@')[0].split(':')[0];
@@ -143,6 +191,7 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         if (isBotMentioned) {
             cleanedMessage = cleanedMessage.replace(new RegExp(`@${botNumber}`, 'g'), '').trim();
         }
+        cleanedMessage = await replaceMentionedJids(sock, chatId, cleanedMessage, mentionedJids);
         if (!chatMemory.messages.has(senderId)) {
             chatMemory.messages.set(senderId, []);
             chatMemory.userInfo.set(senderId, {});
@@ -156,7 +205,7 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         }
         const messages = chatMemory.messages.get(senderId);
         messages.push(cleanedMessage);
-        if (messages.length > 20)
+        if (messages.length > config.groqChatHistoryLimit)
             messages.shift();
         chatMemory.messages.set(senderId, messages);
         await showTyping(sock, chatId);
@@ -200,12 +249,18 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
 }
 async function getAIResponse(userMessage, userContext) {
     const replyLanguage = languageLabel(userContext.language);
+    const responseGuidance = {
+        short: 'Keep the response concise: usually 1-3 sentences, focusing only on the essential answer.',
+        medium: 'Give a clear, useful response in a few paragraphs when needed. Explain the reasoning briefly, without being excessive.',
+        big: 'Give a detailed and well-structured response. Cover important context, steps, examples, and caveats when useful.'
+    }[config.groqChatResponseSize];
+    const customInstructions = String(config.groqChatInstructions || '').replace(/\\n/g, '\n').trim();
     const prompt = `
 You are a casual, friendly human chatting on WhatsApp. Reply in ${replyLanguage}.
 
 RULES:
 1. Always respond in ${replyLanguage}, unless the user explicitly asks for another language
-2. Keep responses short — 1-2 lines max
+2. ${responseGuidance}
 3. Be casual and natural, not robotic
 4. Use emojis naturally
 5. Never reveal you are an AI or bot
@@ -220,6 +275,8 @@ PERSONALITY:
 - If they are funny, joke around
 - If they are sad, be supportive
 
+${customInstructions ? `ADDITIONAL INSTRUCTIONS FROM THE BOT OWNER:\n${customInstructions}\n` : ''}
+
 Previous conversation:
 ${userContext.messages.join('\n')}
 
@@ -231,7 +288,11 @@ You:
     `.trim();
     if (hasGroqKey()) {
         try {
-            const result = await groqChat([{ role: 'user', content: prompt }]);
+            const systemPrompt = `You are the system instruction layer for a WhatsApp assistant. Follow the response style and owner instructions below.\n\n${prompt}`;
+            const result = await groqChat([
+                { role: 'system', content: systemPrompt },
+                { role: 'user', content: userMessage }
+            ]);
             if (result) {
                 console.log('✅ Groq success');
                 return cleanAIResponse(result);
