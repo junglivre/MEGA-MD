@@ -4,15 +4,16 @@ import {
     deleteInsideJokeBank,
     getBank,
     linkInsideJokeBank,
+    loadInsideJokeFlows,
     loadInsideJokes,
     removeInsideJoke,
     saveInsideJokes,
+    saveInsideJokeFlows,
     unlinkInsideJokeBank
 } from '../lib/insideJokes.js';
 import config from '../config.js';
 import { createTranslator, getUserLanguage } from '../lib/i18n.js';
 
-const pendingFlows = new Map();
 const FLOW_TTL_MS = 5 * 60 * 1000;
 const COMMAND_ALIASES = new Set(['bancopiadas', 'bpiadas', 'insidejokes']);
 
@@ -73,8 +74,9 @@ function normalizeFlowKeywords(value) {
     return String(value || '').split(',').map(keyword => keyword.trim()).filter(Boolean);
 }
 
-function startFlow(chatId, senderId, bankName, step = 'keywords', keywords = [], pushName = '') {
-    pendingFlows.set(flowKey(chatId, senderId), {
+async function startFlow(chatId, senderId, bankName, step = 'keywords', keywords = [], pushName = '') {
+    const flows = await loadInsideJokeFlows();
+    flows[flowKey(chatId, senderId)] = {
         chatId,
         senderId,
         pushName: String(pushName || '').trim(),
@@ -82,34 +84,39 @@ function startFlow(chatId, senderId, bankName, step = 'keywords', keywords = [],
         step,
         keywords,
         expiresAt: Date.now() + FLOW_TTL_MS
-    });
+    };
+    await saveInsideJokeFlows(flows);
 }
 
-function removeExpiredFlows() {
+function removeExpiredFlows(flows) {
     const now = Date.now();
-    for (const [key, flow] of pendingFlows.entries()) {
+    for (const [key, flow] of Object.entries(flows)) {
         if (flow.expiresAt <= now)
-            pendingFlows.delete(key);
+            delete flows[key];
     }
 }
 
-export function hasPendingInsideJokeWizard(chatId) {
-    removeExpiredFlows();
-    return [...pendingFlows.values()].some(flow => flow.chatId === chatId);
+export async function hasPendingInsideJokeWizard(chatId) {
+    const flows = await loadInsideJokeFlows();
+    removeExpiredFlows(flows);
+    await saveInsideJokeFlows(flows);
+    return Object.values(flows).some(flow => flow.chatId === chatId);
 }
 
 export async function handleInsideJokesWizard(sock, message, context) {
     const chatId = context.chatId || message.key.remoteJid;
     const senderId = context.senderId || message.key.participant || chatId;
+    const flows = await loadInsideJokeFlows();
+    removeExpiredFlows(flows);
     let key = flowKey(chatId, senderId);
-    let flow = pendingFlows.get(key);
+    let flow = flows[key];
     // The same owner can arrive as LID in one message and PN/another LID form
     // in the next one. Match the configured owner, owner/sudo check, or the
     // original pushName so the wizard survives that identity representation
     // change without handing the message to the chatbot.
     if (!flow) {
         const currentPushName = String(message.pushName || '').trim();
-        const pendingEntry = [...pendingFlows.entries()].find(([, item]) => item.chatId === chatId && (
+        const pendingEntry = Object.entries(flows).find(([, item]) => item.chatId === chatId && (
             context.senderIsOwnerOrSudo ||
             isConfiguredOwner(senderId) ||
             (item.pushName && currentPushName && item.pushName === currentPushName)
@@ -123,12 +130,14 @@ export async function handleInsideJokesWizard(sock, message, context) {
     const t = context.t || createTranslator(await getUserLanguage(senderId));
     const rawText = String(context.rawText || '').trim();
     if (Date.now() > flow.expiresAt) {
-        pendingFlows.delete(key);
+        delete flows[key];
+        await saveInsideJokeFlows(flows);
         await send(sock, chatId, `⌛ ${t('p.insidejokes.flowExpired')}`, message);
         return true;
     }
     if (isCancelCommand(rawText, context.config?.prefixes || [])) {
-        pendingFlows.delete(key);
+        delete flows[key];
+        await saveInsideJokeFlows(flows);
         await send(sock, chatId, `✅ ${t('p.insidejokes.flowCanceled')}`, message);
         return true;
     }
@@ -143,7 +152,8 @@ export async function handleInsideJokesWizard(sock, message, context) {
         flow.keywords = keywords;
         flow.step = 'context';
         flow.expiresAt = Date.now() + FLOW_TTL_MS;
-        pendingFlows.set(key, flow);
+        flows[key] = flow;
+        await saveInsideJokeFlows(flows);
         await send(sock, chatId, `✅ ${t('p.insidejokes.tagsReceived')}\n\n${t('p.insidejokes.askContext')}`, message);
         return true;
     }
@@ -151,7 +161,8 @@ export async function handleInsideJokesWizard(sock, message, context) {
         const state = await loadInsideJokes();
         const joke = addInsideJoke(state, flow.bankName, flow.keywords, rawText, senderId);
         await saveInsideJokes(state);
-        pendingFlows.delete(key);
+        delete flows[key];
+        await saveInsideJokeFlows(flows);
         await send(sock, chatId, `✅ ${t('p.insidejokes.jokeAdded', { id: joke.id, bank: getBank(state, flow.bankName).name })}`, message);
     }
     catch (error) {
@@ -218,7 +229,7 @@ export default {
                     if (!getBank(state, payload.bankName))
                         throw new Error('not_found');
                     const keywords = normalizeFlowKeywords(payload.keywords);
-                    startFlow(chatId, senderId, payload.bankName, keywords.length ? 'context' : 'keywords', keywords, message.pushName);
+                    await startFlow(chatId, senderId, payload.bankName, keywords.length ? 'context' : 'keywords', keywords, message.pushName);
                     return send(sock, chatId, keywords.length
                         ? `📝 ${t('p.insidejokes.askContext')}`
                         : `📝 ${t('p.insidejokes.askKeywords')}`, message);

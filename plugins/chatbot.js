@@ -144,7 +144,7 @@ async function replaceMentionedJids(sock, chatId, text, mentionedJids) {
 }
 
 export async function handleChatbotResponse(sock, chatId, message, userMessage, senderId) {
-    if (hasPendingInsideJokeWizard(chatId))
+    if (await hasPendingInsideJokeWizard(chatId))
         return;
     const data = await loadUserGroupData();
     const insideJokeState = await loadInsideJokes();
