@@ -161,7 +161,10 @@ function selectSources(message, chatId, count, includeReplyChain = false) {
         .sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0));
     if (!quoted)
         return stored.slice(-count);
-    if (includeReplyChain)
+    // With a single count, `r` means follow the reply chain. When a count is
+    // provided (e.g. `.q 4 r`), keep the normal message window and only add
+    // reply previews to the messages that contain one.
+    if (includeReplyChain && count <= 1)
         return getReplyChain(message, quotedContext, stored);
     const quotedId = quotedContext.stanzaId;
     if (count <= 1 || stored.length === 0)
