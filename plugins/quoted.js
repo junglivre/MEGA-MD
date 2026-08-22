@@ -4,7 +4,6 @@ import config from '../config.js';
 import store from '../lib/lightweight_store.js';
 
 const QUOTE_API_URL = config.quoteApiUrl;
-const DEFAULT_AVATAR = 'https://i.ibb.co/9HY4wjz/a4c0b1af253197d4837ff6760d5b81c0.jpg';
 const COLOR_NAMES = new Set(['black', 'white', 'red', 'green', 'blue', 'yellow', 'orange', 'purple', 'pink', 'gray', 'grey', 'brown', 'cyan', 'magenta', 'transparent', 'random']);
 
 function unwrapMessage(message) {
@@ -104,7 +103,9 @@ async function getSender(sock, jid, fallback) {
     ]);
     return {
         name: getContactName(sock, jid, contact.status === 'fulfilled' ? contact.value : null, fallback),
-        avatar: profile.status === 'fulfilled' ? profile.value : DEFAULT_AVATAR,
+        // The quote API renders an initial when photo is empty. Do not use a
+        // generic fallback image here: it hides who actually sent the message.
+        avatar: profile.status === 'fulfilled' ? profile.value : null,
         id: Math.abs([...String(jid || 'user')].reduce((sum, char) => sum * 31 + char.charCodeAt(0), 7))
     };
 }
@@ -113,7 +114,36 @@ function sourceFromStored(stored) {
     return stored?.message ? stored : null;
 }
 
-function selectSources(message, chatId, count) {
+function sourceFromQuoted(quoted, context, fallbackParticipant) {
+    if (!quoted)
+        return null;
+    return {
+        key: {
+            id: context?.stanzaId,
+            participant: context?.participant || fallbackParticipant
+        },
+        message: quoted,
+        pushName: context?.pushName
+    };
+}
+
+function getReplyChain(message, quotedContext) {
+    const chain = [];
+    let current = sourceFromQuoted(quotedContext.quotedMessage, quotedContext, message.key?.participant);
+    const seen = new Set();
+    while (current && chain.length < 20) {
+        const id = current.key?.id || `nested-${chain.length}`;
+        if (seen.has(id))
+            break;
+        seen.add(id);
+        chain.unshift(current);
+        const nestedContext = getContextInfo(current.message);
+        current = sourceFromQuoted(nestedContext.quotedMessage, nestedContext, current.key?.participant);
+    }
+    return chain;
+}
+
+function selectSources(message, chatId, count, includeReplyChain = false) {
     const quotedContext = getContextInfo(message);
     const quoted = quotedContext.quotedMessage;
     const currentId = message.key?.id;
@@ -123,17 +153,17 @@ function selectSources(message, chatId, count) {
         .sort((a, b) => Number(a.messageTimestamp || 0) - Number(b.messageTimestamp || 0));
     if (!quoted)
         return stored.slice(-count);
+    if (includeReplyChain)
+        return getReplyChain(message, quotedContext);
     const quotedId = quotedContext.stanzaId;
     if (count <= 1 || stored.length === 0)
         return [{ key: { participant: quotedContext.participant || message.key.participant || chatId }, message: quoted }];
     const index = stored.findIndex(item => String(item.key?.id || '') === String(quotedId || ''));
-    // Some Baileys updates contain the quoted payload but omit/mutate the
-    // stanza id. In that case the quoted message is the latest stored message
-    // before the command, so retain the requested number of messages ending
-    // at that point instead of silently returning only the quoted payload.
+    // Count forward from the selected message. This matches the chat order:
+    // replying to message 1 with `.q 2` quotes message 1 and message 2.
     if (index === -1)
         return stored.slice(-count);
-    return stored.slice(Math.max(0, index - count + 1), index + 1);
+    return stored.slice(index, index + count);
 }
 
 function makeReplyPreview(source) {
@@ -158,7 +188,7 @@ async function buildQuoteMessages(sock, sources, typedText, options, fallbackNam
             entities: [],
             avatar: index === 0 || sources[index - 1]?.key?.participant !== source.key?.participant,
             chatId: sender.id,
-            from: { id: sender.id, name: sender.name, photo: { url: sender.avatar } },
+            from: { id: sender.id, name: sender.name, photo: sender.avatar ? { url: sender.avatar } : {} },
             text,
             replyMessage: options.reply ? makeReplyPreview(source) : {}
         };
@@ -194,7 +224,7 @@ export default {
         const { t } = context;
         const options = parseOptions(args);
         const typedText = options.text.join(' ').trim();
-        const sources = selectSources(message, chatId, options.count);
+        const sources = selectSources(message, chatId, options.count, options.reply);
         if (!typedText && sources.length === 0)
             return sock.sendMessage(chatId, { text: t('p.quoted.missingText') }, { quoted: message });
         const sourceList = sources.length > 0
