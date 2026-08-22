@@ -185,24 +185,35 @@ function makeReplyPreview(source) {
 }
 
 async function buildQuoteMessages(sock, sources, typedText, options, fallbackName) {
-    return Promise.all(sources.map(async (source, index) => {
+    const resolved = await Promise.all(sources.map(async (source) => {
         const context = getContextInfo(source.message);
         const who = source.key?.participant || source.participant || context.participant || source.key?.remoteJid;
         const sender = await getSender(sock, who, source.pushName || fallbackName);
+        return { source, sender };
+    }));
+
+    return resolved.map(({ source, sender }, index) => {
+        const previous = resolved[index - 1]?.sender;
+        const next = resolved[index + 1]?.sender;
+        const sameAsPrevious = previous && (previous.id === sender.id || previous.name === sender.name);
+        const sameAsNext = next && next.id === sender.id;
         const text = typedText && sources.length === 1
             ? typedText
             : extractText(source.message, 'Mensagem de mídia');
         return {
             entities: [],
             // QuotLy renders the avatar on the last message of a sender run.
-            avatar: index === sources.length - 1
-                || sources[index + 1]?.key?.participant !== source.key?.participant,
+            avatar: !sameAsNext,
             chatId: sender.id,
-            from: { id: sender.id, name: sender.name, photo: sender.avatar ? { url: sender.avatar } : {} },
+            // The renderer shows a name on every message unless we explicitly
+            // suppress it. Keep first_name for the initials-avatar fallback.
+            from: sameAsPrevious
+                ? { id: sender.id, name: false, first_name: sender.name, photo: sender.avatar ? { url: sender.avatar } : {} }
+                : { id: sender.id, name: sender.name, photo: sender.avatar ? { url: sender.avatar } : {} },
             text,
             replyMessage: options.reply ? makeReplyPreview(source) : {}
         };
-    }));
+    });
 }
 
 async function renderQuote(options, messages) {
