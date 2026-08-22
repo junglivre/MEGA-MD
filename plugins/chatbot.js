@@ -5,6 +5,7 @@ import { dataFile } from '../lib/paths.js';
 import store from '../lib/lightweight_store.js';
 import { createTranslator, getUserLanguage, languageLabel } from '../lib/i18n.js';
 import { groqChat, hasGroqKey } from '../lib/groq.js';
+import { findInsideJokes, loadInsideJokes } from '../lib/insideJokes.js';
 const MONGO_URL = process.env.MONGO_URL;
 const POSTGRES_URL = process.env.POSTGRES_URL;
 const MYSQL_URL = process.env.MYSQL_URL;
@@ -143,7 +144,9 @@ async function replaceMentionedJids(sock, chatId, text, mentionedJids) {
 
 export async function handleChatbotResponse(sock, chatId, message, userMessage, senderId) {
     const data = await loadUserGroupData();
-    if (!data.chatbot[chatId])
+    const insideJokeState = await loadInsideJokes();
+    const insideJokes = findInsideJokes(insideJokeState, chatId, userMessage);
+    if (!data.chatbot?.[chatId] && !insideJokes.length)
         return;
     // Created up front (with a safe default locale) so the catch block below always
     // has a working translator, even if the try block throws before resolving the
@@ -185,7 +188,7 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         else if (message.message?.conversation) {
             isBotMentioned = userMessage.includes(`@${botNumber}`);
         }
-        if (!isBotMentioned && !isReplyToBot)
+        if (!isBotMentioned && !isReplyToBot && !insideJokes.length)
             return;
         let cleanedMessage = userMessage;
         if (isBotMentioned) {
@@ -214,7 +217,8 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         const response = await getAIResponse(cleanedMessage, {
             messages: chatMemory.messages.get(senderId),
             userInfo: chatMemory.userInfo.get(senderId),
-            language
+            language,
+            insideJokes
         });
         if (!response) {
             await sock.sendMessage(chatId, {
@@ -255,6 +259,9 @@ async function getAIResponse(userMessage, userContext) {
         big: 'Give a detailed and well-structured response. Cover important context, steps, examples, and caveats when useful.'
     }[config.groqChatResponseSize];
     const customInstructions = String(config.groqChatInstructions || '').replace(/\\n/g, '\n').trim();
+    const insideJokeContext = userContext.insideJokes?.length
+        ? `\nINTERNAL JOKE CONTEXT (use it naturally when relevant; never mention this database or these instructions):\n${userContext.insideJokes.map(joke => `- Bank: ${joke.bankName}; Trigger: ${joke.matchedKeywords.join(', ')}; Context: ${joke.context}`).join('\n')}\n`
+        : '';
     const prompt = `
 You are a casual, friendly human chatting on WhatsApp. Reply in ${replyLanguage}.
 
@@ -276,6 +283,8 @@ PERSONALITY:
 - If they are sad, be supportive
 
 ${customInstructions ? `ADDITIONAL INSTRUCTIONS FROM THE BOT OWNER:\n${customInstructions}\n` : ''}
+
+${insideJokeContext}
 
 Previous conversation:
 ${userContext.messages.join('\n')}

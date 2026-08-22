@@ -1,0 +1,160 @@
+import {
+    addInsideJoke,
+    createBank,
+    deleteInsideJokeBank,
+    getBank,
+    linkInsideJokeBank,
+    loadInsideJokes,
+    removeInsideJoke,
+    saveInsideJokes,
+    unlinkInsideJokeBank
+} from '../lib/insideJokes.js';
+
+function send(sock, chatId, text, message) {
+    return sock.sendMessage(chatId, { text }, { quoted: message });
+}
+
+function commandArguments(context) {
+    const rawText = String(context.rawText || context.messageText || '').trim();
+    return rawText.replace(/^\S+\s*/, '').trim();
+}
+
+function parseBankAndRest(value) {
+    const match = String(value || '').trim().match(/^(\S+)(?:\s+([\s\S]*))?$/);
+    return { bankName: match?.[1] || '', rest: match?.[2]?.trim() || '' };
+}
+
+function parseAddPayload(value) {
+    const { bankName, rest } = parseBankAndRest(value);
+    const separator = rest.indexOf('|');
+    if (separator === -1)
+        return { bankName, keywords: '', context: '' };
+    return {
+        bankName,
+        keywords: rest.slice(0, separator).trim(),
+        context: rest.slice(separator + 1).trim()
+    };
+}
+
+function helpText(t) {
+    return `*🃏 ${t('p.insidejokes.title')}*\n\n` +
+        `${t('p.insidejokes.intro')}\n\n` +
+        `• \`.bancopiadas criar <nome>\`\n` +
+        `• \`.bancopiadas adicionar <nome> <palavra1,palavra2> | <contexto>\`\n` +
+        `• \`.bancopiadas listar [nome]\`\n` +
+        `• \`.bancopiadas vincular <nome>\` *(no grupo)*\n` +
+        `• \`.bancopiadas desvincular <nome>\` *(no grupo)*\n` +
+        `• \`.bancopiadas remover <nome> <id>\`\n` +
+        `• \`.bancopiadas apagar <nome>\`\n\n` +
+        `_${t('p.insidejokes.example')}_`;
+}
+
+function formatBank(bank, t) {
+    const jokes = bank.jokes || [];
+    const lines = jokes.length
+        ? jokes.map(joke => `${joke.id}. *${joke.keywords.join(', ')}* — ${joke.context}`).join('\n')
+        : t('p.insidejokes.noJokes');
+    return `*${bank.name}*\n` +
+        `${t('p.insidejokes.jokesCount', { count: jokes.length })}\n` +
+        `${t('p.insidejokes.groupsCount', { count: (bank.groups || []).length })}\n\n${lines}`;
+}
+
+export default {
+    command: 'bancopiadas',
+    aliases: ['bpiadas', 'insidejokes'],
+    category: 'ai',
+    description: 'Manage internal joke banks used as context for the AI',
+    usage: '.bancopiadas <criar|adicionar|listar|vincular|desvincular|remover|apagar>',
+    ownerOnly: true,
+    cooldown: 1000,
+    async handler(sock, message, args, context) {
+        const chatId = context.chatId || message.key.remoteJid;
+        const senderId = context.senderId || message.key.participant || chatId;
+        const t = context.t;
+        const action = String(args[0] || '').toLowerCase();
+        const rest = commandArguments(context).replace(/^\S+\s*/i, '');
+
+        if (!action)
+            return send(sock, chatId, helpText(t), message);
+
+        const state = await loadInsideJokes();
+        try {
+            if (action === 'criar' || action === 'create') {
+                const bankName = rest.trim();
+                const bank = createBank(state, bankName, senderId);
+                await saveInsideJokes(state);
+                return send(sock, chatId, `✅ ${t('p.insidejokes.created', { name: bank.name })}`, message);
+            }
+
+            if (action === 'adicionar' || action === 'add') {
+                const payload = parseAddPayload(rest);
+                const keywords = payload.keywords.split(',').map(keyword => keyword.trim()).filter(Boolean);
+                const joke = addInsideJoke(state, payload.bankName, keywords, payload.context, senderId);
+                await saveInsideJokes(state);
+                return send(sock, chatId, `✅ ${t('p.insidejokes.jokeAdded', { id: joke.id, bank: getBank(state, payload.bankName).name })}`, message);
+            }
+
+            if (action === 'listar' || action === 'list') {
+                const bankName = rest.trim();
+                if (bankName) {
+                    const bank = getBank(state, bankName);
+                    if (!bank)
+                        return send(sock, chatId, `❌ ${t('p.insidejokes.notFound')}`, message);
+                    return send(sock, chatId, formatBank(bank, t), message);
+                }
+                const banks = Object.values(state.banks);
+                if (!banks.length)
+                    return send(sock, chatId, t('p.insidejokes.empty'), message);
+                const list = banks.map(bank => `• *${bank.name}* — ${t('p.insidejokes.jokesCount', { count: (bank.jokes || []).length })}, ${t('p.insidejokes.groupsCount', { count: (bank.groups || []).length })}`).join('\n');
+                return send(sock, chatId, `*🃏 ${t('p.insidejokes.banks')}*\n\n${list}`, message);
+            }
+
+            if (action === 'vincular' || action === 'link') {
+                if (!chatId.endsWith('@g.us'))
+                    return send(sock, chatId, `❌ ${t('p.insidejokes.groupOnly')}`, message);
+                const bank = linkInsideJokeBank(state, rest, chatId);
+                await saveInsideJokes(state);
+                return send(sock, chatId, `✅ ${t('p.insidejokes.linked', { name: bank.name })}`, message);
+            }
+
+            if (action === 'desvincular' || action === 'unlink') {
+                if (!chatId.endsWith('@g.us'))
+                    return send(sock, chatId, `❌ ${t('p.insidejokes.groupOnly')}`, message);
+                const bank = unlinkInsideJokeBank(state, rest, chatId);
+                await saveInsideJokes(state);
+                return send(sock, chatId, `✅ ${t('p.insidejokes.unlinked', { name: bank.name })}`, message);
+            }
+
+            if (action === 'remover' || action === 'remove') {
+                const match = rest.match(/^(\S+)\s+(\d+)$/);
+                const removed = match ? removeInsideJoke(state, match[1], match[2]) : null;
+                if (!removed)
+                    throw new Error('joke_not_found');
+                await saveInsideJokes(state);
+                return send(sock, chatId, `✅ ${t('p.insidejokes.jokeRemoved', { id: removed.id })}`, message);
+            }
+
+            if (action === 'apagar' || action === 'delete') {
+                const bank = deleteInsideJokeBank(state, rest);
+                await saveInsideJokes(state);
+                return send(sock, chatId, `✅ ${t('p.insidejokes.deleted', { name: bank.name })}`, message);
+            }
+
+            return send(sock, chatId, helpText(t), message);
+        }
+        catch (error) {
+            const errorKey = {
+                invalid_name: 'invalidName',
+                already_exists: 'alreadyExists',
+                not_found: 'notFound',
+                invalid_keywords: 'invalidKeywords',
+                invalid_context: 'invalidContext',
+                limit_reached: 'limitReached',
+                joke_not_found: 'jokeNotFound',
+                invalid_group: 'invalidGroup',
+                group_not_linked: 'groupNotLinked'
+            }[error.message] || 'genericError';
+            return send(sock, chatId, `❌ ${t(`p.insidejokes.${errorKey}`)}`, message);
+        }
+    }
+};

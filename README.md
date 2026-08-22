@@ -111,6 +111,7 @@ The message pipeline keeps WhatsApp LIDs as the canonical user identity and trea
 | 👑 | **Role System** | Owner, Sudo, Admin, and User permission levels |
 | ⏰ | **Scheduled Messages** | Schedule messages with natural time input |
 | 🤖 | **AI Chatbot** | Per-chat AI conversation mode |
+| 🃏 | **Internal Joke Banks** | Link private joke/context banks to groups and feed matching context to the AI |
 | 🎧 | **Last.fm** | Personal scrobble card with album artwork via `.lastfm` |
 | 🔒 | **Privacy Controls** | Full WhatsApp privacy management via commands |
 | 📊 | **Polls & Voting** | Create polls with live vote tracking in groups |
@@ -125,6 +126,22 @@ The message pipeline keeps WhatsApp LIDs as the canonical user identity and trea
 ### Last.fm
 
 Set `LASTFM_API_KEY` in `.env`, then use `.setlastfm <username>` once. Use `.lastfm` (or `.lfm`) to receive your latest scrobble card, and `.unsetlastfm` to remove the saved username.
+
+### Banco de piadas internas
+
+The owner or a sudo user can create context banks for the AI. A bank can be linked to multiple groups; when a linked group message contains one of its keywords, the matching context is added to the AI prompt automatically.
+
+```text
+.bancopiadas criar bixos
+.bancopiadas adicionar bixos careca, ichigo | Bixos é o apelido interno do grupo para essa pessoa.
+.bancopiadas vincular bixos
+.bancopiadas listar bixos
+.bancopiadas remover bixos 1
+.bancopiadas desvincular bixos
+.bancopiadas apagar bixos
+```
+
+Run `vincular` and `desvincular` inside each group that should use the bank. The bank data uses the configured storage backend; with JSON storage it is saved in `data/insideJokes.json`.
 
 ---
 
