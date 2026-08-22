@@ -95,6 +95,52 @@ function extractUserInfo(message) {
     }
     return info;
 }
+
+function jidToken(jid) {
+    return String(jid || '').split('@')[0].split(':')[0];
+}
+
+function sameJid(left, right) {
+    return jidToken(left) && jidToken(left) === jidToken(right);
+}
+
+function escapeRegExp(value) {
+    return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
+}
+
+async function getMentionName(sock, chatId, jid) {
+    const contacts = sock.store?.contacts || {};
+    const direct = contacts[jid] || Object.values(contacts).find(contact =>
+        sameJid(contact?.id, jid) || sameJid(contact?.lid, jid));
+    if (direct?.name || direct?.notify)
+        return direct.name || direct.notify;
+    if (chatId?.endsWith('@g.us')) {
+        try {
+            const metadata = await sock.groupMetadata(chatId);
+            const participant = metadata?.participants?.find(item =>
+                sameJid(item?.id, jid) || sameJid(item?.lid, jid) || sameJid(item?.phoneNumber, jid));
+            if (participant?.name || participant?.notify)
+                return participant.name || participant.notify;
+        }
+        catch {
+            // Contact cache remains a valid fallback when group metadata fails.
+        }
+    }
+    return 'alguém';
+}
+
+async function replaceMentionedJids(sock, chatId, text, mentionedJids) {
+    let result = text;
+    for (const jid of mentionedJids || []) {
+        const token = jidToken(jid);
+        if (!token)
+            continue;
+        const name = await getMentionName(sock, chatId, jid);
+        result = result.replace(new RegExp(`@${escapeRegExp(token)}\\b`, 'g'), name);
+    }
+    return result.replace(/\s{2,}/g, ' ').trim();
+}
+
 export async function handleChatbotResponse(sock, chatId, message, userMessage, senderId) {
     const data = await loadUserGroupData();
     if (!data.chatbot[chatId])
@@ -117,10 +163,11 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         ];
         let isBotMentioned = false;
         let isReplyToBot = false;
+        let mentionedJids = [];
         if (message.message?.extendedTextMessage) {
-            const mentionedJid = message.message.extendedTextMessage.contextInfo?.mentionedJid || [];
+            mentionedJids = message.message.extendedTextMessage.contextInfo?.mentionedJid || [];
             const quotedParticipant = message.message.extendedTextMessage.contextInfo?.participant;
-            isBotMentioned = mentionedJid.some((jid) => {
+            isBotMentioned = mentionedJids.some((jid) => {
                 const jidNumber = jid.split('@')[0].split(':')[0];
                 return botJids.some((botJid) => {
                     const botJidNumber = botJid.split('@')[0].split(':')[0];
@@ -144,6 +191,7 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         if (isBotMentioned) {
             cleanedMessage = cleanedMessage.replace(new RegExp(`@${botNumber}`, 'g'), '').trim();
         }
+        cleanedMessage = await replaceMentionedJids(sock, chatId, cleanedMessage, mentionedJids);
         if (!chatMemory.messages.has(senderId)) {
             chatMemory.messages.set(senderId, []);
             chatMemory.userInfo.set(senderId, {});
