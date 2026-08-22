@@ -73,10 +73,11 @@ function normalizeFlowKeywords(value) {
     return String(value || '').split(',').map(keyword => keyword.trim()).filter(Boolean);
 }
 
-function startFlow(chatId, senderId, bankName, step = 'keywords', keywords = []) {
+function startFlow(chatId, senderId, bankName, step = 'keywords', keywords = [], pushName = '') {
     pendingFlows.set(flowKey(chatId, senderId), {
         chatId,
         senderId,
+        pushName: String(pushName || '').trim(),
         bankName,
         step,
         keywords,
@@ -103,10 +104,16 @@ export async function handleInsideJokesWizard(sock, message, context) {
     let key = flowKey(chatId, senderId);
     let flow = pendingFlows.get(key);
     // The same owner can arrive as LID in one message and PN/another LID form
-    // in the next one. Owner-only fallback keeps the wizard tied to the same
-    // group without allowing another group member to hijack it.
-    if (!flow && isConfiguredOwner(senderId)) {
-        const pendingEntry = [...pendingFlows.entries()].find(([, item]) => item.chatId === chatId);
+    // in the next one. Match the configured owner, owner/sudo check, or the
+    // original pushName so the wizard survives that identity representation
+    // change without handing the message to the chatbot.
+    if (!flow) {
+        const currentPushName = String(message.pushName || '').trim();
+        const pendingEntry = [...pendingFlows.entries()].find(([, item]) => item.chatId === chatId && (
+            context.senderIsOwnerOrSudo ||
+            isConfiguredOwner(senderId) ||
+            (item.pushName && currentPushName && item.pushName === currentPushName)
+        ));
         if (pendingEntry) {
             [key, flow] = pendingEntry;
         }
@@ -211,7 +218,7 @@ export default {
                     if (!getBank(state, payload.bankName))
                         throw new Error('not_found');
                     const keywords = normalizeFlowKeywords(payload.keywords);
-                    startFlow(chatId, senderId, payload.bankName, keywords.length ? 'context' : 'keywords', keywords);
+                    startFlow(chatId, senderId, payload.bankName, keywords.length ? 'context' : 'keywords', keywords, message.pushName);
                     return send(sock, chatId, keywords.length
                         ? `📝 ${t('p.insidejokes.askContext')}`
                         : `📝 ${t('p.insidejokes.askKeywords')}`, message);
