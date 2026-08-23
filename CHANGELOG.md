@@ -12,6 +12,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Pipeline compartilhado para baixar fotos e figurinhas estáticas, limitar entradas e gerar efeitos sem APIs externas.
 - Comandos locais `tobecontinued` e `perdao`, com processamento e composição sem serviço externo.
 - Comandos locais `sam` e `contentawarescale`, com selo vetorial e seam carving executado no próprio bot.
+- Comandos locais `gay`, `perfeito` e `petpet`, com filtro arco-íris sutil, composição estática e animação geradas sem APIs externas.
 
 ### Changed
 

@@ -6,6 +6,9 @@ import {
     createAsciiImage,
     createContentAwareScaleImage,
     createForgivenessImage,
+    createPerfectImage,
+    createPetPetGif,
+    createPrideOverlayImage,
     createSamImage,
     createToBeContinuedImage,
     createTriggeredGif,
@@ -168,6 +171,52 @@ describe('image effects', () => {
         expect([...output.data]).toEqual([245, 235, 225]);
         expect(output.info.width).toBe(1);
         expect(output.info.height).toBe(1);
+    });
+
+    it('adds a subtle rainbow overlay while preserving the photo', async () => {
+        const input = await sharp({
+            create: { width: 60, height: 60, channels: 3, background: '#808080' }
+        }).png().toBuffer();
+        const result = await createPrideOverlayImage(input);
+        const { data, info } = await sharp(result).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+        const topPixel = [...data.subarray(0, 3)];
+        const greenPixelOffset = Math.floor(info.height * 0.58) * info.width * info.channels;
+        const greenPixel = [...data.subarray(greenPixelOffset, greenPixelOffset + 3)];
+
+        expect(info.width).toBe(60);
+        expect(info.height).toBe(60);
+        expect(topPixel[0]).toBeGreaterThan(topPixel[1]);
+        expect(greenPixel[1]).toBeGreaterThan(greenPixel[0]);
+        expect(topPixel.every(channel => channel > 95)).toBe(true);
+        expect(Math.max(...topPixel) - Math.min(...topPixel)).toBeLessThan(50);
+    });
+
+    it('places a photo in the perfect meme template', async () => {
+        const input = await sharp({
+            create: { width: 100, height: 160, channels: 3, background: '#20c060' }
+        }).png().toBuffer();
+        const template = await fs.readFile(path.join(process.cwd(), 'assets/image-effects/perfeito.png'));
+        const result = await createPerfectImage(input, template);
+        const metadata = await sharp(result).metadata();
+        const pixel = await sharp(result).extract({ left: 300, top: 100, width: 1, height: 1 })
+            .removeAlpha().raw().toBuffer();
+
+        expect(metadata.width).toBe(456);
+        expect(metadata.height).toBe(400);
+        expect([...pixel]).toEqual([32, 192, 96]);
+    });
+
+    it('renders petpet as a five-frame animated GIF', async () => {
+        const input = await sharp({
+            create: { width: 100, height: 100, channels: 3, background: '#3278c8' }
+        }).png().toBuffer();
+        const result = await createPetPetGif(input);
+        const metadata = await sharp(result, { animated: true }).metadata();
+
+        expect(metadata.format).toBe('gif');
+        expect(metadata.pages).toBe(5);
+        expect(metadata.width).toBe(128);
+        expect(metadata.pageHeight).toBe(128);
     });
 
     it('renders the continued overlay without changing the canvas size', async () => {
