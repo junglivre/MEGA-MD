@@ -210,13 +210,14 @@ describe('image effects', () => {
         const input = await sharp({
             create: { width: 100, height: 100, channels: 3, background: '#3278c8' }
         }).png().toBuffer();
-        const result = await createPetPetGif(input);
+        const overlay = await fs.readFile(path.join(process.cwd(), 'assets/image-effects/petpet-transparent.gif'));
+        const result = await createPetPetGif(input, overlay);
         const metadata = await sharp(result, { animated: true }).metadata();
 
         expect(metadata.format).toBe('gif');
         expect(metadata.pages).toBe(5);
-        expect(metadata.width).toBe(128);
-        expect(metadata.pageHeight).toBe(128);
+        expect(metadata.width).toBe(112);
+        expect(metadata.pageHeight).toBe(112);
     });
 
     it('renders the continued overlay without changing the canvas size', async () => {

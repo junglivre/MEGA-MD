@@ -21,6 +21,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Overlay do `tobecontinued` reduzido e aproximado do canto inferior direito.
 - Comandos locais de imagem passaram a aceitar a foto de perfil da primeira pessoa mencionada, com orientação neutra quando nenhuma imagem está disponível.
 - Comando `sam` passou a usar o overlay transparente fornecido no lugar do selo vetorial gerado.
+- Comando `petpet` passou a usar os cinco quadros do GIF transparente fornecido no lugar da mão vetorial gerada.
 
 ## [2026-08-23]
 

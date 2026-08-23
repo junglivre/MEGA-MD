@@ -1,9 +1,14 @@
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
 import {
     createPetPetGif,
     gifToMp4,
     imageErrorReply,
     resolveImageInput
 } from '../lib/imageEffects.js';
+
+const overlayPath = fileURLToPath(new URL('../assets/image-effects/petpet-transparent.gif', import.meta.url));
+const overlayPromise = fs.readFile(overlayPath);
 
 export default {
     command: 'petpet',
@@ -15,7 +20,10 @@ export default {
     async handler(sock, message, _args, context) {
         const { chatId, channelInfo, t } = context;
         try {
-            const gif = await createPetPetGif(await resolveImageInput(sock, message, chatId));
+            const gif = await createPetPetGif(
+                await resolveImageInput(sock, message, chatId),
+                await overlayPromise
+            );
             const video = await gifToMp4(gif);
             await sock.sendMessage(chatId, {
                 video,
