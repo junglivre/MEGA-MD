@@ -1,7 +1,7 @@
 import {
     createContentAwareScaleImage,
-    downloadImage,
-    imageErrorKey
+    imageErrorReply,
+    resolveImageInput
 } from '../lib/imageEffects.js';
 
 export default {
@@ -9,12 +9,12 @@ export default {
     aliases: ['cas', 'contentaware', 'seamcarver'],
     category: 'images',
     description: 'Distort a photo using local content-aware seam carving',
-    usage: '.contentawarescale (send or reply to an image or static sticker)',
+    usage: '.contentawarescale [@user] (send or reply to an image or static sticker)',
     cooldown: 5000,
     async handler(sock, message, _args, context) {
         const { chatId, channelInfo, t } = context;
         try {
-            const result = await createContentAwareScaleImage(await downloadImage(message));
+            const result = await createContentAwareScaleImage(await resolveImageInput(sock, message, chatId));
             await sock.sendMessage(chatId, {
                 image: result,
                 caption: t('p.imagefx.contentAwareCaption'),
@@ -22,10 +22,10 @@ export default {
             }, { quoted: message });
         }
         catch (error) {
-            const key = imageErrorKey(error);
-            if (key === 'failed')
+            const reply = imageErrorReply(error, t);
+            if (reply.key === 'failed')
                 console.error('[CONTENT-AWARE] Error:', error.message);
-            await sock.sendMessage(chatId, { text: `❌ ${t(`p.imagefx.${key}`)}`, ...channelInfo }, { quoted: message });
+            await sock.sendMessage(chatId, { text: reply.text, ...channelInfo }, { quoted: message });
         }
     }
 };

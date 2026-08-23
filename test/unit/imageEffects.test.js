@@ -1,4 +1,4 @@
-import { describe, expect, it } from 'vitest';
+import { afterEach, describe, expect, it, vi } from 'vitest';
 import fs from 'fs/promises';
 import path from 'path';
 import sharp from 'sharp';
@@ -10,8 +10,11 @@ import {
     createToBeContinuedImage,
     createTriggeredGif,
     getImageMedia,
+    getMentionedJids,
+    imageErrorReply,
     invertImage,
-    mirrorImage
+    mirrorImage,
+    resolveImageInput
 } from '../../lib/imageEffects.js';
 
 async function pixelRow(buffer) {
@@ -23,6 +26,10 @@ async function pixelRow(buffer) {
 }
 
 describe('image effects', () => {
+    afterEach(() => {
+        vi.unstubAllGlobals();
+    });
+
     it('finds direct and quoted photos and static stickers', () => {
         const direct = { message: { imageMessage: { mimetype: 'image/jpeg' } } };
         const quoted = {
@@ -37,6 +44,95 @@ describe('image effects', () => {
         expect(getImageMedia(quoted)?.media.mimetype).toBe('image/png');
         expect(getImageMedia(sticker)?.type).toBe('sticker');
         expect(getImageMedia({ message: { conversation: 'hello' } })).toBeNull();
+    });
+
+    it('finds and normalizes mentions in text and media messages', () => {
+        const textMessage = {
+            message: {
+                extendedTextMessage: {
+                    contextInfo: { mentionedJid: ['5511999999999:4@s.whatsapp.net'] }
+                }
+            }
+        };
+        const imageMessage = {
+            message: {
+                imageMessage: {
+                    contextInfo: { mentionedJid: ['123456789@lid', '123456789@lid'] }
+                }
+            }
+        };
+        expect(getMentionedJids(textMessage)).toEqual(['5511999999999@s.whatsapp.net']);
+        expect(getMentionedJids(imageMessage)).toEqual(['123456789@lid']);
+    });
+
+    it('uses the mentioned profile picture before attached media', async () => {
+        const avatar = await sharp({
+            create: { width: 32, height: 32, channels: 3, background: '#9867c5' }
+        }).png().toBuffer();
+        const profilePictureUrl = vi.fn().mockResolvedValue('https://example.test/avatar.png');
+        const fetchMock = vi.fn().mockResolvedValue({
+            ok: true,
+            status: 200,
+            headers: { get: () => String(avatar.length) },
+            arrayBuffer: async () => avatar.buffer.slice(avatar.byteOffset, avatar.byteOffset + avatar.byteLength)
+        });
+        vi.stubGlobal('fetch', fetchMock);
+        const message = {
+            message: {
+                imageMessage: {
+                    mimetype: 'image/jpeg',
+                    contextInfo: { mentionedJid: ['5511999999999@s.whatsapp.net'] }
+                }
+            }
+        };
+
+        const result = await resolveImageInput({ profilePictureUrl }, message, '5511888888888@s.whatsapp.net');
+
+        expect(result.equals(avatar)).toBe(true);
+        expect(profilePictureUrl).toHaveBeenCalledWith('5511999999999@s.whatsapp.net', 'image');
+        expect(fetchMock).toHaveBeenCalledOnce();
+    });
+
+    it('returns a neutral profile-picture hint instead of using another image', async () => {
+        const message = {
+            message: {
+                extendedTextMessage: {
+                    contextInfo: {
+                        mentionedJid: ['5511999999999@s.whatsapp.net'],
+                        quotedMessage: { imageMessage: { mimetype: 'image/jpeg' } }
+                    }
+                }
+            }
+        };
+        const sock = { profilePictureUrl: vi.fn().mockRejectedValue(new Error('not authorized')) };
+
+        let caught;
+        try {
+            await resolveImageInput(sock, message, '5511888888888@s.whatsapp.net');
+        }
+        catch (error) {
+            caught = error;
+        }
+        const reply = imageErrorReply(caught, key => key);
+
+        expect(caught?.code).toBe('NO_PROFILE_PICTURE');
+        expect(reply).toEqual({ key: 'noProfilePicture', text: 'p.imagefx.noProfilePicture' });
+        expect(reply.text).not.toContain('❌');
+    });
+
+    it('returns a neutral usage hint when no mention or media is present', async () => {
+        let caught;
+        try {
+            await resolveImageInput({}, { message: { conversation: '.jooj' } }, '5511888888888@s.whatsapp.net');
+        }
+        catch (error) {
+            caught = error;
+        }
+        const reply = imageErrorReply(caught, key => key);
+
+        expect(caught?.code).toBe('NO_IMAGE');
+        expect(reply).toEqual({ key: 'noImage', text: 'p.imagefx.noImage' });
+        expect(reply.text).not.toContain('❌');
     });
 
     it('mirrors the selected half while preserving odd dimensions', async () => {

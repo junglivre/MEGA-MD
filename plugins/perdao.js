@@ -1,7 +1,7 @@
 import {
     createForgivenessImage,
-    downloadImage,
-    imageErrorKey
+    imageErrorReply,
+    resolveImageInput
 } from '../lib/imageEffects.js';
 
 export default {
@@ -9,11 +9,11 @@ export default {
     aliases: ['perdão', 'forgive'],
     category: 'images',
     description: 'Put a dramatic forgiveness poll below a photo',
-    usage: '.perdao (send or reply to an image or static sticker)',
+    usage: '.perdao [@user] (send or reply to an image or static sticker)',
     async handler(sock, message, _args, context) {
         const { chatId, channelInfo, t } = context;
         try {
-            const result = await createForgivenessImage(await downloadImage(message), {
+            const result = await createForgivenessImage(await resolveImageInput(sock, message, chatId), {
                 question: t('p.imagefx.forgivenessQuestion'),
                 no: t('p.imagefx.no'),
                 yes: t('p.imagefx.yes')
@@ -25,10 +25,10 @@ export default {
             }, { quoted: message });
         }
         catch (error) {
-            const key = imageErrorKey(error);
-            if (key === 'failed')
+            const reply = imageErrorReply(error, t);
+            if (reply.key === 'failed')
                 console.error('[PERDAO] Error:', error.message);
-            await sock.sendMessage(chatId, { text: `❌ ${t(`p.imagefx.${key}`)}`, ...channelInfo }, { quoted: message });
+            await sock.sendMessage(chatId, { text: reply.text, ...channelInfo }, { quoted: message });
         }
     }
 };

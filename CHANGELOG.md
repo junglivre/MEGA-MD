@@ -17,6 +17,8 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 
 - Comando `invert` passou a processar fotos e figurinhas estáticas localmente com Sharp, sem arquivos temporários nem API externa.
 - Comando `tobecontinued` passou a usar o overlay transparente fornecido para o meme, mantendo o processamento sépia local.
+- Overlay do `tobecontinued` reduzido e aproximado do canto inferior direito.
+- Comandos locais de imagem passaram a aceitar a foto de perfil da primeira pessoa mencionada, com orientação neutra quando nenhuma imagem está disponível.
 
 ## [2026-08-23]
 
