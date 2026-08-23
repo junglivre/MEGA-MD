@@ -1,4 +1,9 @@
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
 import { createSamImage, imageErrorReply, resolveImageInput } from '../lib/imageEffects.js';
+
+const overlayPath = fileURLToPath(new URL('../assets/image-effects/sam.png', import.meta.url));
+const overlayPromise = fs.readFile(overlayPath);
 
 export default {
     command: 'sam',
@@ -9,10 +14,10 @@ export default {
     async handler(sock, message, _args, context) {
         const { chatId, channelInfo, t } = context;
         try {
-            const result = await createSamImage(await resolveImageInput(sock, message, chatId), {
-                title: t('p.imagefx.samTitle'),
-                subtitle: t('p.imagefx.samSubtitle')
-            });
+            const result = await createSamImage(
+                await resolveImageInput(sock, message, chatId),
+                await overlayPromise
+            );
             await sock.sendMessage(chatId, {
                 image: result,
                 caption: t('p.imagefx.samCaption'),

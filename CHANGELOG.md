@@ -20,6 +20,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comando `tobecontinued` passou a usar o overlay transparente fornecido para o meme, mantendo o processamento sépia local.
 - Overlay do `tobecontinued` reduzido e aproximado do canto inferior direito.
 - Comandos locais de imagem passaram a aceitar a foto de perfil da primeira pessoa mencionada, com orientação neutra quando nenhuma imagem está disponível.
+- Comando `sam` passou a usar o overlay transparente fornecido no lugar do selo vetorial gerado.
 
 ## [2026-08-23]
 

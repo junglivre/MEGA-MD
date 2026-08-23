@@ -244,7 +244,8 @@ describe('image effects', () => {
         const input = await sharp({
             create: { width: 320, height: 180, channels: 3, background: '#4c78a8' }
         }).png().toBuffer();
-        const metadata = await sharp(await createSamImage(input)).metadata();
+        const overlay = await fs.readFile(path.join(process.cwd(), 'assets/image-effects/sam.png'));
+        const metadata = await sharp(await createSamImage(input, overlay)).metadata();
         expect(metadata.format).toBe('png');
         expect(metadata.width).toBe(320);
         expect(metadata.height).toBe(180);
