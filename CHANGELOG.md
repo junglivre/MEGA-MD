@@ -7,7 +7,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 ### Added
 
 - Contexto operacional para agentes em `AGENTS.md`.
-- Inventário local confidencial do ambiente em `.env.md`, ignorado pelo Git.
+- Documentação local sanitizada do ambiente em `.env.md`, ignorada pelo Git e sem valores secretos.
 
 ## [2026-08-23]
 

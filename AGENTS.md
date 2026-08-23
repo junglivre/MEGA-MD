@@ -32,12 +32,12 @@ Antes de atualizar produção:
 
 ## Ambiente e segredos
 
-O inventário real do ambiente fica em `.env.md` na raiz deste checkout local. Esse arquivo:
+O contexto operacional sanitizado do ambiente fica em `.env.md` na raiz deste checkout local. Esse arquivo:
 
-- é confidencial e pode conter tokens, chaves, números e identificadores reais;
-- está obrigatoriamente no `.gitignore`;
-- nunca deve ser commitado, copiado para logs, exibido no terminal ou incluído em respostas;
-- usa sintaxe dotenv apesar da extensão `.md`, para facilitar consulta e comparação;
+- documenta servidor, acesso, deploy, configuração efetiva não sensível e estado das integrações;
+- nunca contém tokens, chaves, números privados, LIDs/JIDs privados ou URLs com credenciais;
+- está obrigatoriamente no `.gitignore`, pois descreve um ambiente específico;
+- não é carregado pelo bot e não substitui o `.env` real;
 - deve ser consultado localmente quando uma tarefa depender da configuração de produção.
 
 O servidor carrega `/root/MEGA-MD/.env`. `.env.example` é apenas o modelo seguro e versionado. Ao adicionar uma variável, atualize `.env.example`, `config.js`, este documento quando relevante e o ambiente real sem expor o valor.
@@ -51,7 +51,7 @@ Variáveis importantes incluem:
 - Serviços: `LASTFM_API_KEY`, `QUOTE_API_URL`, `REMOVEBG_KEY`, `GIPHY_API_KEY`.
 - Operação: `PORT`, `BACKUP_ENABLED`, `BACKUP_INTERVAL`, `BACKUP_RETENTION`, `BACKUP_DIR`, `CLEANUP_INTERVAL`.
 
-Nunca imprima o conteúdo de `.env`, `.env.md`, sessão Baileys, banco ou tokens. Para auditoria, liste somente nomes de variáveis.
+Nunca imprima o conteúdo do `.env` real, sessão Baileys, banco ou tokens. Para auditoria, liste somente nomes de variáveis ou o estado `configurada/não configurada`. O `.env.md` pode ser lido como documentação, mas deve permanecer sanitizado.
 
 ## Arquitetura relevante
 
