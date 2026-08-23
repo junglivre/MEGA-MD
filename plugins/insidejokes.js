@@ -109,9 +109,12 @@ export async function handleInsideJokesWizard(sock, message, context) {
     // original pushName so the wizard survives that identity representation
     // change without handing the message to the chatbot.
     if (!flow) {
-        const pendingEntry = Object.entries(flows).find(([, item]) => item.chatId === chatId && (
-            identityAlternatives.some(identity => (item.identities || [item.senderId]).map(normalizeJid).includes(normalizeJid(identity)))
-        ));
+        const chatFlows = Object.entries(flows).filter(([, item]) => item.chatId === chatId);
+        const pendingEntry = chatFlows.find(([, item]) =>
+            identityAlternatives.some(identity => (item.identities || [item.senderId])
+                .map(normalizeJid)
+                .includes(normalizeJid(identity)))
+        ) || (context.senderIsOwnerOrSudo && chatFlows.length === 1 ? chatFlows[0] : null);
         if (pendingEntry) {
             [key, flow] = pendingEntry;
             flow.identities = [...new Set([...(flow.identities || []), ...identityAlternatives].map(normalizeJid))];
