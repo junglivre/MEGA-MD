@@ -15,6 +15,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comandos locais `gay`, `perfeito` e `petpet`, com filtro arco-íris sutil, composição estática e animação geradas sem APIs externas.
 - Comandos locais `morrepraga`, `susto` e `ripvida`, usando templates do Loritta e composição local de uma imagem.
 - Comandos locais `ednaldotv`, `bolsonaro` e `studiopolistv`, com substituição local das telas dos templates.
+- Comandos locais `bolsonaro2`, `ata` e `riptv`, com encaixes recortados para telas em perspectiva.
 
 ### Changed
 

@@ -4,6 +4,8 @@ import path from 'path';
 import sharp from 'sharp';
 import {
     createAsciiImage,
+    createAtaImage,
+    createBolsonaroTv2Image,
     createBolsonaroTvImage,
     createContentAwareScaleImage,
     createEdnaldoTvImage,
@@ -13,6 +15,7 @@ import {
     createPetPetGif,
     createPrideOverlayImage,
     createRipLifeImage,
+    createRipTvImage,
     createSamImage,
     createScaredImage,
     createStudiopolisTvImage,
@@ -273,6 +276,45 @@ describe('image effects', () => {
                 asset: 'studiopolis-tv.png',
                 size: [400, 282],
                 point: [220, 110]
+            }
+        ];
+        for (const item of cases) {
+            const template = await fs.readFile(path.join(process.cwd(), 'assets/image-effects', item.asset));
+            const result = await item.create(input, template);
+            const metadata = await sharp(result).metadata();
+            const pixel = await sharp(result)
+                .extract({ left: item.point[0], top: item.point[1], width: 1, height: 1 })
+                .removeAlpha()
+                .raw()
+                .toBuffer();
+
+            expect([metadata.width, metadata.height]).toEqual(item.size);
+            expect([...pixel]).toEqual([32, 192, 96]);
+        }
+    });
+
+    it('places stretched photos inside the Bolsonaro 2, Ata and RIP television screens', async () => {
+        const input = await sharp({
+            create: { width: 160, height: 100, channels: 3, background: '#20c060' }
+        }).png().toBuffer();
+        const cases = [
+            {
+                create: createBolsonaroTv2Image,
+                asset: 'bolsonaro-tv2.png',
+                size: [536, 300],
+                point: [320, 90]
+            },
+            {
+                create: createAtaImage,
+                asset: 'ata.png',
+                size: [300, 300],
+                point: [220, 80]
+            },
+            {
+                create: createRipTvImage,
+                asset: 'rip-tv.png',
+                size: [768, 432],
+                point: [650, 110]
             }
         ];
         for (const item of cases) {
