@@ -4,7 +4,8 @@ import config from '../config.js';
 import { dataFile } from '../lib/paths.js';
 import store from '../lib/lightweight_store.js';
 import { createTranslator, getUserLanguage, languageLabel } from '../lib/i18n.js';
-import { groqChat, hasGroqKey } from '../lib/groq.js';
+import { groqChat, groqVision, hasGroqKey } from '../lib/groq.js';
+import { downloadContentFromMessage } from '@whiskeysockets/baileys';
 import { findInsideJokes, loadInsideJokes } from '../lib/insideJokes.js';
 import { hasPendingInsideJokeWizard } from './insidejokes.js';
 const MONGO_URL = process.env.MONGO_URL;
@@ -143,12 +144,28 @@ async function replaceMentionedJids(sock, chatId, text, mentionedJids) {
     return result.replace(/\s{2,}/g, ' ').trim();
 }
 
+function getImageMessage(message) {
+    const current = message.message || {};
+    const quoted = current.extendedTextMessage?.contextInfo?.quotedMessage || {};
+    return current.imageMessage || quoted.imageMessage || null;
+}
+
+async function imageToBuffer(image) {
+    const stream = await downloadContentFromMessage(image, 'image');
+    const chunks = [];
+    for await (const chunk of stream)
+        chunks.push(chunk);
+    return Buffer.concat(chunks);
+}
+
 export async function handleChatbotResponse(sock, chatId, message, userMessage, senderId) {
     if (await hasPendingInsideJokeWizard(chatId))
         return;
     const data = await loadUserGroupData();
     const insideJokeState = await loadInsideJokes();
     const insideJokes = findInsideJokes(insideJokeState, chatId, userMessage);
+    const image = getImageMessage(message);
+    const hasImage = Boolean(image);
     if (!data.chatbot?.[chatId] && !insideJokes.length)
         return;
     // Created up front (with a safe default locale) so the catch block below always
@@ -191,7 +208,7 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         else if (message.message?.conversation) {
             isBotMentioned = userMessage.includes(`@${botNumber}`);
         }
-        if (!isBotMentioned && !isReplyToBot && !insideJokes.length)
+        if (!isBotMentioned && !isReplyToBot && !insideJokes.length && !hasImage)
             return;
         let cleanedMessage = userMessage;
         if (isBotMentioned) {
@@ -217,11 +234,12 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         await showTyping(sock, chatId);
         const language = await getUserLanguage(senderId);
         t = createTranslator(language);
-        const response = await getAIResponse(cleanedMessage, {
+        const response = await getAIResponse(cleanedMessage || 'Analise esta imagem e responda de forma natural ao grupo.', {
             messages: chatMemory.messages.get(senderId),
             userInfo: chatMemory.userInfo.get(senderId),
             language,
-            insideJokes
+            insideJokes,
+            image: hasImage ? { buffer: await imageToBuffer(image), mimetype: image.mimetype } : null
         });
         if (!response) {
             await sock.sendMessage(chatId, {
@@ -301,10 +319,21 @@ You:
     if (hasGroqKey()) {
         try {
             const systemPrompt = `You are the system instruction layer for a WhatsApp assistant. Follow the response style and owner instructions below.\n\n${prompt}`;
-            const result = await groqChat([
-                { role: 'system', content: systemPrompt },
-                { role: 'user', content: userMessage }
-            ]);
+            const messages = userContext.image
+                ? [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: [
+                        { type: 'text', text: userMessage },
+                        { type: 'image_url', image_url: { url: `data:${userContext.image.mimetype || 'image/jpeg'};base64,${userContext.image.buffer.toString('base64')}` } }
+                    ] }
+                ]
+                : [
+                    { role: 'system', content: systemPrompt },
+                    { role: 'user', content: userMessage }
+                ];
+            const result = userContext.image
+                ? await groqVision(userContext.image.buffer, userContext.image.mimetype, systemPrompt)
+                : await groqChat(messages);
             if (result) {
                 console.log('✅ Groq success');
                 return cleanAIResponse(result);

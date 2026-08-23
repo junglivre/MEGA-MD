@@ -11,20 +11,11 @@ import {
     saveInsideJokeFlows,
     unlinkInsideJokeBank
 } from '../lib/insideJokes.js';
-import config from '../config.js';
 import { createTranslator, getUserLanguage } from '../lib/i18n.js';
+import { getMessageIdentityAlternatives, normalizeJid } from '../lib/jid.js';
 
 const FLOW_TTL_MS = 5 * 60 * 1000;
 const COMMAND_ALIASES = new Set(['bancopiadas', 'bpiadas', 'insidejokes']);
-
-function cleanIdentity(value) {
-    return String(value || '').split(':')[0].split('@')[0];
-}
-
-function isConfiguredOwner(senderId) {
-    const sender = cleanIdentity(senderId);
-    return [config.ownerNumber, config.ownerLid].filter(Boolean).some(owner => cleanIdentity(owner) === sender);
-}
 
 function send(sock, chatId, text, message) {
     return sock.sendMessage(chatId, { text }, { quoted: message });
@@ -53,7 +44,7 @@ function parseAddPayload(value) {
 }
 
 function flowKey(chatId, senderId) {
-    return `${chatId}:${senderId}`;
+    return `${chatId}:${normalizeJid(senderId)}`;
 }
 
 function isCancelCommand(rawText, prefixes = []) {
@@ -74,12 +65,12 @@ function normalizeFlowKeywords(value) {
     return String(value || '').split(',').map(keyword => keyword.trim()).filter(Boolean);
 }
 
-async function startFlow(chatId, senderId, bankName, step = 'keywords', keywords = [], pushName = '') {
+async function startFlow(chatId, senderId, bankName, step = 'keywords', keywords = [], identityAlternatives = []) {
     const flows = await loadInsideJokeFlows();
     flows[flowKey(chatId, senderId)] = {
         chatId,
         senderId,
-        pushName: String(pushName || '').trim(),
+        identities: [...new Set([senderId, ...identityAlternatives].filter(Boolean).map(normalizeJid))],
         bankName,
         step,
         keywords,
@@ -108,6 +99,9 @@ export async function handleInsideJokesWizard(sock, message, context) {
     const senderId = context.senderId || message.key.participant || chatId;
     const flows = await loadInsideJokeFlows();
     removeExpiredFlows(flows);
+    const identityAlternatives = context.senderAlternatives?.length
+        ? context.senderAlternatives
+        : getMessageIdentityAlternatives(message);
     let key = flowKey(chatId, senderId);
     let flow = flows[key];
     // The same owner can arrive as LID in one message and PN/another LID form
@@ -115,14 +109,12 @@ export async function handleInsideJokesWizard(sock, message, context) {
     // original pushName so the wizard survives that identity representation
     // change without handing the message to the chatbot.
     if (!flow) {
-        const currentPushName = String(message.pushName || '').trim();
         const pendingEntry = Object.entries(flows).find(([, item]) => item.chatId === chatId && (
-            context.senderIsOwnerOrSudo ||
-            isConfiguredOwner(senderId) ||
-            (item.pushName && currentPushName && item.pushName === currentPushName)
+            identityAlternatives.some(identity => (item.identities || [item.senderId]).map(normalizeJid).includes(normalizeJid(identity)))
         ));
         if (pendingEntry) {
             [key, flow] = pendingEntry;
+            flow.identities = [...new Set([...(flow.identities || []), ...identityAlternatives].map(normalizeJid))];
         }
     }
     if (!flow)
@@ -229,7 +221,7 @@ export default {
                     if (!getBank(state, payload.bankName))
                         throw new Error('not_found');
                     const keywords = normalizeFlowKeywords(payload.keywords);
-                    await startFlow(chatId, senderId, payload.bankName, keywords.length ? 'context' : 'keywords', keywords, message.pushName);
+                    await startFlow(chatId, senderId, payload.bankName, keywords.length ? 'context' : 'keywords', keywords, context.senderAlternatives);
                     return send(sock, chatId, keywords.length
                         ? `📝 ${t('p.insidejokes.askContext')}`
                         : `📝 ${t('p.insidejokes.askKeywords')}`, message);
