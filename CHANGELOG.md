@@ -1,0 +1,68 @@
+# Changelog
+
+Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O formato segue, de forma simplificada, o Keep a Changelog.
+
+## [Unreleased]
+
+### Added
+
+- Contexto operacional para agentes em `AGENTS.md`.
+- Inventário local confidencial do ambiente em `.env.md`, ignorado pelo Git.
+
+## [2026-08-23]
+
+### Added
+
+- Bancos de piadas internas vinculáveis a grupos, com aliases `bancopiadas`, `bpiadas` e `insidejokes`.
+- Cadastro direto de piadas com tags e contexto no formato `<tags> | <contexto>`.
+- Matching sem distinção de caixa ou acentos e seleção de todos os contextos compatíveis.
+- Correlação de outras piadas do mesmo banco como referências de estilo quando um gatilho casa.
+- Suporte do chatbot a imagens acionadas explicitamente por menção, resposta ou contexto interno.
+- Suporte do `.vision` a figurinhas estáticas convertidas de WebP para PNG.
+- Alias `toimg` para `.s2img`.
+- Aliases `everson` e `everton` para `tagall/everyone`.
+- Compatibilidade ampliada com identidades WhatsApp PN/LID/JID e device suffix.
+
+### Changed
+
+- Removido o fluxo guiado de cadastro de piadas; o cadastro direto é o único modo suportado.
+- Chatbot ajustado para tom mais natural, menos sarcástico e menos provocativo.
+- Flerte passou a ser apenas reativo, leve e condicionado a sinal explícito do usuário.
+- Respostas curtas e risadas não devem gerar perguntas forçadas.
+- Piadas internas passaram a ter prioridade comportamental no prompt quando uma tag casa.
+- Prompt de piadas passou a evitar tarefas banais, memes, screenshots e punchlines genéricas.
+- Imagens comuns deixaram de acionar o chatbot automaticamente.
+- Tooltips, traduções, menus e ajuda passaram a exibir somente um prefixo válido do ambiente.
+- Produção passou a acompanhar a branch `main` após integração da feature.
+
+### Fixed
+
+- Autorização owner/sudo em grupos com alternância entre PN, LID e JID.
+- Matching de participantes com IDs bare, `@lid`, `@s.whatsapp.net` e sufixos de dispositivo.
+- Retorno não booleano em `isOwnerOnly`.
+- Exposição de raciocínio interno e tamanho excessivo em respostas de visão.
+
+## [2026-08-22]
+
+### Added
+
+- Comando Groq Vision para análise de imagens.
+- Configuração de modelo, tamanho, tokens e instruções do chatbot via ambiente.
+- Integração Last.fm com cartão de faixa recente.
+- Sistema de citações/quotely com preservação de respostas, ordem, avatares e agrupamento.
+
+### Changed
+
+- Separação entre proprietário do bot e metadados de autor/pacote de figurinha.
+- Repositório e links de atualização alinhados ao fork `junglivre/MEGA-MD`.
+
+### Fixed
+
+- Formatação e limitação das respostas de visão.
+- Substituição de menções LID por nomes de exibição quando disponíveis.
+
+## Notas de manutenção
+
+- Não registre segredos, tokens, números privados ou conteúdo de `.env.md` neste changelog.
+- Mudanças de prompt devem informar o efeito comportamental pretendido.
+- Mudanças de produção devem informar branch/processo somente quando operacionalmente relevante.

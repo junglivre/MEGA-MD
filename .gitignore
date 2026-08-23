@@ -13,6 +13,7 @@ tmp/
 
 # Environment variables
 .env
+.env.md
 
 # Database files
 *.db
