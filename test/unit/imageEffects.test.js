@@ -6,10 +6,13 @@ import {
     createAsciiImage,
     createContentAwareScaleImage,
     createForgivenessImage,
+    createMorrePragaImage,
     createPerfectImage,
     createPetPetGif,
     createPrideOverlayImage,
+    createRipLifeImage,
     createSamImage,
+    createScaredImage,
     createToBeContinuedImage,
     createTriggeredGif,
     getImageMedia,
@@ -204,6 +207,45 @@ describe('image effects', () => {
         expect(metadata.width).toBe(456);
         expect(metadata.height).toBe(400);
         expect([...pixel]).toEqual([32, 192, 96]);
+    });
+
+    it('places photos in the Morre Praga, Susto and RIP Vida templates', async () => {
+        const input = await sharp({
+            create: { width: 100, height: 160, channels: 3, background: '#20c060' }
+        }).png().toBuffer();
+        const cases = [
+            {
+                create: createMorrePragaImage,
+                asset: 'morre-praga.png',
+                size: [1080, 649],
+                point: [200, 250]
+            },
+            {
+                create: createScaredImage,
+                asset: 'susto.png',
+                size: [191, 300],
+                point: [80, 160]
+            },
+            {
+                create: createRipLifeImage,
+                asset: 'ripvida.png',
+                size: [400, 133],
+                point: [150, 50]
+            }
+        ];
+        for (const item of cases) {
+            const template = await fs.readFile(path.join(process.cwd(), 'assets/image-effects', item.asset));
+            const result = await item.create(input, template);
+            const metadata = await sharp(result).metadata();
+            const pixel = await sharp(result)
+                .extract({ left: item.point[0], top: item.point[1], width: 1, height: 1 })
+                .removeAlpha()
+                .raw()
+                .toBuffer();
+
+            expect([metadata.width, metadata.height]).toEqual(item.size);
+            expect([...pixel]).toEqual([32, 192, 96]);
+        }
     });
 
     it('renders petpet as a five-frame animated GIF', async () => {
