@@ -202,10 +202,10 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
                 });
             }
         }
-        else if (message.message?.conversation) {
+        else if (message.message?.conversation || message.message?.imageMessage) {
             isBotMentioned = userMessage.includes(`@${botNumber}`);
         }
-        if (!isBotMentioned && !isReplyToBot && !insideJokes.length && !hasImage)
+        if (!isBotMentioned && !isReplyToBot && !insideJokes.length)
             return;
         let cleanedMessage = userMessage;
         if (isBotMentioned) {
