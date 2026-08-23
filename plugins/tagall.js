@@ -1,6 +1,6 @@
 export default {
     command: 'tagall',
-    aliases: ['everyone', 'all'],
+    aliases: ['everyone', 'all', 'everson', 'everton'],
     category: 'admin',
     description: 'Tag all group members with their usernames',
     usage: '.tagall',

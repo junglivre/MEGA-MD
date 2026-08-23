@@ -19,7 +19,7 @@ const scheduleFileDeletion = (filePath) => {
 };
 export default {
     command: 's2img',
-    aliases: ['simage', 'stoimg'],
+    aliases: ['simage', 'stoimg', 'toimg'],
     category: 'stickers',
     description: 'Convert a sticker to an image',
     usage: '.s2img (reply to a sticker)',
