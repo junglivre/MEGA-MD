@@ -1,4 +1,4 @@
-import { createTriggeredGif, downloadImage, gifToMp4 } from '../lib/imageEffects.js';
+import { createTriggeredGif, downloadImage, gifToMp4, imageErrorKey } from '../lib/imageEffects.js';
 
 export default {
     command: 'triggered',
@@ -21,9 +21,7 @@ export default {
             }, { quoted: message });
         }
         catch (error) {
-            const key = error.code === 'NO_IMAGE' ? 'noImage'
-                : error.code === 'ANIMATED_STICKER' ? 'animatedSticker'
-                    : 'failed';
+            const key = imageErrorKey(error);
             if (key === 'failed')
                 console.error('[TRIGGERED] Error:', error.message);
             await sock.sendMessage(chatId, { text: `❌ ${t(`p.imagefx.${key}`)}`, ...channelInfo }, { quoted: message });

@@ -2,8 +2,11 @@ import { describe, expect, it } from 'vitest';
 import sharp from 'sharp';
 import {
     createAsciiImage,
+    createForgivenessImage,
+    createToBeContinuedImage,
     createTriggeredGif,
     getImageMedia,
+    invertImage,
     mirrorImage
 } from '../../lib/imageEffects.js';
 
@@ -55,6 +58,36 @@ describe('image effects', () => {
         expect(metadata.format).toBe('png');
         expect(metadata.width).toBeGreaterThan(300);
         expect(metadata.height).toBeGreaterThan(100);
+    });
+
+    it('inverts RGB colours without changing the dimensions', async () => {
+        const input = await sharp(Buffer.from([10, 20, 30]), {
+            raw: { width: 1, height: 1, channels: 3 }
+        }).png().toBuffer();
+        const output = await sharp(await invertImage(input)).removeAlpha().raw().toBuffer({ resolveWithObject: true });
+        expect([...output.data]).toEqual([245, 235, 225]);
+        expect(output.info.width).toBe(1);
+        expect(output.info.height).toBe(1);
+    });
+
+    it('renders the continued overlay without changing the canvas size', async () => {
+        const input = await sharp({
+            create: { width: 320, height: 180, channels: 3, background: '#4c78a8' }
+        }).png().toBuffer();
+        const metadata = await sharp(await createToBeContinuedImage(input, 'CONTINUA...')).metadata();
+        expect(metadata.format).toBe('png');
+        expect(metadata.width).toBe(320);
+        expect(metadata.height).toBe(180);
+    });
+
+    it('appends a forgiveness panel while preserving the photo width', async () => {
+        const input = await sharp({
+            create: { width: 320, height: 180, channels: 3, background: '#4c78a8' }
+        }).png().toBuffer();
+        const metadata = await sharp(await createForgivenessImage(input)).metadata();
+        expect(metadata.format).toBe('png');
+        expect(metadata.width).toBe(320);
+        expect(metadata.height).toBeGreaterThan(180);
     });
 
     it('renders triggered as a six-frame animated GIF', async () => {

@@ -1,48 +1,27 @@
-import axios from 'axios';
-import FormData from 'form-data';
-import fs from 'fs';
-import path from 'path';
-import { downloadContentFromMessage } from '@whiskeysockets/baileys';
+import { downloadImage, imageErrorKey, invertImage } from '../lib/imageEffects.js';
+
 export default {
     command: 'invert',
-    aliases: ['negative'],
-    category: 'tools',
-    description: 'Convert an image to negative',
-    usage: 'Reply to an image with .invert',
-    async handler(sock, message, args, context) {
-        const { t } = context;
-        const chatId = context.chatId || message.key.remoteJid;
+    aliases: ['negative', 'inverter'],
+    category: 'images',
+    description: 'Convert a photo to its color negative locally',
+    usage: '.invert (send or reply to an image or static sticker)',
+    async handler(sock, message, _args, context) {
+        const { chatId, channelInfo, t } = context;
         try {
-            const quoted = message.message?.extendedTextMessage?.contextInfo?.quotedMessage;
-            if (!quoted?.imageMessage) {
-                return await sock.sendMessage(chatId, { text: `🤍 *${t('p.invert.title')}*\n\n${t('p.invert.usage')}` }, { quoted: message });
-            }
-            await sock.sendMessage(chatId, { react: { text: '🔄', key: message.key } });
-            const stream = await downloadContentFromMessage(quoted.imageMessage, 'image');
-            let buffer = Buffer.from([]);
-            for await (const chunk of stream) {
-                buffer = Buffer.concat([buffer, chunk]);
-            }
-            const tempFile = path.join(process.cwd(), `invert_${Date.now()}.jpg`);
-            fs.writeFileSync(tempFile, buffer);
-            const form = new FormData();
-            form.append('apikey', 'guru');
-            form.append('file', fs.createReadStream(tempFile));
-            const res = await axios.post('https://discardapi.dpdns.org/api/image/invert', form, { headers: form.getHeaders(), responseType: 'arraybuffer', timeout: 60000 });
-            fs.unlinkSync(tempFile);
-            if (!res?.data)
-                throw new Error('Negative conversion failed');
-            const grayFile = path.join(process.cwd(), `invert_result_${Date.now()}.jpg`);
-            fs.writeFileSync(grayFile, res.data);
+            const result = await invertImage(await downloadImage(message));
             await sock.sendMessage(chatId, {
-                image: { url: grayFile },
-                caption: `🤍 *${t('p.invert.success')}*\n\nProcessed by: MEGA-MD`
+                image: result,
+                caption: `🤍 ${t('p.invert.success')}`,
+                ...channelInfo
             }, { quoted: message });
-            fs.unlinkSync(grayFile);
         }
-        catch (err) {
-            console.error('Invert Plugin Error:', err);
-            await sock.sendMessage(chatId, { text: `❌ ${t('p.invert.failed')}` }, { quoted: message });
+        catch (error) {
+            const key = imageErrorKey(error);
+            if (key === 'failed')
+                console.error('[INVERT] Error:', error.message);
+            const translationKey = key === 'failed' ? 'p.invert.failed' : `p.imagefx.${key}`;
+            await sock.sendMessage(chatId, { text: `❌ ${t(translationKey)}`, ...channelInfo }, { quoted: message });
         }
     }
 };
