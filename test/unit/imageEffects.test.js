@@ -1,8 +1,12 @@
 import { describe, expect, it } from 'vitest';
+import fs from 'fs/promises';
+import path from 'path';
 import sharp from 'sharp';
 import {
     createAsciiImage,
+    createContentAwareScaleImage,
     createForgivenessImage,
+    createSamImage,
     createToBeContinuedImage,
     createTriggeredGif,
     getImageMedia,
@@ -74,7 +78,8 @@ describe('image effects', () => {
         const input = await sharp({
             create: { width: 320, height: 180, channels: 3, background: '#4c78a8' }
         }).png().toBuffer();
-        const metadata = await sharp(await createToBeContinuedImage(input, 'CONTINUA...')).metadata();
+        const overlay = await fs.readFile(path.join(process.cwd(), 'assets/image-effects/to-be-continued.png'));
+        const metadata = await sharp(await createToBeContinuedImage(input, overlay)).metadata();
         expect(metadata.format).toBe('png');
         expect(metadata.width).toBe(320);
         expect(metadata.height).toBe(180);
@@ -88,6 +93,30 @@ describe('image effects', () => {
         expect(metadata.format).toBe('png');
         expect(metadata.width).toBe(320);
         expect(metadata.height).toBeGreaterThan(180);
+    });
+
+    it('adds a SAM badge without changing the canvas size', async () => {
+        const input = await sharp({
+            create: { width: 320, height: 180, channels: 3, background: '#4c78a8' }
+        }).png().toBuffer();
+        const metadata = await sharp(await createSamImage(input)).metadata();
+        expect(metadata.format).toBe('png');
+        expect(metadata.width).toBe(320);
+        expect(metadata.height).toBe(180);
+    });
+
+    it('content-aware scales locally and restores the display dimensions', async () => {
+        const input = await sharp({
+            create: { width: 80, height: 60, channels: 3, background: '#4c78a8' }
+        }).composite([{
+            input: Buffer.from('<svg width="80" height="60"><circle cx="18" cy="25" r="12" fill="#ffcc00"/></svg>')
+        }]).png().toBuffer();
+        const result = await createContentAwareScaleImage(input, 0.25);
+        const metadata = await sharp(result).metadata();
+        expect(metadata.format).toBe('png');
+        expect(metadata.width).toBe(80);
+        expect(metadata.height).toBe(60);
+        expect(result.equals(input)).toBe(false);
     });
 
     it('renders triggered as a six-frame animated GIF', async () => {

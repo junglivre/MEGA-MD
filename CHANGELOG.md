@@ -10,11 +10,13 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Documentação local sanitizada do ambiente em `.env.md`, ignorada pelo Git e sem valores secretos.
 - Comandos de imagem `jooj`, `ojjo`, `ascii` e `triggered`, inspirados nos efeitos do LorittaBot e implementados localmente com Sharp.
 - Pipeline compartilhado para baixar fotos e figurinhas estáticas, limitar entradas e gerar efeitos sem APIs externas.
-- Comandos locais `tobecontinued` e `perdao`, com filtros e overlays SVG próprios.
+- Comandos locais `tobecontinued` e `perdao`, com processamento e composição sem serviço externo.
+- Comandos locais `sam` e `contentawarescale`, com selo vetorial e seam carving executado no próprio bot.
 
 ### Changed
 
 - Comando `invert` passou a processar fotos e figurinhas estáticas localmente com Sharp, sem arquivos temporários nem API externa.
+- Comando `tobecontinued` passou a usar o overlay transparente fornecido para o meme, mantendo o processamento sépia local.
 
 ## [2026-08-23]
 

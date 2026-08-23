@@ -1,8 +1,13 @@
+import fs from 'fs/promises';
+import { fileURLToPath } from 'url';
 import {
     createToBeContinuedImage,
     downloadImage,
     imageErrorKey
 } from '../lib/imageEffects.js';
+
+const overlayPath = fileURLToPath(new URL('../assets/image-effects/to-be-continued.png', import.meta.url));
+const overlayPromise = fs.readFile(overlayPath);
 
 export default {
     command: 'tobecontinued',
@@ -13,10 +18,7 @@ export default {
     async handler(sock, message, _args, context) {
         const { chatId, channelInfo, t } = context;
         try {
-            const result = await createToBeContinuedImage(
-                await downloadImage(message),
-                t('p.imagefx.toBeContinuedLabel')
-            );
+            const result = await createToBeContinuedImage(await downloadImage(message), await overlayPromise);
             await sock.sendMessage(chatId, {
                 image: result,
                 caption: t('p.imagefx.toBeContinuedCaption'),
