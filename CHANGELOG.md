@@ -8,6 +8,8 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 
 - Contexto operacional para agentes em `AGENTS.md`.
 - Documentação local sanitizada do ambiente em `.env.md`, ignorada pelo Git e sem valores secretos.
+- Comandos de imagem `jooj`, `ojjo`, `ascii` e `triggered`, inspirados nos efeitos do LorittaBot e implementados localmente com Sharp.
+- Pipeline compartilhado para baixar fotos e figurinhas estáticas, limitar entradas e gerar efeitos sem APIs externas.
 
 ## [2026-08-23]
 

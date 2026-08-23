@@ -171,7 +171,7 @@ npm run lint
 node --check <arquivo.js>
 ```
 
-No ambiente Codex local, `npm` pode não estar no PATH. Use o runtime Node fornecido pelo workspace quando necessário. `node_modules` local pode ter sido instalado por pnpm apenas para validação; não versione lockfiles gerados incidentalmente.
+No ambiente Codex local, `npm` pode não estar no PATH. O runtime Node/FNM disponível nesta estação está atualmente em `/run/user/1000/fnm_multishells/1009536_1787504297746/bin/`; prefixe esse diretório ao `PATH` para executar `node`, `npm` e `npx`. Como o identificador do multishell pode mudar após uma nova sessão, localize o diretório ativo em `/run/user/1000/fnm_multishells/` se esse caminho deixar de existir. `node_modules` local pode ter sido instalado por pnpm apenas para validação; não versione lockfiles gerados incidentalmente.
 
 Antes de entregar uma mudança:
 
