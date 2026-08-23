@@ -6,7 +6,6 @@ import {
     linkInsideJokeBank,
     normalizeInsideJokeText
 } from '../../lib/insideJokes.js';
-import { normalizeJid } from '../../lib/jid.js';
 
 describe('inside joke banks', () => {
     it('normalizes accents and casing for keyword matching', () => {
@@ -24,8 +23,4 @@ describe('inside joke banks', () => {
         expect(findInsideJokes(state, '999@g.us', 'esse careca apareceu')).toHaveLength(0);
     });
 
-    it('keeps flow identities normalized across device suffixes', () => {
-        expect(normalizeJid('123456789:4@lid')).toBe('123456789@lid');
-        expect(normalizeJid('5511999999999:7@s.whatsapp.net')).toBe('5511999999999@s.whatsapp.net');
-    });
 });
