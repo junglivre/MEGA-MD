@@ -14,7 +14,7 @@ import config from '../config.js';
  *                                                                           *
  *****************************************************************************/
 import commandHandler from '../lib/commandHandler.js';
-import { translateCategory, translateCommandDescription } from '../lib/i18n.js';
+import { getConfiguredPrefix, replaceCommandPrefix, translateCategory, translateCommandDescription } from '../lib/i18n.js';
 function formatTime() {
     const now = new Date();
     const options = {
@@ -155,7 +155,7 @@ export default {
     usage: '.menu [command]',
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t = (key) => key } = context;
-        const prefix = config.prefixes[0];
+        const prefix = getConfiguredPrefix();
         if (args.length) {
             const searchTerm = args[0].toLowerCase();
             let cmd = commandHandler.commands.get(searchTerm);
@@ -174,7 +174,7 @@ export default {
 ┃
 ┃ ⚡ *${t('command')}:* ${prefix}${cmd.command}
 ┃ 📝 *${t('description')}:* ${translateCommandDescription(context.language, cmd.command, cmd.description)}
-┃ 📖 *${t('usage')}:* ${cmd.usage || `${prefix}${cmd.command}`}
+┃ 📖 *${t('usage')}:* ${replaceCommandPrefix(cmd.usage || `${prefix}${cmd.command}`, prefix)}
 ┃ 🏷️ *${t('category')}:* ${translateCategory(context.language, cmd.category || 'misc')}
 ┃ 🔖 *${t('aliases')}:* ${cmd.aliases?.length ? cmd.aliases.map((a) => prefix + a).join(', ') : t('none')}
 ┃

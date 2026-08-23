@@ -104,7 +104,7 @@ export default {
                         else if (ms > 1000)
                             speedTag = ` ${slowEmoji}`;
                     }
-                    menuText += `${prefix}─ ${statusIcon} .${cmdName}${speedTag}\n`;
+                    menuText += `${prefix}─ ${statusIcon} ${config.prefix}${cmdName}${speedTag}\n`;
                 });
                 menuText += `\n`;
             }

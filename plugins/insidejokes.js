@@ -36,16 +36,16 @@ function parseAddPayload(value) {
     };
 }
 
-function helpText(t) {
+function helpText(t, prefix) {
     return `*🃏 ${t('p.insidejokes.title')}*\n\n` +
         `${t('p.insidejokes.intro')}\n\n` +
-        `• .bancopiadas criar <nome>\n` +
-        `• .bancopiadas adicionar <nome> <tags> | <contexto>\n` +
-        `• .bancopiadas listar [nome]\n` +
-        `• .bancopiadas vincular <nome>\n` +
-        `• .bancopiadas desvincular <nome>\n` +
-        `• .bancopiadas remover <nome> <id>\n` +
-        `• .bancopiadas apagar <nome>\n\n` +
+        `• ${prefix}bancopiadas criar <nome>\n` +
+        `• ${prefix}bancopiadas adicionar <nome> <tags> | <contexto>\n` +
+        `• ${prefix}bancopiadas listar [nome]\n` +
+        `• ${prefix}bancopiadas vincular <nome>\n` +
+        `• ${prefix}bancopiadas desvincular <nome>\n` +
+        `• ${prefix}bancopiadas remover <nome> <id>\n` +
+        `• ${prefix}bancopiadas apagar <nome>\n\n` +
         `_${t('p.insidejokes.example')}_`;
 }
 
@@ -71,11 +71,12 @@ export default {
         const chatId = context.chatId || message.key.remoteJid;
         const senderId = context.senderId || message.key.participant || chatId;
         const t = context.t;
+        const prefix = context.config?.prefix || '.';
         const action = String(args[0] || '').toLowerCase();
         const rest = commandArguments(context).replace(/^\S+\s*/i, '');
 
         if (!action)
-            return send(sock, chatId, helpText(t), message);
+            return send(sock, chatId, helpText(t, prefix), message);
 
         const state = await loadInsideJokes();
         try {
@@ -132,7 +133,7 @@ export default {
                 await saveInsideJokes(state);
                 return send(sock, chatId, `✅ ${t('p.insidejokes.deleted', { name: bank.name })}`, message);
             }
-            return send(sock, chatId, helpText(t), message);
+            return send(sock, chatId, helpText(t, prefix), message);
         }
         catch (error) {
             const errorKey = {
