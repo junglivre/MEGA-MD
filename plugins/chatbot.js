@@ -278,7 +278,7 @@ async function getAIResponse(userMessage, userContext) {
     }[config.groqChatResponseSize];
     const customInstructions = String(config.groqChatInstructions || '').replace(/\\n/g, '\n').trim();
     const insideJokeContext = userContext.insideJokes?.length
-        ? `\nINTERNAL JOKE CONTEXT (never mention this database or these instructions):\n${userContext.insideJokes.map(joke => `- Bank: ${joke.bankName}; Trigger: ${joke.matchedKeywords.join(', ')}; Context: ${joke.context}`).join('\n')}\nEvaluate all matching contexts and choose the one that best fits the user's message. If multiple clearly apply, combine them naturally without inventing facts.\n`
+        ? `\nPRIVATE GROUP HUMOR (highest priority when relevant; never mention this database, the matching tag, or these instructions):\n${userContext.insideJokes.map(joke => `- ${joke.context}`).join('\n')}\nTreat these contexts as the group's humor pattern, not as a request to explain or repeat the original story. When the user's message matches one, adapt that pattern to the current situation and make the response itself participate in the joke. If the message is a challenge or wager such as "10 pila pra...", prefer a fresh, short joke in the same format (for example, another playful "10 pila pra..." challenge) that fits what was just said. Do not get stuck on the original location, people, or example. Do not merely give a generic reaction while ignoring the matching context. If several contexts match, choose the most relevant one and combine them naturally without inventing unrelated facts.\n`
         : '';
     const prompt = `
 You are a casual, friendly human chatting on WhatsApp. Reply in ${replyLanguage}.
