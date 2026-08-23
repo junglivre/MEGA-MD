@@ -4,7 +4,9 @@ import path from 'path';
 import sharp from 'sharp';
 import {
     createAsciiImage,
+    createBolsonaroTvImage,
     createContentAwareScaleImage,
+    createEdnaldoTvImage,
     createForgivenessImage,
     createMorrePragaImage,
     createPerfectImage,
@@ -13,6 +15,7 @@ import {
     createRipLifeImage,
     createSamImage,
     createScaredImage,
+    createStudiopolisTvImage,
     createToBeContinuedImage,
     createTriggeredGif,
     getImageMedia,
@@ -191,7 +194,7 @@ describe('image effects', () => {
         expect(topPixel[0]).toBeGreaterThan(topPixel[1]);
         expect(greenPixel[1]).toBeGreaterThan(greenPixel[0]);
         expect(topPixel.every(channel => channel > 95)).toBe(true);
-        expect(Math.max(...topPixel) - Math.min(...topPixel)).toBeLessThan(50);
+        expect(Math.max(...topPixel) - Math.min(...topPixel)).toBeLessThan(75);
     });
 
     it('places a photo in the perfect meme template', async () => {
@@ -231,6 +234,45 @@ describe('image effects', () => {
                 asset: 'ripvida.png',
                 size: [400, 133],
                 point: [150, 50]
+            }
+        ];
+        for (const item of cases) {
+            const template = await fs.readFile(path.join(process.cwd(), 'assets/image-effects', item.asset));
+            const result = await item.create(input, template);
+            const metadata = await sharp(result).metadata();
+            const pixel = await sharp(result)
+                .extract({ left: item.point[0], top: item.point[1], width: 1, height: 1 })
+                .removeAlpha()
+                .raw()
+                .toBuffer();
+
+            expect([metadata.width, metadata.height]).toEqual(item.size);
+            expect([...pixel]).toEqual([32, 192, 96]);
+        }
+    });
+
+    it('places photos inside the Ednaldo, Bolsonaro and Studiopolis televisions', async () => {
+        const input = await sharp({
+            create: { width: 160, height: 100, channels: 3, background: '#20c060' }
+        }).png().toBuffer();
+        const cases = [
+            {
+                create: createEdnaldoTvImage,
+                asset: 'ednaldo-tv.png',
+                size: [500, 375],
+                point: [300, 60]
+            },
+            {
+                create: createBolsonaroTvImage,
+                asset: 'bolsonaro-tv.png',
+                size: [400, 230],
+                point: [200, 80]
+            },
+            {
+                create: createStudiopolisTvImage,
+                asset: 'studiopolis-tv.png',
+                size: [400, 282],
+                point: [220, 110]
             }
         ];
         for (const item of cases) {

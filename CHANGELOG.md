@@ -14,6 +14,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comandos locais `sam` e `contentawarescale`, com selo vetorial e seam carving executado no próprio bot.
 - Comandos locais `gay`, `perfeito` e `petpet`, com filtro arco-íris sutil, composição estática e animação geradas sem APIs externas.
 - Comandos locais `morrepraga`, `susto` e `ripvida`, usando templates do Loritta e composição local de uma imagem.
+- Comandos locais `ednaldotv`, `bolsonaro` e `studiopolistv`, com substituição local das telas dos templates.
 
 ### Changed
 
@@ -23,6 +24,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comandos locais de imagem passaram a aceitar a foto de perfil da primeira pessoa mencionada, com orientação neutra quando nenhuma imagem está disponível.
 - Comando `sam` passou a usar o overlay transparente fornecido no lugar do selo vetorial gerado.
 - Comando `petpet` passou a usar os cinco quadros do GIF transparente fornecido no lugar da mão vetorial gerada.
+- Filtro do comando `gay` ficou mais visível, aumentando a opacidade da bandeira de 14% para 22%.
 
 ## [2026-08-23]
 
