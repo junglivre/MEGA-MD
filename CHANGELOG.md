@@ -19,6 +19,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comandos locais `deus`, `bobfire` e `bolsoframe`, com composição de uma foto em templates clássicos.
 - Comandos locais `passingpaper`, `briggscover` e `buckshirt`, com recortes locais e repetição da estampa quando necessário.
 - Comandos locais `pepedream`, `romerobritto` e `quadro`, preservando personagens e objetos sobrepostos aos encaixes.
+- Toggle `chatbot command-replies` para controlar respostas do chatbot quando alguém responde ao resultado de um comando.
 
 ### Changed
 
@@ -30,6 +31,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comando `petpet` passou a usar os cinco quadros do GIF transparente fornecido no lugar da mão vetorial gerada.
 - Filtro do comando `gay` ficou mais visível, aumentando a opacidade da bandeira de 14% para 22%.
 - Telas de `ednaldotv`, `bolsonaro` e `studiopolistv` passaram a esticar a imagem sem recorte; o encaixe inferior do `bolsonaro` também foi reduzido em 4 px.
+- Figurinhas animadas passaram a usar o modo normal com preenchimento transparente por padrão, evitando o formato `full` incompatível com alguns GIFs.
 
 ## [2026-08-23]
 

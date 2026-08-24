@@ -106,6 +106,55 @@ function sameJid(left, right) {
     return jidToken(left) && jidToken(left) === jidToken(right);
 }
 
+function getContextInfo(messageContent) {
+    if (!messageContent)
+        return null;
+    for (const value of Object.values(messageContent)) {
+        if (value && typeof value === 'object' && value.contextInfo)
+            return value.contextInfo;
+    }
+    return null;
+}
+
+function getMessageText(messageContent) {
+    return messageContent?.conversation
+        || messageContent?.extendedTextMessage?.text
+        || messageContent?.imageMessage?.caption
+        || messageContent?.videoMessage?.caption
+        || messageContent?.documentMessage?.caption
+        || '';
+}
+
+export function getChatbotState(value) {
+    if (value === true) {
+        return { enabled: true, replyToCommandResponses: true };
+    }
+    if (!value || typeof value !== 'object') {
+        return { enabled: false, replyToCommandResponses: true };
+    }
+    return {
+        enabled: value.enabled === true,
+        replyToCommandResponses: value.replyToCommandResponses !== false
+    };
+}
+
+export function isReplyToCommandResponse(message, prefixes = config.prefixes) {
+    const replyContext = getContextInfo(message?.message);
+    const botResponse = replyContext?.quotedMessage;
+    const isMediaResponse = Boolean(botResponse?.stickerMessage
+        || botResponse?.imageMessage
+        || botResponse?.videoMessage
+        || botResponse?.documentMessage
+        || botResponse?.audioMessage);
+    if (isMediaResponse)
+        return true;
+    const commandContext = getContextInfo(botResponse);
+    const commandText = getMessageText(commandContext?.quotedMessage).trim();
+    if (!commandText)
+        return false;
+    return (prefixes || []).some(prefix => prefix && commandText.startsWith(prefix));
+}
+
 function escapeRegExp(value) {
     return String(value).replace(/[.*+?^${}()|[\]\\]/g, '\\$&');
 }
@@ -159,11 +208,12 @@ async function imageToBuffer(image) {
 
 export async function handleChatbotResponse(sock, chatId, message, userMessage, senderId) {
     const data = await loadUserGroupData();
+    const chatbotState = getChatbotState(data.chatbot?.[chatId]);
     const insideJokeState = await loadInsideJokes();
     const insideJokes = findInsideJokes(insideJokeState, chatId, userMessage);
     const image = getImageMessage(message);
     const hasImage = Boolean(image);
-    if (!data.chatbot?.[chatId] && !insideJokes.length)
+    if (!chatbotState.enabled && !insideJokes.length)
         return;
     // Created up front (with a safe default locale) so the catch block below always
     // has a working translator, even if the try block throws before resolving the
@@ -177,16 +227,18 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
             botId,
             `${botNumber}@s.whatsapp.net`,
             `${botNumber}@whatsapp.net`,
-            `${botNumber}@lid`,
-            botLid,
-            `${botLid.split(':')[0]}@lid`
+            `${botNumber}@lid`
         ];
+        if (botLid) {
+            botJids.push(botLid, `${jidToken(botLid)}@lid`);
+        }
         let isBotMentioned = false;
         let isReplyToBot = false;
         let mentionedJids = [];
-        if (message.message?.extendedTextMessage) {
-            mentionedJids = message.message.extendedTextMessage.contextInfo?.mentionedJid || [];
-            const quotedParticipant = message.message.extendedTextMessage.contextInfo?.participant;
+        const contextInfo = getContextInfo(message.message);
+        if (contextInfo) {
+            mentionedJids = contextInfo.mentionedJid || [];
+            const quotedParticipant = contextInfo.participant;
             isBotMentioned = mentionedJids.some((jid) => {
                 const jidNumber = jid.split('@')[0].split(':')[0];
                 return botJids.some((botJid) => {
@@ -204,6 +256,10 @@ export async function handleChatbotResponse(sock, chatId, message, userMessage, 
         }
         else if (message.message?.conversation || message.message?.imageMessage) {
             isBotMentioned = userMessage.includes(`@${botNumber}`);
+        }
+        if (isReplyToBot && !isBotMentioned && !chatbotState.replyToCommandResponses
+            && isReplyToCommandResponse(message)) {
+            return;
         }
         if (!isBotMentioned && !isReplyToBot && !insideJokes.length)
             return;
@@ -402,7 +458,7 @@ export default {
     aliases: ['bot', 'ai', 'achat'],
     category: 'admin',
     description: 'Enable or disable AI chatbot for the group',
-    usage: '.chatbot <on|off>',
+    usage: '.chatbot <on|off|command-replies [on|off]>',
     groupOnly: true,
     adminOnly: true,
     async handler(sock, message, args, context) {
@@ -410,7 +466,10 @@ export default {
         const senderId = context.senderId || message.key.participant || message.key.remoteJid;
         const language = context.language || await getUserLanguage(senderId);
         const t = createTranslator(language);
+        const prefix = context.config?.prefix || config.prefix || config.prefixes?.[0] || '.';
         const match = args.join(' ').toLowerCase();
+        const data = await loadUserGroupData();
+        const chatbotState = getChatbotState(data.chatbot?.[chatId]);
         if (!match) {
             await showTyping(sock, chatId);
             const storage = HAS_DB ? t('p.chatbot.storageDb') : t('p.chatbot.storageFs');
@@ -419,8 +478,10 @@ export default {
                     `*${t('p.chatbot.storageLabel')}:* ${storage}\n` +
                     `*${t('p.chatbot.apisLabel')}:* ${t('p.chatbot.apisDesc', { count: API_ENDPOINTS.length })}\n\n` +
                     `*${t('p.chatbot.commandsLabel')}:*\n` +
-                    `• \`.chatbot on\` - ${t('p.chatbot.cmdOn')}\n` +
-                    `• \`.chatbot off\` - ${t('p.chatbot.cmdOff')}\n\n` +
+                    `• \`${prefix}chatbot on\` - ${t('p.chatbot.cmdOn')}\n` +
+                    `• \`${prefix}chatbot off\` - ${t('p.chatbot.cmdOff')}\n` +
+                    `• \`${prefix}chatbot command-replies on/off\` - ${t('p.chatbot.cmdCommandReplies')}\n\n` +
+                    `*${t('p.chatbot.commandRepliesLabel')}:* ${chatbotState.replyToCommandResponses ? t('p.chatbot.stateOn') : t('p.chatbot.stateOff')}\n\n` +
                     `*${t('p.chatbot.howItWorksLabel')}:*\n` +
                     `${t('p.chatbot.howItWorksDesc')}\n\n` +
                     `*${t('p.chatbot.featuresLabel')}:*\n` +
@@ -431,16 +492,16 @@ export default {
                 quoted: message
             });
         }
-        const data = await loadUserGroupData();
         if (match === 'on') {
             await showTyping(sock, chatId);
-            if (data.chatbot[chatId]) {
+            if (chatbotState.enabled) {
                 return sock.sendMessage(chatId, {
                     text: `⚠️ *${t('p.chatbot.alreadyEnabled')}*`,
                     quoted: message
                 });
             }
-            data.chatbot[chatId] = true;
+            data.chatbot ||= {};
+            data.chatbot[chatId] = { ...chatbotState, enabled: true };
             await saveUserGroupData(data);
             return sock.sendMessage(chatId, {
                 text: `✅ *${t('p.chatbot.enabledMsg')}*`,
@@ -449,16 +510,37 @@ export default {
         }
         if (match === 'off') {
             await showTyping(sock, chatId);
-            if (!data.chatbot[chatId]) {
+            if (!chatbotState.enabled) {
                 return sock.sendMessage(chatId, {
                     text: `⚠️ *${t('p.chatbot.alreadyDisabled')}*`,
                     quoted: message
                 });
             }
-            delete data.chatbot[chatId];
+            data.chatbot[chatId] = { ...chatbotState, enabled: false };
             await saveUserGroupData(data);
             return sock.sendMessage(chatId, {
                 text: `❌ *${t('p.chatbot.disabledMsg')}*`,
+                quoted: message
+            });
+        }
+        const [option, requestedState, ...extra] = match.split(/\s+/);
+        const commandReplyOptions = new Set([
+            'command-replies', 'commandreplies', 'cmd-replies', 'cmdreplies',
+            'respostas-comandos', 'respostascomandos', 'respostas'
+        ]);
+        if (commandReplyOptions.has(option) && extra.length === 0
+            && (!requestedState || requestedState === 'on' || requestedState === 'off')) {
+            const enabled = requestedState ? requestedState === 'on' : !chatbotState.replyToCommandResponses;
+            data.chatbot ||= {};
+            data.chatbot[chatId] = {
+                ...chatbotState,
+                replyToCommandResponses: enabled
+            };
+            await saveUserGroupData(data);
+            return sock.sendMessage(chatId, {
+                text: `${enabled ? '✅' : '❌'} *${enabled
+                    ? t('p.chatbot.commandRepliesEnabled')
+                    : t('p.chatbot.commandRepliesDisabled')}*`,
                 quoted: message
             });
         }

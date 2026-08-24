@@ -4,7 +4,6 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import webp from 'node-webpmux';
-import config from '../config.js';
 import { getStickerAuthor, getStickerPackName } from '../lib/stickerMetadata.js';
 
 // Matches a single (possibly ZWJ-joined, variation-selector-terminated) emoji,
@@ -98,6 +97,10 @@ function buildFilter(shape, animated) {
             // stretches and never crops anything out.
             return `scale=512:512:force_original_aspect_ratio=decrease${fps},format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000`;
     }
+}
+
+export function getStickerShape(shape, animated) {
+    return shape || (animated ? 'normal' : 'full');
 }
 
 async function convertToSticker(inputPath, outputPath, shape, animated) {
@@ -200,7 +203,7 @@ export default {
     description: 'Create or edit a sticker from an image, video, GIF or another sticker',
     usage: '.sticker [emoji] [-crop|-full|-rounded|-circle] [-custom author|pack] (reply to image/video/gif/document/sticker)',
     async handler(sock, message, args, context) {
-        const { chatId, config, channelInfo, t } = context;
+        const { chatId, channelInfo, t } = context;
         const { targetMessage, mediaMessage } = resolveTarget(message, chatId);
         if (!mediaMessage) {
             await sock.sendMessage(chatId, {
@@ -242,7 +245,7 @@ export default {
                     || (mediaMessage.mimetype === 'image/webp' && targetMessage.message?.stickerMessage?.isAnimated)
                     || mediaMessage.seconds > 0;
                 fs.writeFileSync(tempInput, mediaBuffer);
-                await convertToSticker(tempInput, tempOutput, shape || 'full', isAnimated);
+                await convertToSticker(tempInput, tempOutput, getStickerShape(shape, isAnimated), isAnimated);
                 if (!fs.existsSync(tempOutput) || fs.statSync(tempOutput).size === 0) {
                     throw new Error('ffmpeg produced no output');
                 }
