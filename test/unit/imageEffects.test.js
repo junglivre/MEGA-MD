@@ -9,11 +9,14 @@ import {
     createBolsoFrameImage,
     createBolsonaroTv2Image,
     createBolsonaroTvImage,
+    createBriggsCoverImage,
+    createBuckShirtImage,
     createContentAwareScaleImage,
     createEdnaldoTvImage,
     createForgivenessImage,
     createGodImage,
     createMorrePragaImage,
+    createPassingPaperImage,
     createPerfectImage,
     createPetPetGif,
     createPrideOverlayImage,
@@ -371,6 +374,47 @@ describe('image effects', () => {
 
             expect([metadata.width, metadata.height]).toEqual(item.size);
             expect([...pixel]).toEqual([32, 192, 96]);
+        }
+    });
+
+    it('places photos in the passing paper, Briggs cover and Buck shirt templates', async () => {
+        const input = await sharp({
+            create: { width: 160, height: 100, channels: 3, background: '#20c060' }
+        }).png().toBuffer();
+        const cases = [
+            {
+                create: createPassingPaperImage,
+                asset: 'passing-paper.png',
+                size: [400, 378],
+                points: [[250, 250]]
+            },
+            {
+                create: createBriggsCoverImage,
+                asset: 'briggs-cover.png',
+                size: [400, 300],
+                points: [[300, 130]]
+            },
+            {
+                create: createBuckShirtImage,
+                asset: 'buck-shirt.png',
+                size: [399, 280],
+                points: [[250, 160], [65, 110], [70, 220]]
+            }
+        ];
+        for (const item of cases) {
+            const template = await fs.readFile(path.join(process.cwd(), 'assets/image-effects', item.asset));
+            const result = await item.create(input, template);
+            const metadata = await sharp(result).metadata();
+
+            expect([metadata.width, metadata.height]).toEqual(item.size);
+            for (const point of item.points) {
+                const pixel = await sharp(result)
+                    .extract({ left: point[0], top: point[1], width: 1, height: 1 })
+                    .removeAlpha()
+                    .raw()
+                    .toBuffer();
+                expect([...pixel]).toEqual([32, 192, 96]);
+            }
         }
     });
 
