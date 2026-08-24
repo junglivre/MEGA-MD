@@ -17,16 +17,19 @@ import {
     createGodImage,
     createMorrePragaImage,
     createPassingPaperImage,
+    createPepeDreamImage,
     createPerfectImage,
     createPetPetGif,
     createPrideOverlayImage,
     createRipLifeImage,
     createRipTvImage,
+    createRomeroBrittoImage,
     createSamImage,
     createScaredImage,
     createStudiopolisTvImage,
     createToBeContinuedImage,
     createTriggeredGif,
+    createWolverineFrameImage,
     getImageMedia,
     getMentionedJids,
     imageErrorReply,
@@ -415,6 +418,45 @@ describe('image effects', () => {
                     .toBuffer();
                 expect([...pixel]).toEqual([32, 192, 96]);
             }
+        }
+    });
+
+    it('places photos in the Pepe dream, Romero Britto and Wolverine templates', async () => {
+        const input = await sharp({
+            create: { width: 160, height: 100, channels: 3, background: '#20c060' }
+        }).png().toBuffer();
+        const cases = [
+            {
+                create: createPepeDreamImage,
+                asset: 'pepe-dream.png',
+                size: [400, 320],
+                point: [130, 50]
+            },
+            {
+                create: createRomeroBrittoImage,
+                asset: 'romero-britto.png',
+                size: [300, 300],
+                point: [100, 100]
+            },
+            {
+                create: createWolverineFrameImage,
+                asset: 'wolverine-frame.png',
+                size: [206, 300],
+                point: [100, 190]
+            }
+        ];
+        for (const item of cases) {
+            const template = await fs.readFile(path.join(process.cwd(), 'assets/image-effects', item.asset));
+            const result = await item.create(input, template);
+            const metadata = await sharp(result).metadata();
+            const pixel = await sharp(result)
+                .extract({ left: item.point[0], top: item.point[1], width: 1, height: 1 })
+                .removeAlpha()
+                .raw()
+                .toBuffer();
+
+            expect([metadata.width, metadata.height]).toEqual(item.size);
+            expect([...pixel]).toEqual([32, 192, 96]);
         }
     });
 
