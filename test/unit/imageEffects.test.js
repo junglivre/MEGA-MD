@@ -5,11 +5,14 @@ import sharp from 'sharp';
 import {
     createAsciiImage,
     createAtaImage,
+    createBobFireImage,
+    createBolsoFrameImage,
     createBolsonaroTv2Image,
     createBolsonaroTvImage,
     createContentAwareScaleImage,
     createEdnaldoTvImage,
     createForgivenessImage,
+    createGodImage,
     createMorrePragaImage,
     createPerfectImage,
     createPetPetGif,
@@ -315,6 +318,45 @@ describe('image effects', () => {
                 asset: 'rip-tv.png',
                 size: [768, 432],
                 point: [650, 110]
+            }
+        ];
+        for (const item of cases) {
+            const template = await fs.readFile(path.join(process.cwd(), 'assets/image-effects', item.asset));
+            const result = await item.create(input, template);
+            const metadata = await sharp(result).metadata();
+            const pixel = await sharp(result)
+                .extract({ left: item.point[0], top: item.point[1], width: 1, height: 1 })
+                .removeAlpha()
+                .raw()
+                .toBuffer();
+
+            expect([metadata.width, metadata.height]).toEqual(item.size);
+            expect([...pixel]).toEqual([32, 192, 96]);
+        }
+    });
+
+    it('places photos in the God, Bob Fire and Bolsonaro frame templates', async () => {
+        const input = await sharp({
+            create: { width: 160, height: 100, channels: 3, background: '#20c060' }
+        }).png().toBuffer();
+        const cases = [
+            {
+                create: createGodImage,
+                asset: 'deus.png',
+                size: [376, 146],
+                point: [40, 40]
+            },
+            {
+                create: createBobFireImage,
+                asset: 'bobfire.png',
+                size: [331, 400],
+                point: [60, 100]
+            },
+            {
+                create: createBolsoFrameImage,
+                asset: 'bolsoframe.png',
+                size: [680, 505],
+                point: [350, 80]
             }
         ];
         for (const item of cases) {

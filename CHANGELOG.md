@@ -16,6 +16,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comandos locais `morrepraga`, `susto` e `ripvida`, usando templates do Loritta e composição local de uma imagem.
 - Comandos locais `ednaldotv`, `bolsonaro` e `studiopolistv`, com substituição local das telas dos templates.
 - Comandos locais `bolsonaro2`, `ata` e `riptv`, com encaixes recortados para telas em perspectiva.
+- Comandos locais `deus`, `bobfire` e `bolsoframe`, com composição de uma foto em templates clássicos.
 
 ### Changed
 
