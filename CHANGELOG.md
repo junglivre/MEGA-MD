@@ -33,6 +33,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Telas de `ednaldotv`, `bolsonaro` e `studiopolistv` passaram a esticar a imagem sem recorte; o encaixe inferior do `bolsonaro` também foi reduzido em 4 px.
 - Figurinhas animadas passaram a usar o modo normal com preenchimento transparente por padrão, evitando o formato `full` incompatível com alguns GIFs.
 - O alias `bot` deixou de acionar o status `alive` sem prefixo, evitando respostas automáticas em conversas iniciadas com essa palavra.
+- Comandos `ban` e `unban` passaram a ser exclusivos do proprietário; `unban` agora aceita diretamente o LID salvo no banco, inclusive no privado, e `ban` esclarece a diferença para `kick`.
 
 ## [2026-08-23]
 
