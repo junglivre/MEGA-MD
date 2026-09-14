@@ -500,7 +500,7 @@ export default {
                     quoted: message
                 });
             }
-            data.chatbot ||= {};
+            data.chatbot = data.chatbot || {};
             data.chatbot[chatId] = { ...chatbotState, enabled: true };
             await saveUserGroupData(data);
             return sock.sendMessage(chatId, {
@@ -531,7 +531,7 @@ export default {
         if (commandReplyOptions.has(option) && extra.length === 0
             && (!requestedState || requestedState === 'on' || requestedState === 'off')) {
             const enabled = requestedState ? requestedState === 'on' : !chatbotState.replyToCommandResponses;
-            data.chatbot ||= {};
+            data.chatbot = data.chatbot || {};
             data.chatbot[chatId] = {
                 ...chatbotState,
                 replyToCommandResponses: enabled

@@ -35,6 +35,11 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - O alias `bot` deixou de acionar o status `alive` sem prefixo, evitando respostas automáticas em conversas iniciadas com essa palavra.
 - Comandos `ban` e `unban` passaram a ser exclusivos do proprietário; `unban` agora aceita diretamente o LID salvo no banco, inclusive no privado, e `ban` esclarece a diferença para `kick`.
 
+### Fixed
+
+- A sessão Baileys deixa de remover chaves Signal em uso, preservando a capacidade de decifrar mensagens após reinícios.
+- Plugin `chatbot` deixa de usar atribuição lógica incompatível com o verificador de sintaxe carregado na inicialização.
+
 ## [2026-08-23]
 
 ### Added
