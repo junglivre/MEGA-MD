@@ -3,7 +3,7 @@ import process from 'process';
 import { channelInfo } from '../lib/messageConfig.js';
 export default {
     command: 'alive',
-    aliases: ['status', 'bot'],
+    aliases: ['status'],
     category: 'general',
     description: 'Check bot status and system info',
     usage: '.alive',

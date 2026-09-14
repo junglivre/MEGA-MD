@@ -8,6 +8,37 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 
 - Contexto operacional para agentes em `AGENTS.md`.
 - Documentação local sanitizada do ambiente em `.env.md`, ignorada pelo Git e sem valores secretos.
+- Comandos de imagem `jooj`, `ojjo`, `ascii` e `triggered`, inspirados nos efeitos do LorittaBot e implementados localmente com Sharp.
+- Pipeline compartilhado para baixar fotos e figurinhas estáticas, limitar entradas e gerar efeitos sem APIs externas.
+- Comandos locais `tobecontinued` e `perdao`, com processamento e composição sem serviço externo.
+- Comandos locais `sam` e `contentawarescale`, com selo vetorial e seam carving executado no próprio bot.
+- Comandos locais `gay`, `perfeito` e `petpet`, com filtro arco-íris sutil, composição estática e animação geradas sem APIs externas.
+- Comandos locais `morrepraga`, `susto` e `ripvida`, usando templates do Loritta e composição local de uma imagem.
+- Comandos locais `ednaldotv`, `bolsonaro` e `studiopolistv`, com substituição local das telas dos templates.
+- Comandos locais `bolsonaro2`, `ata` e `riptv`, com encaixes recortados para telas em perspectiva.
+- Comandos locais `deus`, `bobfire` e `bolsoframe`, com composição de uma foto em templates clássicos.
+- Comandos locais `passingpaper`, `briggscover` e `buckshirt`, com recortes locais e repetição da estampa quando necessário.
+- Comandos locais `pepedream`, `romerobritto` e `quadro`, preservando personagens e objetos sobrepostos aos encaixes.
+- Toggle `chatbot command-replies` para controlar respostas do chatbot quando alguém responde ao resultado de um comando.
+
+### Changed
+
+- Comando `invert` passou a processar fotos e figurinhas estáticas localmente com Sharp, sem arquivos temporários nem API externa.
+- Comando `tobecontinued` passou a usar o overlay transparente fornecido para o meme, mantendo o processamento sépia local.
+- Overlay do `tobecontinued` reduzido e aproximado do canto inferior direito.
+- Comandos locais de imagem passaram a aceitar a foto de perfil da primeira pessoa mencionada, com orientação neutra quando nenhuma imagem está disponível.
+- Comando `sam` passou a usar o overlay transparente fornecido no lugar do selo vetorial gerado.
+- Comando `petpet` passou a usar os cinco quadros do GIF transparente fornecido no lugar da mão vetorial gerada.
+- Filtro do comando `gay` ficou mais visível, aumentando a opacidade da bandeira de 14% para 22%.
+- Telas de `ednaldotv`, `bolsonaro` e `studiopolistv` passaram a esticar a imagem sem recorte; o encaixe inferior do `bolsonaro` também foi reduzido em 4 px.
+- Figurinhas animadas passaram a usar o modo normal com preenchimento transparente por padrão, evitando o formato `full` incompatível com alguns GIFs.
+- O alias `bot` deixou de acionar o status `alive` sem prefixo, evitando respostas automáticas em conversas iniciadas com essa palavra.
+- Comandos `ban` e `unban` passaram a ser exclusivos do proprietário; `unban` agora aceita diretamente o LID salvo no banco, inclusive no privado, e `ban` esclarece a diferença para `kick`.
+
+### Fixed
+
+- A sessão Baileys deixa de remover chaves Signal em uso, preservando a capacidade de decifrar mensagens após reinícios.
+- Plugin `chatbot` deixa de usar atribuição lógica incompatível com o verificador de sintaxe carregado na inicialização.
 
 ## [2026-08-23]
 
