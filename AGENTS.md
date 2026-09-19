@@ -144,6 +144,7 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 - Figurinhas estáticas são convertidas de WebP para PNG com Sharp antes do Groq.
 - Figurinhas animadas não são suportadas pelo `.vision`.
 - `.s2img` converte figurinha em imagem; aliases: `simage`, `stoimg`, `toimg`.
+- `.s2vid` converte figurinha animada em vídeo; aliases: `svideo`, `stovid`, `tovid`.
 - `tagall` também possui aliases `everyone`, `all`, `everson`, `everton`.
 
 ## Persistência e arquivos de runtime

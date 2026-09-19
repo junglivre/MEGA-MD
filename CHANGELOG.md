@@ -20,6 +20,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comandos locais `passingpaper`, `briggscover` e `buckshirt`, com recortes locais e repetição da estampa quando necessário.
 - Comandos locais `pepedream`, `romerobritto` e `quadro`, preservando personagens e objetos sobrepostos aos encaixes.
 - Toggle `chatbot command-replies` para controlar respostas do chatbot quando alguém responde ao resultado de um comando.
+- Comando `.s2vid` para converter figurinhas animadas em vídeo; aliases: `svideo`, `stovid`, `tovid`.
 
 ### Changed
 
