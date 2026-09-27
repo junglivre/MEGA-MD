@@ -15,6 +15,7 @@ import {
     createEdnaldoTvImage,
     createForgivenessImage,
     createGodImage,
+    createMitoJogaImage,
     createMorrePragaImage,
     createPassingPaperImage,
     createPepeDreamImage,
@@ -261,6 +262,23 @@ describe('image effects', () => {
             expect([metadata.width, metadata.height]).toEqual(item.size);
             expect([...pixel]).toEqual([32, 192, 96]);
         }
+    });
+
+    it('fits a photo inside the tilted Mito Joga monitor', async () => {
+        const input = await sharp({
+            create: { width: 320, height: 180, channels: 3, background: '#20c060' }
+        }).png().toBuffer();
+        const template = await fs.readFile(path.join(process.cwd(), 'assets/image-effects/mitojoga.jpeg'));
+        const result = await createMitoJogaImage(input, template);
+        const metadata = await sharp(result).metadata();
+        const pixel = await sharp(result)
+            .extract({ left: 300, top: 700, width: 1, height: 1 })
+            .removeAlpha()
+            .raw()
+            .toBuffer();
+
+        expect([metadata.width, metadata.height]).toEqual([900, 1600]);
+        expect([...pixel]).toEqual([32, 192, 96]);
     });
 
     it('places photos inside the Ednaldo, Bolsonaro and Studiopolis televisions', async () => {
