@@ -1,28 +1,8 @@
 import yts from 'yt-search';
+import fs from 'fs';
 import axios from 'axios';
-const DL_API = 'https://api.qasimdev.dpdns.org/api/loaderto/download';
-const API_KEY = 'qasim-dev';
-const wait = (ms) => new Promise(r => setTimeout(r, ms));
-const downloadWithRetry = async (url, retries = 3) => {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const { data } = await axios.get(DL_API, {
-                params: { apiKey: API_KEY, format: 'mp3', url },
-                timeout: 90000
-            });
-            if (data?.data?.downloadUrl)
-                return data.data;
-            throw new Error('No download URL');
-        }
-        catch (err) {
-            if (i === retries - 1)
-                throw err;
-            console.log(`Download attempt ${i + 1} failed, retrying in 5s...`);
-            await wait(5000);
-        }
-    }
-    throw new Error('All download attempts failed');
-};
+import { downloadAudio } from '../lib/ytdlp.js';
+
 export default {
     command: 'play',
     aliases: ['plays', 'music'],
@@ -35,6 +15,7 @@ export default {
         const query = args.join(' ').trim();
         if (!query)
             return sock.sendMessage(chatId, { text: t('p.play.noQuery') }, { quoted: message });
+        let result;
         try {
             await sock.sendMessage(chatId, { text: `🔍 ${t('p.play.searching')}` }, { quoted: message });
             const { videos } = await yts(query);
@@ -44,20 +25,21 @@ export default {
             await sock.sendMessage(chatId, {
                 text: `✅ ${t('p.play.found', { title: video.title, timestamp: video.timestamp, author: video.author.name })}`
             }, { quoted: message });
-            const songData = await downloadWithRetry(video.url);
+            result = await downloadAudio(video.url, { sock });
             let thumbnailBuffer;
             try {
-                const img = await axios.get(songData.thumbnail, { responseType: 'arraybuffer', timeout: 15000 });
+                const img = await axios.get(video.thumbnail, { responseType: 'arraybuffer', timeout: 15000 });
                 thumbnailBuffer = Buffer.from(img.data);
             }
             catch { /* no thumbnail */ }
+            const audioBuffer = await fs.promises.readFile(result.filePath);
             await sock.sendMessage(chatId, {
-                audio: { url: songData.downloadUrl },
+                audio: audioBuffer,
                 mimetype: 'audio/mpeg',
-                fileName: `${songData.title}.mp3`,
+                fileName: `${result.title || video.title}.mp3`,
                 contextInfo: {
                     externalAdReply: {
-                        title: songData.title,
+                        title: result.title || video.title,
                         body: `${video.author.name} • ${video.timestamp}`,
                         thumbnail: thumbnailBuffer,
                         mediaType: 2,
@@ -68,12 +50,11 @@ export default {
         }
         catch (err) {
             console.error('Play error:', err.message);
-            const reason = err.response?.status === 408
-                ? t('p.play.reasonTimeout')
-                : err.response?.status === 429
-                    ? t('p.play.reasonRateLimited')
-                    : err.message;
-            await sock.sendMessage(chatId, { text: `❌ ${t('p.play.failed', { reason })}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.play.failed', { reason: err.message })}` }, { quoted: message });
+        }
+        finally {
+            if (result)
+                await result.cleanup();
         }
     }
 };

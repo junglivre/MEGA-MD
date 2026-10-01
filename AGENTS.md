@@ -50,6 +50,7 @@ Variáveis importantes incluem:
 - Persistência: `DB_URL`, `MONGO_URL`, `POSTGRES_URL`, `MYSQL_URL`, `MAX_STORE_MESSAGES`, `STORE_WRITE_INTERVAL`.
 - Serviços: `LASTFM_API_KEY`, `QUOTE_API_URL`, `REMOVEBG_KEY`, `GIPHY_API_KEY`.
 - Operação: `PORT`, `BACKUP_ENABLED`, `BACKUP_INTERVAL`, `BACKUP_RETENTION`, `BACKUP_DIR`, `CLEANUP_INTERVAL`.
+- Downloads do YouTube: `YOUTUBE_COOKIES_FILE` (fallback; prefira `.ytcookies set` no WhatsApp, que persiste via `lightweight_store`).
 
 Nunca imprima o conteúdo do `.env` real, sessão Baileys, banco ou tokens. Para auditoria, liste somente nomes de variáveis ou o estado `configurada/não configurada`. O `.env.md` pode ser lido como documentação, mas deve permanecer sanitizado.
 
@@ -63,6 +64,7 @@ Nunca imprima o conteúdo do `.env` real, sessão Baileys, banco ou tokens. Para
 - `lib/jid.js`: normalização de PN/LID/JID e mapeamento de identidades alternativas.
 - `lib/isOwner.js`: autorização owner/sudo considerando representações WhatsApp.
 - `lib/groq.js`: chat, visão e transcrição via Groq.
+- `lib/ytdlp.js`: download local de áudio/vídeo do YouTube via `yt-dlp` (`.play`/`.song`/`.video`), cookies opcionais e alerta ao owner quando o cookie expira.
 - `lib/i18n.js` e `lib/i18n-plugins.js`: traduções pt-BR/en/es e normalização dinâmica do prefixo.
 - `plugins/chatbot.js`: ativação, memória curta, prompt, piadas internas e imagens.
 - `plugins/insidejokes.js` e `lib/insideJokes.js`: administração, persistência e matching do banco de piadas.
@@ -146,6 +148,22 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 - `.s2img` converte figurinha em imagem; aliases: `simage`, `stoimg`, `toimg`.
 - `.s2vid` converte figurinha animada em vídeo; aliases: `svideo`, `stovid`, `tovid`.
 - `tagall` também possui aliases `everyone`, `all`, `everson`, `everton`.
+
+## Downloads do YouTube (play/song/video)
+
+`.play`, `.song` e `.video` chamavam uma API HTTP de terceiros (`api.qasimdev.dpdns.org`) cujo `downloadUrl` passou a redirecionar para uma rede de anúncios em vez de servir o arquivo — por isso o download parou de funcionar. O download agora roda localmente via `yt-dlp` (processo filho, `lib/ytdlp.js`), que grava em `temp/` e o buffer é enviado direto pelo Baileys; o arquivo é apagado logo depois do envio.
+
+Requisitos no host de produção:
+
+- `yt-dlp` e `ffmpeg` instalados e atualizáveis (o extrator do YouTube quebra com frequência; mantenha `yt-dlp` atualizado via `pip`).
+- Recomendado: um provedor de PO Token (`bgutil-ytdlp-pot-provider`, container Docker em `127.0.0.1:4416`) para reduzir bloqueios "Sign in to confirm you're not a bot". Sem ele o yt-dlp ainda funciona na maioria das vezes, mas com mais falhas intermitentes.
+
+Cookies do YouTube (opcionais, reduzem bloqueio ainda mais):
+
+- Prioridade 1: salvos via comando `.ytcookies set` (owner/strict), persistidos em `lightweight_store` (setting global `youtubeCookies`) — sobrevivem a redeploy mesmo sem disco persistente.
+- Prioridade 2 (fallback): arquivo apontado por `YOUTUBE_COOKIES_FILE`, formato Netscape (`cookies.txt`).
+- `.ytcookies status` mostra a fonte ativa e o último alerta de cookie inválido; `.ytcookies clear` remove o cookie salvo via WhatsApp.
+- Quando o yt-dlp reporta cookies expirados (mensagem exata do yt-dlp: "account cookies are no longer valid"), o bot avisa automaticamente o owner (`OWNER_NUMBER`) no WhatsApp, com cooldown de 6h para não repetir o aviso a cada download.
 
 ## Persistência e arquivos de runtime
 

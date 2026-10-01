@@ -157,6 +157,7 @@ Run `vincular` and `desvincular` inside each group that should use the bank. The
 | ![ffmpeg](https://img.shields.io/badge/ffmpeg-latest-007808?logo=ffmpeg&logoColor=white) | Latest | Media processing |
 | ![libvips](https://img.shields.io/badge/libvips-latest-blueviolet) | Latest | Image processing |
 | ![libwebp](https://img.shields.io/badge/libwebp-latest-blue) | Latest | Sticker creation |
+| ![yt-dlp](https://img.shields.io/badge/yt--dlp-latest-FF0000?logo=youtube&logoColor=white) | Latest | `.play`/`.song`/`.video` YouTube downloads; install via `pip install -U yt-dlp` and keep it updated |
 
 > [!WARNING]
 > **Never use your personal WhatsApp number for the bot.** Always use a dedicated number.
@@ -662,6 +663,33 @@ DB_URL=./data/baileys.db
 | `BACKUP_INTERVAL` | ❌ | `86400000` | Backup interval (ms) |
 | `BACKUP_RETENTION` | ❌ | `7` | Number of ZIP backups to keep |
 | `BACKUP_DIR` | ❌ | `backups` | Backup output directory |
+| `YOUTUBE_COOKIES_FILE` | ❌ | — | Fallback Netscape `cookies.txt` path for `.play`/`.song`/`.video`; prefer `.ytcookies set` in WhatsApp instead |
+
+---
+
+## 🎬 YouTube Downloads (`.play` / `.song` / `.video`)
+
+These commands run [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) locally (no third-party download API) and need `yt-dlp` + `ffmpeg` on the host — see [Requirements](#-requirements). Keep `yt-dlp` updated (`pip install -U yt-dlp`); YouTube changes frequently enough that an outdated extractor breaks downloads.
+
+YouTube may throttle anonymous requests ("Sign in to confirm you're not a bot"). Two ways to reduce that:
+
+1. **PO Token provider (recommended, no account needed):** run [`bgutil-ytdlp-pot-provider`](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) and install the matching pip plugin — yt-dlp picks it up automatically.
+   ```bash
+   docker run --name bgutil-provider -d --init --restart unless-stopped \
+     -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider
+   pip install -U yt-dlp bgutil-ytdlp-pot-provider
+   ```
+2. **YouTube cookies (optional, more effective):** export cookies from a browser logged into YouTube and give them to the bot. Two ways to load them, DB takes priority:
+   - `.ytcookies set` (owner-only, in WhatsApp) — reply to a `.txt` file or paste the content. Stored in the database, so it survives redeploys even without persistent disk.
+   - `YOUTUBE_COOKIES_FILE=/path/to/cookies.txt` — static fallback used only when nothing was saved via WhatsApp yet.
+
+   **How to export cookies.txt:**
+   - Easiest: install the [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) extension, log into YouTube, and export in Netscape format.
+   - No extension: `yt-dlp --cookies-from-browser chrome --cookies cookies.txt` on a machine with Chrome/Firefox logged into YouTube.
+
+   The file is small (a few KB) either way — `YOUTUBE_COOKIES_FILE` just points at it on disk instead of inlining it in `.env`.
+
+   Other `.ytcookies` subcommands: `status` (shows the active source and last invalid-cookie alert) and `clear` (removes the WhatsApp-saved cookie). If yt-dlp reports the cookies were rotated/expired, the bot automatically messages `OWNER_NUMBER` on WhatsApp (at most once every 6 hours) so you know to refresh them.
 
 ---
 

@@ -22,6 +22,8 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comandos locais `pepedream`, `romerobritto` e `quadro`, preservando personagens e objetos sobrepostos aos encaixes.
 - Toggle `chatbot command-replies` para controlar respostas do chatbot quando alguém responde ao resultado de um comando.
 - Comando `.s2vid` para converter figurinhas animadas em vídeo; aliases: `svideo`, `stovid`, `tovid`.
+- Comando `ytcookies` (owner) pra gerenciar cookies opcionais do YouTube direto pelo WhatsApp (`set`/`status`/`clear`), persistidos via `lightweight_store` e com fallback pro arquivo `YOUTUBE_COOKIES_FILE`.
+- Alerta automático ao owner no WhatsApp quando o cookie do YouTube expira/é revogado, com cooldown de 6h.
 
 ### Changed
 
@@ -36,11 +38,13 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Figurinhas animadas passaram a usar o modo normal com preenchimento transparente por padrão, evitando o formato `full` incompatível com alguns GIFs.
 - O alias `bot` deixou de acionar o status `alive` sem prefixo, evitando respostas automáticas em conversas iniciadas com essa palavra.
 - Comandos `ban` e `unban` passaram a ser exclusivos do proprietário; `unban` agora aceita diretamente o LID salvo no banco, inclusive no privado, e `ban` esclarece a diferença para `kick`.
+- `.play`, `.song` e `.video` passaram a baixar com `yt-dlp` local em vez da API de terceiros `api.qasimdev.dpdns.org`.
 
 ### Fixed
 
 - A sessão Baileys deixa de remover chaves Signal em uso, preservando a capacidade de decifrar mensagens após reinícios.
 - Plugin `chatbot` deixa de usar atribuição lógica incompatível com o verificador de sintaxe carregado na inicialização.
+- `.play`, `.song` e `.video` (download de áudio/vídeo do YouTube): a API de terceiros usada passou a redirecionar todo `downloadUrl` pra uma rede de anúncios em vez de servir o arquivo, quebrando os três comandos. Substituída por `yt-dlp` local (ver `lib/ytdlp.js`), com suporte opcional a cookies e Proof-of-Origin Token provider pra reduzir bloqueios do YouTube.
 
 ## [2026-08-23]
 

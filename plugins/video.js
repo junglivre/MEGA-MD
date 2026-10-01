@@ -1,28 +1,7 @@
-import axios from 'axios';
 import yts from 'yt-search';
-const DL_API = 'https://api.qasimdev.dpdns.org/api/loaderto/download';
-const API_KEY = 'qasim-dev';
-const wait = (ms) => new Promise(r => setTimeout(r, ms));
-const downloadWithRetry = async (url, retries = 3) => {
-    for (let i = 0; i < retries; i++) {
-        try {
-            const { data } = await axios.get(DL_API, {
-                params: { apiKey: API_KEY, format: '360', url },
-                timeout: 120000
-            });
-            if (data?.data?.downloadUrl)
-                return data.data;
-            throw new Error('No download URL');
-        }
-        catch (err) {
-            if (i === retries - 1)
-                throw err;
-            console.log(`Download attempt ${i + 1} failed, retrying in 5s...`);
-            await wait(5000);
-        }
-    }
-    throw new Error('All download attempts failed');
-};
+import fs from 'fs';
+import { downloadVideo } from '../lib/ytdlp.js';
+
 export default {
     command: 'video',
     aliases: ['ytmp4', 'ytvideo', 'ytdl'],
@@ -35,6 +14,7 @@ export default {
         const query = args.join(' ').trim();
         if (!query)
             return sock.sendMessage(chatId, { text: `🎥 ${t('p.video.askQuery')}` }, { quoted: message });
+        let result;
         try {
             let videoUrl;
             let videoTitle;
@@ -59,20 +39,22 @@ export default {
                 image: { url: thumb },
                 caption: `🎬 *${videoTitle || query}*\n⬇️ ${t('p.video.downloading')}`
             }, { quoted: message });
-            const videoData = await downloadWithRetry(videoUrl);
+            result = await downloadVideo(videoUrl, { sock, maxHeight: 360 });
+            const videoBuffer = await fs.promises.readFile(result.filePath);
             await sock.sendMessage(chatId, {
-                video: { url: videoData.downloadUrl },
+                video: videoBuffer,
                 mimetype: 'video/mp4',
-                fileName: `${videoData.title || videoTitle || 'video'}.mp4`,
-                caption: `🎬 *${videoData.title || videoTitle || 'Video'}*\n\n> *_${t('p.video.footer')}_*`
+                fileName: `${result.title || videoTitle || 'video'}.mp4`,
+                caption: `🎬 *${result.title || videoTitle || 'Video'}*\n\n> *_${t('p.video.footer')}_*`
             }, { quoted: message });
         }
         catch (err) {
             console.error('[VIDEO] Error:', err.message);
-            const reason = err.response?.status === 408
-                ? t('p.video.timeout')
-                : err.message;
-            await sock.sendMessage(chatId, { text: `❌ ${t('p.video.failed', { reason })}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.video.failed', { reason: err.message })}` }, { quoted: message });
+        }
+        finally {
+            if (result)
+                await result.cleanup();
         }
     }
 };
