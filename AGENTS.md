@@ -153,12 +153,17 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 
 `.play`, `.song` e `.video` chamavam uma API HTTP de terceiros (`api.qasimdev.dpdns.org`) cujo `downloadUrl` passou a redirecionar para uma rede de anúncios em vez de servir o arquivo — por isso o download parou de funcionar. O download agora roda localmente via `yt-dlp` (processo filho, `lib/ytdlp.js`), que grava em `temp/` e o buffer é enviado direto pelo Baileys; o arquivo é apagado logo depois do envio.
 
-Requisitos no host de produção:
+Requisitos no host de produção (já aplicados em `bixos2`, 2026-10-01):
 
-- `yt-dlp` e `ffmpeg` instalados e atualizáveis (o extrator do YouTube quebra com frequência; mantenha `yt-dlp` atualizado via `pip`).
-- Recomendado: um provedor de PO Token (`bgutil-ytdlp-pot-provider`, container Docker em `127.0.0.1:4416`) para reduzir bloqueios "Sign in to confirm you're not a bot". Sem ele o yt-dlp ainda funciona na maioria das vezes, mas com mais falhas intermitentes.
+- `yt-dlp` e `ffmpeg` instalados e atualizáveis via `pip install --break-system-packages -U yt-dlp` (o extrator do YouTube quebra com frequência).
+- `deno` no PATH do processo (symlink em `/usr/local/bin/deno`) — sem runtime JS o yt-dlp cai pro cliente `visionos`/`web` sem resolver assinatura e YouTube retorna `LOGIN_REQUIRED` em qualquer cliente.
+- `bgutil-ytdlp-pot-provider`: container Docker em `127.0.0.1:4416` (`docker run --name bgutil-provider -d --init --restart unless-stopped -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider`) + plugin pip (`bgutil-ytdlp-pot-provider`).
 
-Cookies do YouTube (opcionais, reduzem bloqueio ainda mais):
+**IP do bixos2 (Oracle Cloud) é bloqueado pelo YouTube.** Testado em 2026-10-01: com `yt-dlp` + `ffmpeg` + `deno` + PO Token provider funcionando, TODOS os clientes (`web`, `android`, `ios`, `tv`, `tv_simply`, `android_vr`, `web_embedded`, `mweb`, `web_safari`, `visionos`) retornam `LOGIN_REQUIRED`/"Sign in to confirm you're not a bot" sem cookies — é bloqueio por reputação de IP datacenter, não falta de PO Token. Isso é um padrão conhecido pra IPs de VPS/cloud (Oracle, Hetzner, AWS etc.), não um bug do bot.
+
+**Conclusão prática: cookies não são opcionais neste host — são obrigatórios pro `.play`/`.song`/`.video` funcionarem.** Owner precisa rodar `.ytcookies set` com um cookies.txt real de uma conta logada assim que possível.
+
+Cookies do YouTube:
 
 - Prioridade 1: salvos via comando `.ytcookies set` (owner/strict), persistidos em `lightweight_store` (setting global `youtubeCookies`) — sobrevivem a redeploy mesmo sem disco persistente.
 - Prioridade 2 (fallback): arquivo apontado por `YOUTUBE_COOKIES_FILE`, formato Netscape (`cookies.txt`).

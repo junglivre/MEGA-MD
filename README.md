@@ -158,6 +158,7 @@ Run `vincular` and `desvincular` inside each group that should use the bank. The
 | ![libvips](https://img.shields.io/badge/libvips-latest-blueviolet) | Latest | Image processing |
 | ![libwebp](https://img.shields.io/badge/libwebp-latest-blue) | Latest | Sticker creation |
 | ![yt-dlp](https://img.shields.io/badge/yt--dlp-latest-FF0000?logo=youtube&logoColor=white) | Latest | `.play`/`.song`/`.video` YouTube downloads; install via `pip install -U yt-dlp` and keep it updated |
+| ![Deno](https://img.shields.io/badge/Deno-latest-000000?logo=deno&logoColor=white) | Latest | Required by `yt-dlp` to solve YouTube's JS signature challenge — see [YouTube Downloads](#-youtube-downloads-play--song--video) |
 
 > [!WARNING]
 > **Never use your personal WhatsApp number for the bot.** Always use a dedicated number.
@@ -669,17 +670,24 @@ DB_URL=./data/baileys.db
 
 ## 🎬 YouTube Downloads (`.play` / `.song` / `.video`)
 
-These commands run [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) locally (no third-party download API) and need `yt-dlp` + `ffmpeg` on the host — see [Requirements](#-requirements). Keep `yt-dlp` updated (`pip install -U yt-dlp`); YouTube changes frequently enough that an outdated extractor breaks downloads.
+These commands run [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) locally (no third-party download API) and need on the host:
 
-YouTube may throttle anonymous requests ("Sign in to confirm you're not a bot"). Two ways to reduce that:
+- `yt-dlp` + `ffmpeg` — see [Requirements](#-requirements). Keep `yt-dlp` updated (`pip install -U yt-dlp`); YouTube changes frequently enough that an outdated extractor breaks downloads.
+- A JS runtime in `PATH` — **[Deno](https://deno.com)** is what yt-dlp looks for by default. Without one, yt-dlp can't solve YouTube's signature/n-param challenge and every client falls back to a broken response.
+  ```bash
+  curl -fsSL https://deno.land/install.sh | sh -s -- -y
+  ln -sf "$HOME/.deno/bin/deno" /usr/local/bin/deno  # so PM2/system services find it too
+  ```
 
-1. **PO Token provider (recommended, no account needed):** run [`bgutil-ytdlp-pot-provider`](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) and install the matching pip plugin — yt-dlp picks it up automatically.
+YouTube throttles anonymous requests with "Sign in to confirm you're not a bot" / `LOGIN_REQUIRED`. Two layers help, and on datacenter/VPS IPs (Oracle Cloud, Hetzner, AWS, etc.) **cookies are not optional — every client gets blocked without them**, PO Token or not:
+
+1. **PO Token provider (still worth running, reduces blocks on non-flagged IPs):** [`bgutil-ytdlp-pot-provider`](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) — yt-dlp picks it up automatically.
    ```bash
    docker run --name bgutil-provider -d --init --restart unless-stopped \
      -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider
    pip install -U yt-dlp bgutil-ytdlp-pot-provider
    ```
-2. **YouTube cookies (optional, more effective):** export cookies from a browser logged into YouTube and give them to the bot. Two ways to load them, DB takes priority:
+2. **YouTube cookies (required on most cloud VPS hosts):** export cookies from a browser logged into YouTube and give them to the bot. Two ways to load them, DB takes priority:
    - `.ytcookies set` (owner-only, in WhatsApp) — reply to a `.txt` file or paste the content. Stored in the database, so it survives redeploys even without persistent disk.
    - `YOUTUBE_COOKIES_FILE=/path/to/cookies.txt` — static fallback used only when nothing was saved via WhatsApp yet.
 
