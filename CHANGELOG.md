@@ -45,6 +45,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Toda string de tradução passou a injetar `{botName}` automaticamente (`lib/i18n.js`), e textos que citavam "MEGA-MD" fixo (rodapés de download, títulos de uptime/pareamento/clone, bio automática, metadata de figurinha do `.attp`) agora usam o nome configurado em `BOT_NAME`.
 - `.video` e `.song` passaram a mostrar título, canal e data de publicação (e o link, sem embed) antes/depois do download, buscados via `yt-dlp --skip-download`; antes `.video` mostrava a própria URL como "título" quando o link era colado direto (sem passar pela busca).
 - Mensagens de erro de download (`play`/`song`/`video`/`spotify`/`tiktok`/`twitter`) passaram a ser sanitizadas e traduzidas em vez de mostrar o texto cru do yt-dlp (links de wiki, flags de CLI em inglês); ver `sanitizeYtDlpError`/`formatYtDlpError` em `lib/ytdlpCore.js`.
+- `play`/`song`/`video`/`spotify`/`tiktok` passaram a apagar pra todos a mensagem de status ("buscando"/"baixando"/"encontrado") assim que a mídia final é entregue com sucesso, deixando o chat limpo.
 
 ### Fixed
 

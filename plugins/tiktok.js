@@ -22,7 +22,7 @@ export default {
         }
         let result;
         try {
-            await sock.sendMessage(chatId, { text: `⏳ ${t('p.tiktok.downloading')}` }, { quoted: message });
+            const statusMsg = await sock.sendMessage(chatId, { text: `⏳ ${t('p.tiktok.downloading')}` }, { quoted: message });
             result = await downloadTikTok(url, { sock });
             const f = result.fields || {};
             const caption = [
@@ -37,6 +37,7 @@ export default {
                 mimetype: 'video/mp4',
                 caption
             }, { quoted: message });
+            await sock.sendMessage(chatId, { delete: statusMsg.key });
         }
         catch (error) {
             console.error('TikTok plugin error:', error.message);

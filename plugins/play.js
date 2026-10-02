@@ -23,7 +23,7 @@ export default {
             if (!videos?.length)
                 return sock.sendMessage(chatId, { text: `❌ ${t('p.play.noResults')}` }, { quoted: message });
             const video = videos[0];
-            await sock.sendMessage(chatId, {
+            const statusMsg = await sock.sendMessage(chatId, {
                 text: `✅ ${t('p.play.found', { title: video.title, timestamp: video.timestamp, author: video.author.name })}`
             }, { quoted: message });
             result = await downloadAudio(video.url, { sock });
@@ -48,6 +48,7 @@ export default {
                     }
                 }
             }, { quoted: message });
+            await sock.sendMessage(chatId, { delete: statusMsg.key });
         }
         catch (err) {
             console.error('Play error:', err.message);

@@ -44,7 +44,7 @@ export default {
             if (meta.uploadDate)
                 infoLines.push(`📅 ${meta.uploadDate}`);
             infoLines.push('', videoUrl, `⬇️ ${t('p.video.downloading')}`);
-            await sock.sendMessage(chatId, {
+            const statusMsg = await sock.sendMessage(chatId, {
                 image: { url: thumb },
                 caption: infoLines.join('\n')
             }, { quoted: message });
@@ -63,6 +63,7 @@ export default {
                 fileName: `${finalTitle}.mp4`,
                 caption: finalCaptionLines.join('\n')
             }, { quoted: message });
+            await sock.sendMessage(chatId, { delete: statusMsg.key });
         }
         catch (err) {
             console.error('[VIDEO] Error:', err.message);

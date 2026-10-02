@@ -71,7 +71,7 @@ export default {
             await sock.sendMessage(chatId, { react: { text: '🎵', key: message.key } });
             const track = await fetchSpotifyTrack(trackId);
             const query = `${track.artist} - ${track.title}`.trim();
-            await sock.sendMessage(chatId, { text: t('p.spotify.searching', { query }) }, { quoted: message });
+            const statusMsg = await sock.sendMessage(chatId, { text: t('p.spotify.searching', { query }) }, { quoted: message });
             const { videos } = await yts(query);
             if (!videos?.length)
                 return sock.sendMessage(chatId, { text: `❌ ${t('p.spotify.notFound')}` }, { quoted: message });
@@ -93,6 +93,7 @@ export default {
                 mimetype: 'audio/mpeg',
                 fileName: `${(track.title || 'track').replace(/[\\/:*?"<>|]/g, '')}.mp3`
             }, { quoted: message });
+            await sock.sendMessage(chatId, { delete: statusMsg.key });
         }
         catch (error) {
             console.error('[SPOTIFY] error:', error.message);
