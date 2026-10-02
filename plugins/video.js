@@ -1,6 +1,7 @@
 import yts from 'yt-search';
 import fs from 'fs';
 import { downloadVideo, getVideoMetadata } from '../lib/ytdlp.js';
+import { formatYtDlpError } from '../lib/ytdlpCore.js';
 
 export default {
     command: 'video',
@@ -65,7 +66,7 @@ export default {
         }
         catch (err) {
             console.error('[VIDEO] Error:', err.message);
-            await sock.sendMessage(chatId, { text: `❌ ${t('p.video.failed', { reason: err.message })}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.video.failed', { reason: formatYtDlpError(err, t) })}` }, { quoted: message });
         }
         finally {
             if (result)

@@ -1,6 +1,7 @@
 import yts from 'yt-search';
 import fs from 'fs';
-import { downloadAudio } from '../lib/ytdlp.js';
+import { downloadAudio, getVideoMetadata } from '../lib/ytdlp.js';
+import { formatYtDlpError } from '../lib/ytdlpCore.js';
 
 export default {
     command: 'song',
@@ -16,34 +17,46 @@ export default {
             return sock.sendMessage(chatId, { text: `🎵 *${t('p.song.title')}*\n\n${t('p.song.usageLabel')}:\n.song <song name | YouTube link>` }, { quoted: message });
         let result;
         try {
-            let video;
+            let videoUrl;
             if (query.includes('youtube.com') || query.includes('youtu.be')) {
-                video = { url: query };
+                videoUrl = query;
             }
             else {
                 const { videos } = await yts(query);
                 if (!videos?.length)
                     return sock.sendMessage(chatId, { text: `❌ ${t('p.song.noResults')}` }, { quoted: message });
-                video = videos[0];
+                videoUrl = videos[0].url;
             }
-            if (video.thumbnail) {
+            let meta = {};
+            try {
+                meta = await getVideoMetadata(videoUrl, { sock });
+            }
+            catch { /* metadata lookup failed (private/restricted); fall back to the query below */ }
+            const title = meta.title || query;
+            const infoLines = [`🎶 *${title}*`];
+            if (meta.uploader)
+                infoLines.push(`📺 ${meta.uploader}`);
+            if (meta.uploadDate)
+                infoLines.push(`📅 ${meta.uploadDate}`);
+            infoLines.push('', videoUrl, `⏳ ${t('p.song.downloading')}`);
+            if (meta.thumbnail) {
                 await sock.sendMessage(chatId, {
-                    image: { url: video.thumbnail },
-                    caption: `🎶 *${video.title || query}*\n⏱ ${video.timestamp || ''}\n\n⏳ ${t('p.song.downloading')}`
+                    image: { url: meta.thumbnail },
+                    caption: infoLines.join('\n')
                 }, { quoted: message });
             }
-            result = await downloadAudio(video.url, { sock });
+            result = await downloadAudio(videoUrl, { sock });
             const audioBuffer = await fs.promises.readFile(result.filePath);
             await sock.sendMessage(chatId, {
                 audio: audioBuffer,
                 mimetype: 'audio/mpeg',
-                fileName: `${result.title || video.title || 'song'}.mp3`,
+                fileName: `${result.title || title || 'song'}.mp3`,
                 ptt: false
             }, { quoted: message });
         }
         catch (err) {
             console.error('Song plugin error:', err.message);
-            await sock.sendMessage(chatId, { text: `❌ ${t('p.song.failed')}: ${err.message}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.song.failed', { reason: formatYtDlpError(err, t) })}` }, { quoted: message });
         }
         finally {
             if (result)

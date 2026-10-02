@@ -43,6 +43,8 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.tiktok` e `.twitter` passaram a baixar com `yt-dlp` local em vez das APIs de terceiros `discardapi.onrender.com`/`discardapi.dpdns.org`; `.twitter` agora só baixa vídeo (tweets só-com-imagem não são suportados).
 - `.terabox` descontinuado: sem extractor no yt-dlp e todo resolver da comunidade exige cookie de conta Terabox separado mais scraping frágil. Comando virou stub (`hidden: true`, fora do `.menu`) que avisa que foi descontinuado.
 - Toda string de tradução passou a injetar `{botName}` automaticamente (`lib/i18n.js`), e textos que citavam "MEGA-MD" fixo (rodapés de download, títulos de uptime/pareamento/clone, bio automática, metadata de figurinha do `.attp`) agora usam o nome configurado em `BOT_NAME`.
+- `.video` e `.song` passaram a mostrar título, canal e data de publicação (e o link, sem embed) antes/depois do download, buscados via `yt-dlp --skip-download`; antes `.video` mostrava a própria URL como "título" quando o link era colado direto (sem passar pela busca).
+- Mensagens de erro de download (`play`/`song`/`video`/`spotify`/`tiktok`/`twitter`) passaram a ser sanitizadas e traduzidas em vez de mostrar o texto cru do yt-dlp (links de wiki, flags de CLI em inglês); ver `sanitizeYtDlpError`/`formatYtDlpError` em `lib/ytdlpCore.js`.
 
 ### Fixed
 
@@ -50,6 +52,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Plugin `chatbot` deixa de usar atribuição lógica incompatível com o verificador de sintaxe carregado na inicialização.
 - `.play`, `.song` e `.video` (download de áudio/vídeo do YouTube): a API de terceiros usada passou a redirecionar todo `downloadUrl` pra uma rede de anúncios em vez de servir o arquivo, quebrando os três comandos. Substituída por `yt-dlp` local (ver `lib/ytdlp.js`), com suporte opcional a cookies e Proof-of-Origin Token provider pra reduzir bloqueios do YouTube.
 - `.play`/`.song`/`.video`/`.spotify`/`.tiktok`/`.twitter`: workaround pra bug aberto do yt-dlp ([#17389](https://github.com/yt-dlp/yt-dlp/issues/17389)) em que, com cookie anexado, o client padrão `tv_downgraded` retorna `UNPLAYABLE` em todo formato e o download falha com `The page needs to be reloaded.`. Forçado `player_client=default,web_embedded` até o upstream corrigir.
+- `.video`/`.song`: título do YouTube às vezes vinha traduzido pro inglês em canais com metadata multilíngue, porque o yt-dlp manda `hl=en` por padrão quando nenhum `lang` é definido. Forçado `lang=pt` junto do `player_client`.
 
 ## [2026-08-23]
 

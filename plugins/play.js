@@ -2,6 +2,7 @@ import yts from 'yt-search';
 import fs from 'fs';
 import axios from 'axios';
 import { downloadAudio } from '../lib/ytdlp.js';
+import { formatYtDlpError } from '../lib/ytdlpCore.js';
 
 export default {
     command: 'play',
@@ -50,7 +51,7 @@ export default {
         }
         catch (err) {
             console.error('Play error:', err.message);
-            await sock.sendMessage(chatId, { text: `❌ ${t('p.play.failed', { reason: err.message })}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.play.failed', { reason: formatYtDlpError(err, t) })}` }, { quoted: message });
         }
         finally {
             if (result)

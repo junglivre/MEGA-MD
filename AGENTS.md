@@ -169,9 +169,13 @@ Requisitos no host de produção (já aplicados em `bixos2`, 2026-10-01):
 
 **Bug conhecido do yt-dlp (issue [#17389](https://github.com/yt-dlp/yt-dlp/issues/17389), aberto, alta prioridade):** com cookie anexado, o client padrão `tv_downgraded` retorna `UNPLAYABLE` em todos os formatos (assinatura JS do player TVHTML5 que o `yt-dlp-ejs` ainda não resolve), surge como `ERROR: The page needs to be reloaded.`. Workaround aplicado em `lib/ytdlp.js`: força `--extractor-args youtube:player_client=default,web_embedded` (confirmado por mantenedor do yt-dlp no issue). Remover quando o upstream corrigir.
 
+`.video` e `.song` mostram título/canal/data de publicação antes e depois do download, via `getVideoMetadata()` (`lib/ytdlp.js`, `yt-dlp --skip-download`); `.song` não tem como mostrar isso na mensagem final porque **mensagem de áudio no WhatsApp/Baileys não tem campo de legenda** (`AudioMessage` não tem `caption` no proto), só a mensagem de "baixando" prévia. Por padrão yt-dlp manda `hl=en` pro YouTube quando nenhum `lang` é definido (`yt_dlp/extractor/youtube/_base.py`), o que faz canais com metadata traduzida servirem o título em inglês; forçado `lang=pt` em `PLAYER_CLIENT_ARGS` (`lib/ytdlp.js`) pra manter o idioma original/pt-BR.
+
+Mensagens de erro de download são sanitizadas: `sanitizeYtDlpError()`/`formatYtDlpError()` (`lib/ytdlpCore.js`) classificam o texto cru do yt-dlp (cheio de link de wiki e flag de CLI) em chaves curtas (`p.ytdlpErrors.*`: `loginRequired`, `cookieExpired`, `private`, `unavailable`, `geoBlocked`, `rateLimited`, `noVideo`, `invalidUrl`, `generic`), preservando só o prefixo `[site] id:` quando presente. Usado em `play`/`song`/`video`/`spotify`/`tiktok`/`twitter`. Nunca mostrar `err.message` cru pro usuário.
+
 Cookies (comando unificado `.dlcookies <site> <ação>`, não um comando por site):
 
-- `.dlcookies youtube|tiktok|twitter set [rótulo]` (owner/strict) — responda a um `.txt` ou cole o conteúdo. Perfis rotulados, revezados (round-robin) a cada download pra espalhar carga entre contas.
+- `.dlcookies youtube|tiktok|twitter set [rótulo]` (`strictOwnerOnly: true` — só o owner principal, nem sudo pode; checado via `isOwnerOnlyInContext`) — responda a um `.txt` ou cole o conteúdo. Perfis rotulados, revezados (round-robin) a cada download pra espalhar carga entre contas. Configuração é **global** (`SETTINGS_SCOPE = 'global'` em `lib/ytdlpCore.js`, nunca por `chatId`) — o cookie vale pra `.play`/`.song`/`.video`/`.spotify`/`.tiktok`/`.twitter` em qualquer grupo ou PV, não só no chat onde foi configurado.
 - `.dlcookies <site> status` / `list` — mostra perfis e estado (válido/inválido desde quando).
 - `.dlcookies <site> remove <rótulo>` / `clear` (todos).
 - Fallback estático por env var: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE`, `TWITTER_COOKIES_FILE` (usado só se não houver perfil salvo via WhatsApp).

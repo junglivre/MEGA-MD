@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { downloadTwitterMedia } from '../lib/twitterDownload.js';
+import { formatYtDlpError } from '../lib/ytdlpCore.js';
 
 export default {
     command: 'twitter',
@@ -28,7 +29,7 @@ export default {
             console.error('Twitter plugin error:', error.message);
             const text = /no video could be found/i.test(error.message)
                 ? `❌ ${t('p.twitter.noMedia')}`
-                : `❌ ${t('p.twitter.fetchFailed')}`;
+                : `❌ ${t('p.twitter.fetchFailed', { reason: formatYtDlpError(error, t) })}`;
             await sock.sendMessage(chatId, { text }, { quoted: message });
         }
         finally {

@@ -1,5 +1,6 @@
 import fs from 'fs';
 import { downloadTikTok } from '../lib/tiktokDownload.js';
+import { formatYtDlpError } from '../lib/ytdlpCore.js';
 
 function val(field) {
     return field && field !== 'NA' ? field : undefined;
@@ -40,7 +41,7 @@ export default {
         catch (error) {
             console.error('TikTok plugin error:', error.message);
             await sock.sendMessage(chatId, {
-                text: `❌ ${t('p.tiktok.downloadFailed', { reason: error.message })}`
+                text: `❌ ${t('p.tiktok.downloadFailed', { reason: formatYtDlpError(error, t) })}`
             }, { quoted: message });
         }
         finally {

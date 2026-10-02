@@ -2,6 +2,7 @@ import axios from 'axios';
 import yts from 'yt-search';
 import fs from 'fs';
 import { downloadAudio } from '../lib/ytdlp.js';
+import { formatYtDlpError } from '../lib/ytdlpCore.js';
 
 function extractTrackId(url) {
     const m = url.match(/open\.spotify\.com\/(?:intl-\w+\/)?track\/([a-zA-Z0-9]+)/) || url.match(/^spotify:track:([a-zA-Z0-9]+)$/);
@@ -95,7 +96,7 @@ export default {
         }
         catch (error) {
             console.error('[SPOTIFY] error:', error.message);
-            await sock.sendMessage(chatId, { text: `❌ ${t('p.spotify.downloadFailed')}` }, { quoted: message });
+            await sock.sendMessage(chatId, { text: `❌ ${t('p.spotify.downloadFailed', { reason: formatYtDlpError(error, t) })}` }, { quoted: message });
         }
         finally {
             if (result)
