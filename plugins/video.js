@@ -55,7 +55,7 @@ export default {
                 finalCaptionLines.push(`📺 ${meta.uploader}`);
             if (meta.uploadDate)
                 finalCaptionLines.push(`📅 ${meta.uploadDate}`);
-            finalCaptionLines.push('', `> *_${t('p.video.footer')}_*`);
+            finalCaptionLines.push('', videoUrl, '', `> *_${t('p.video.footer')}_*`);
             await sock.sendMessage(chatId, {
                 video: videoBuffer,
                 mimetype: 'video/mp4',
