@@ -1,6 +1,6 @@
 import yts from 'yt-search';
 import fs from 'fs';
-import { downloadVideo } from '../lib/ytdlp.js';
+import { downloadVideo, getVideoMetadata } from '../lib/ytdlp.js';
 
 export default {
     command: 'video',
@@ -17,8 +17,6 @@ export default {
         let result;
         try {
             let videoUrl;
-            let videoTitle;
-            let videoThumbnail;
             if (query.startsWith('http://') || query.startsWith('https://')) {
                 videoUrl = query;
             }
@@ -27,25 +25,42 @@ export default {
                 if (!videos?.length)
                     return sock.sendMessage(chatId, { text: `❌ ${t('p.video.noResults')}` }, { quoted: message });
                 videoUrl = videos[0].url;
-                videoTitle = videos[0].title;
-                videoThumbnail = videos[0].thumbnail;
             }
             const validYT = videoUrl.match(/(?:youtu\.be\/|youtube\.com\/(?:watch\?v=|shorts\/|embed\/))([a-zA-Z0-9_-]{11})/);
             if (!validYT)
                 return sock.sendMessage(chatId, { text: `❌ ${t('p.video.invalidLink')}` }, { quoted: message });
             const ytId = validYT[1];
-            const thumb = videoThumbnail || `https://i.ytimg.com/vi/${ytId}/sddefault.jpg`;
+            let meta = {};
+            try {
+                meta = await getVideoMetadata(videoUrl, { sock });
+            }
+            catch { /* metadata lookup failed (private/restricted); fall back to the query/link below */ }
+            const title = meta.title || query;
+            const thumb = meta.thumbnail || `https://i.ytimg.com/vi/${ytId}/sddefault.jpg`;
+            const infoLines = [`🎬 *${title}*`];
+            if (meta.uploader)
+                infoLines.push(`📺 ${meta.uploader}`);
+            if (meta.uploadDate)
+                infoLines.push(`📅 ${meta.uploadDate}`);
+            infoLines.push('', videoUrl, `⬇️ ${t('p.video.downloading')}`);
             await sock.sendMessage(chatId, {
                 image: { url: thumb },
-                caption: `🎬 *${videoTitle || query}*\n⬇️ ${t('p.video.downloading')}`
+                caption: infoLines.join('\n')
             }, { quoted: message });
             result = await downloadVideo(videoUrl, { sock, maxHeight: 360 });
             const videoBuffer = await fs.promises.readFile(result.filePath);
+            const finalTitle = result.title || title;
+            const finalCaptionLines = [`🎬 *${finalTitle}*`];
+            if (meta.uploader)
+                finalCaptionLines.push(`📺 ${meta.uploader}`);
+            if (meta.uploadDate)
+                finalCaptionLines.push(`📅 ${meta.uploadDate}`);
+            finalCaptionLines.push('', `> *_${t('p.video.footer')}_*`);
             await sock.sendMessage(chatId, {
                 video: videoBuffer,
                 mimetype: 'video/mp4',
-                fileName: `${result.title || videoTitle || 'video'}.mp4`,
-                caption: `🎬 *${result.title || videoTitle || 'Video'}*\n\n> *_${t('p.video.footer')}_*`
+                fileName: `${finalTitle}.mp4`,
+                caption: finalCaptionLines.join('\n')
             }, { quoted: message });
         }
         catch (err) {
