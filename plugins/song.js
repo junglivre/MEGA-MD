@@ -39,9 +39,8 @@ export default {
             if (meta.uploadDate)
                 infoLines.push(`📅 ${meta.uploadDate}`);
             infoLines.push('', videoUrl, `⏳ ${t('p.song.downloading')}`);
-            let statusMsg;
             if (meta.thumbnail) {
-                statusMsg = await sock.sendMessage(chatId, {
+                await sock.sendMessage(chatId, {
                     image: { url: meta.thumbnail },
                     caption: infoLines.join('\n')
                 }, { quoted: message });
@@ -54,8 +53,6 @@ export default {
                 fileName: `${result.title || title || 'song'}.mp3`,
                 ptt: false
             }, { quoted: message });
-            if (statusMsg)
-                await sock.sendMessage(chatId, { delete: statusMsg.key });
         }
         catch (err) {
             console.error('Song plugin error:', err.message);
