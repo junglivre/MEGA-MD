@@ -5,7 +5,7 @@ import { formatYtDlpError } from '../lib/ytdlpCore.js';
 
 export default {
     command: 'song',
-    aliases: ['music', 'audio', 'mp3'],
+    aliases: ['music', 'audio', 'mp3', 'musica'],
     category: 'music',
     description: 'Download song from YouTube (MP3)',
     usage: '.song <song name | youtube link>',
