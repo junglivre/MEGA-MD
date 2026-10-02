@@ -50,7 +50,7 @@ Variáveis importantes incluem:
 - Persistência: `DB_URL`, `MONGO_URL`, `POSTGRES_URL`, `MYSQL_URL`, `MAX_STORE_MESSAGES`, `STORE_WRITE_INTERVAL`.
 - Serviços: `LASTFM_API_KEY`, `QUOTE_API_URL`, `REMOVEBG_KEY`, `GIPHY_API_KEY`.
 - Operação: `PORT`, `BACKUP_ENABLED`, `BACKUP_INTERVAL`, `BACKUP_RETENTION`, `BACKUP_DIR`, `CLEANUP_INTERVAL`.
-- Downloads do YouTube: `YOUTUBE_COOKIES_FILE` (fallback; prefira `.ytcookies set` no WhatsApp, que persiste via `lightweight_store`).
+- Downloads via yt-dlp: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE`, `TWITTER_COOKIES_FILE` (fallback estático; prefira `.dlcookies <site> set` no WhatsApp, que persiste via `lightweight_store`).
 
 Nunca imprima o conteúdo do `.env` real, sessão Baileys, banco ou tokens. Para auditoria, liste somente nomes de variáveis ou o estado `configurada/não configurada`. O `.env.md` pode ser lido como documentação, mas deve permanecer sanitizado.
 
@@ -92,6 +92,7 @@ Não presuma que `participant`, `participantAlt`, `remoteJid` e `remoteJidAlt` t
 - Traduções passam por `replaceCommandPrefix()` em `lib/i18n.js`.
 - Metadados `usage` podem continuar declarativos, mas qualquer renderização deve normalizar o prefixo.
 - Handlers que montam ajuda diretamente devem usar `context.config.prefix`.
+- Toda string de tradução recebe `{botName}` automaticamente (injetado em `translate()`, `lib/i18n.js`, igual a `{prefix}`) — nunca escreva "MEGA-MD" literal em texto de usuário; use `{botName}`. Em código JS fora de i18n (bio automática, metadata de figurinha), use `config.botName`/`config.packname`/`config.author` em vez de literal.
 
 ## Chatbot e tom
 
@@ -149,26 +150,33 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 - `.s2vid` converte figurinha animada em vídeo; aliases: `svideo`, `stovid`, `tovid`.
 - `tagall` também possui aliases `everyone`, `all`, `everson`, `everton`.
 
-## Downloads do YouTube (play/song/video)
+## Downloads via yt-dlp (play/song/video, spotify, tiktok, twitter)
 
-`.play`, `.song` e `.video` chamavam uma API HTTP de terceiros (`api.qasimdev.dpdns.org`) cujo `downloadUrl` passou a redirecionar para uma rede de anúncios em vez de servir o arquivo — por isso o download parou de funcionar. O download agora roda localmente via `yt-dlp` (processo filho, `lib/ytdlp.js`), que grava em `temp/` e o buffer é enviado direto pelo Baileys; o arquivo é apagado logo depois do envio.
+`.play`, `.song`, `.video`, `.spotify`, `.tiktok` e `.twitter` chamavam APIs HTTP de terceiros (`api.qasimdev.dpdns.org`, `discardapi.*`) que foram quebrando (redirect pra anúncios, ou simplesmente instáveis). Todos migrados pra `yt-dlp` local: motor compartilhado em `lib/ytdlpCore.js`, especializado por site em `lib/ytdlp.js` (YouTube), `lib/tiktokDownload.js` e `lib/twitterDownload.js`. Grava em `temp/`, envia o buffer direto pelo Baileys, apaga o arquivo depois.
+
+- `.spotify` não baixa o áudio do Spotify (DRM) — pega metadata da página de embed pública do Spotify (`open.spotify.com/embed/track/<id>`, sem API key) e baixa o equivalente do YouTube pelo mesmo pipeline do `.song`.
+- `.twitter` via yt-dlp só pega vídeo; tweets só-com-imagem não são suportados (diferença da API antiga).
+- `.instagram`/`igs`/`igsc` usam `ruhend-scraper` (não yt-dlp, não é a API quebrada) — confirmados funcionando, sem mudança.
+- `.terabox` **descontinuado**: sem extractor no yt-dlp; todo resolver da comunidade exige cookie `ndus` separado de uma conta Terabox + scraping frágil (ou depende de um Cloudflare Worker de terceiros). Virou stub com `hidden: true` (fora do `.menu`), responde "descontinuado" se chamado direto.
 
 Requisitos no host de produção (já aplicados em `bixos2`, 2026-10-01):
 
-- `yt-dlp` e `ffmpeg` instalados e atualizáveis via `pip install --break-system-packages -U yt-dlp` (o extrator do YouTube quebra com frequência).
+- `yt-dlp` e `ffmpeg` instalados e atualizáveis via `pip install --break-system-packages -U "yt-dlp[default]"` (o extrator do YouTube quebra com frequência; `[default]` traz o `yt-dlp-ejs` necessário pra resolver assinatura).
 - `deno` no PATH do processo (symlink em `/usr/local/bin/deno`) — sem runtime JS o yt-dlp cai pro cliente `visionos`/`web` sem resolver assinatura e YouTube retorna `LOGIN_REQUIRED` em qualquer cliente.
 - `bgutil-ytdlp-pot-provider`: container Docker em `127.0.0.1:4416` (`docker run --name bgutil-provider -d --init --restart unless-stopped -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider`) + plugin pip (`bgutil-ytdlp-pot-provider`).
 
-**IP do bixos2 (Oracle Cloud) é bloqueado pelo YouTube.** Testado em 2026-10-01: com `yt-dlp` + `ffmpeg` + `deno` + PO Token provider funcionando, TODOS os clientes (`web`, `android`, `ios`, `tv`, `tv_simply`, `android_vr`, `web_embedded`, `mweb`, `web_safari`, `visionos`) retornam `LOGIN_REQUIRED`/"Sign in to confirm you're not a bot" sem cookies — é bloqueio por reputação de IP datacenter, não falta de PO Token. Isso é um padrão conhecido pra IPs de VPS/cloud (Oracle, Hetzner, AWS etc.), não um bug do bot.
+**IP do bixos2 (Oracle Cloud) é bloqueado pelo YouTube.** Testado em 2026-10-01: com `yt-dlp` + `ffmpeg` + `deno` + PO Token provider funcionando, TODOS os clientes (`web`, `android`, `ios`, `tv`, `tv_simply`, `android_vr`, `web_embedded`, `mweb`, `web_safari`, `visionos`) retornam `LOGIN_REQUIRED`/"Sign in to confirm you're not a bot" sem cookies — é bloqueio por reputação de IP datacenter, não falta de PO Token. Isso é um padrão conhecido pra IPs de VPS/cloud (Oracle, Hetzner, AWS etc.), não um bug do bot. **Cookies não são opcionais nesse host pro YouTube.**
 
-**Conclusão prática: cookies não são opcionais neste host — são obrigatórios pro `.play`/`.song`/`.video` funcionarem.** Owner precisa rodar `.ytcookies set` com um cookies.txt real de uma conta logada assim que possível.
+**Bug conhecido do yt-dlp (issue [#17389](https://github.com/yt-dlp/yt-dlp/issues/17389), aberto, alta prioridade):** com cookie anexado, o client padrão `tv_downgraded` retorna `UNPLAYABLE` em todos os formatos (assinatura JS do player TVHTML5 que o `yt-dlp-ejs` ainda não resolve), surge como `ERROR: The page needs to be reloaded.`. Workaround aplicado em `lib/ytdlp.js`: força `--extractor-args youtube:player_client=default,web_embedded` (confirmado por mantenedor do yt-dlp no issue). Remover quando o upstream corrigir.
 
-Cookies do YouTube:
+Cookies (comando unificado `.dlcookies <site> <ação>`, não um comando por site):
 
-- Prioridade 1: salvos via comando `.ytcookies set` (owner/strict), persistidos em `lightweight_store` (setting global `youtubeCookies`) — sobrevivem a redeploy mesmo sem disco persistente.
-- Prioridade 2 (fallback): arquivo apontado por `YOUTUBE_COOKIES_FILE`, formato Netscape (`cookies.txt`).
-- `.ytcookies status` mostra a fonte ativa e o último alerta de cookie inválido; `.ytcookies clear` remove o cookie salvo via WhatsApp.
-- Quando o yt-dlp reporta cookies expirados (mensagem exata do yt-dlp: "account cookies are no longer valid"), o bot avisa automaticamente o owner (`OWNER_NUMBER`) no WhatsApp, com cooldown de 6h para não repetir o aviso a cada download.
+- `.dlcookies youtube|tiktok|twitter set [rótulo]` (owner/strict) — responda a um `.txt` ou cole o conteúdo. Perfis rotulados, revezados (round-robin) a cada download pra espalhar carga entre contas.
+- `.dlcookies <site> status` / `list` — mostra perfis e estado (válido/inválido desde quando).
+- `.dlcookies <site> remove <rótulo>` / `clear` (todos).
+- Fallback estático por env var: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE`, `TWITTER_COOKIES_FILE` (usado só se não houver perfil salvo via WhatsApp).
+- YouTube detecta cookie inválido com precisão (string exata do yt-dlp: "account cookies are no longer valid"). TikTok/Twitter usam heurística genérica (hint de login/auth do yt-dlp) — menos precisa, pode ocasionalmente marcar um perfil bom como inválido num erro não relacionado; `.dlcookies <site> set <rótulo>` de novo limpa a flag.
+- Alerta automático ao owner (`OWNER_NUMBER`) no WhatsApp quando um perfil fica inválido, mencionando o site e o rótulo, cooldown de 6h por perfil.
 
 ## Persistência e arquivos de runtime
 

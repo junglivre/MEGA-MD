@@ -22,8 +22,8 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comandos locais `pepedream`, `romerobritto` e `quadro`, preservando personagens e objetos sobrepostos aos encaixes.
 - Toggle `chatbot command-replies` para controlar respostas do chatbot quando alguém responde ao resultado de um comando.
 - Comando `.s2vid` para converter figurinhas animadas em vídeo; aliases: `svideo`, `stovid`, `tovid`.
-- Comando `ytcookies` (owner) pra gerenciar cookies opcionais do YouTube direto pelo WhatsApp (`set`/`status`/`clear`), persistidos via `lightweight_store` e com fallback pro arquivo `YOUTUBE_COOKIES_FILE`.
-- Alerta automático ao owner no WhatsApp quando o cookie do YouTube expira/é revogado, com cooldown de 6h.
+- Comando unificado `dlcookies` (owner) pra gerenciar cookies de download via WhatsApp — `.dlcookies <youtube|tiktok|twitter> set [rótulo]/status/remove <rótulo>/clear`. Múltiplos perfis rotulados por site, revezados (round-robin) a cada download.
+- Alerta automático ao owner no WhatsApp quando um cookie (YouTube/TikTok/Twitter) expira/é revogado, mencionando site e rótulo, com cooldown de 6h por perfil.
 
 ### Changed
 
@@ -39,12 +39,17 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - O alias `bot` deixou de acionar o status `alive` sem prefixo, evitando respostas automáticas em conversas iniciadas com essa palavra.
 - Comandos `ban` e `unban` passaram a ser exclusivos do proprietário; `unban` agora aceita diretamente o LID salvo no banco, inclusive no privado, e `ban` esclarece a diferença para `kick`.
 - `.play`, `.song` e `.video` passaram a baixar com `yt-dlp` local em vez da API de terceiros `api.qasimdev.dpdns.org`.
+- `.spotify` passou a buscar metadata na página de embed pública do Spotify e baixar o equivalente do YouTube via `yt-dlp`, em vez da API de terceiros `api.qasimdev.dpdns.org`.
+- `.tiktok` e `.twitter` passaram a baixar com `yt-dlp` local em vez das APIs de terceiros `discardapi.onrender.com`/`discardapi.dpdns.org`; `.twitter` agora só baixa vídeo (tweets só-com-imagem não são suportados).
+- `.terabox` descontinuado: sem extractor no yt-dlp e todo resolver da comunidade exige cookie de conta Terabox separado mais scraping frágil. Comando virou stub (`hidden: true`, fora do `.menu`) que avisa que foi descontinuado.
+- Toda string de tradução passou a injetar `{botName}` automaticamente (`lib/i18n.js`), e textos que citavam "MEGA-MD" fixo (rodapés de download, títulos de uptime/pareamento/clone, bio automática, metadata de figurinha do `.attp`) agora usam o nome configurado em `BOT_NAME`.
 
 ### Fixed
 
 - A sessão Baileys deixa de remover chaves Signal em uso, preservando a capacidade de decifrar mensagens após reinícios.
 - Plugin `chatbot` deixa de usar atribuição lógica incompatível com o verificador de sintaxe carregado na inicialização.
 - `.play`, `.song` e `.video` (download de áudio/vídeo do YouTube): a API de terceiros usada passou a redirecionar todo `downloadUrl` pra uma rede de anúncios em vez de servir o arquivo, quebrando os três comandos. Substituída por `yt-dlp` local (ver `lib/ytdlp.js`), com suporte opcional a cookies e Proof-of-Origin Token provider pra reduzir bloqueios do YouTube.
+- `.play`/`.song`/`.video`/`.spotify`/`.tiktok`/`.twitter`: workaround pra bug aberto do yt-dlp ([#17389](https://github.com/yt-dlp/yt-dlp/issues/17389)) em que, com cookie anexado, o client padrão `tv_downgraded` retorna `UNPLAYABLE` em todo formato e o download falha com `The page needs to be reloaded.`. Forçado `player_client=default,web_embedded` até o upstream corrigir.
 
 ## [2026-08-23]
 

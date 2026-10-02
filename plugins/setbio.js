@@ -1,4 +1,5 @@
 import store from '../lib/lightweight_store.js';
+import config from '../config.js';
 import axios from 'axios';
 const QUOTE_URLS = [
     'https://raw.githubusercontent.com/GlobalTechInfo/Islamic-Database/main/text/random_quotes.txt',
@@ -44,12 +45,12 @@ async function fetchQuotes() {
         return allQuotes;
     }
     catch (error) {
-        return cachedQuotes.length > 0 ? cachedQuotes : ['💎 By MEGA-MD - Your WhatsApp Bot'];
+        return cachedQuotes.length > 0 ? cachedQuotes : [`💎 By ${config.botName} - Your WhatsApp Bot`];
     }
 }
 function getRandomQuote(quotes) {
     if (!quotes || quotes.length === 0)
-        return '💎 By MEGA-MD';
+        return `💎 By ${config.botName}`;
     return quotes[Math.floor(Math.random() * quotes.length)];
 }
 async function updateAutoBio(sock) {
@@ -64,7 +65,7 @@ async function updateAutoBio(sock) {
             bio = autoBioSettings.customBio.replace('{quote}', randomQuote);
         }
         else {
-            bio = `${randomQuote}\n\n💎 MEGA-MD`;
+            bio = `${randomQuote}\n\n💎 ${config.botName}`;
         }
         if (bio.length > 139) {
             bio = `${bio.substring(0, 136) }...`;
@@ -118,7 +119,7 @@ export default {
                         `• \`.setbio set <text>\` - ${t('p.setbio.cmdSet')}\n` +
                         `• \`.setbio reset\` - ${t('p.setbio.cmdReset')}\n` +
                         `• \`.setbio preview\` - ${t('p.setbio.cmdPreview')}\n\n` +
-                        `*${t('p.setbio.defaultBioLabel')}:*\n{quote}\n💎 MEGA-MD\n\n` +
+                        `*${t('p.setbio.defaultBioLabel')}:*\n{quote}\n💎 ${config.botName}\n\n` +
                         `*${t('p.setbio.customBioLabel')}:*\n${autoBioSettings.customBio || t('p.setbio.notSet')}\n\n` +
                         `*${t('p.setbio.noteLabel')}:* ${t('p.setbio.noteText')}\n\n` +
                         `*${t('p.setbio.sourcesLabel')}:*\n• ${t('p.setbio.sourceFamous')}\n• ${t('p.setbio.sourceMotivational')}\n• ${t('p.setbio.sourcePickup')}`
@@ -128,7 +129,7 @@ export default {
                 const quotes = await fetchQuotes();
                 const randomQuote = getRandomQuote(quotes);
                 return await sock.sendMessage(chatId, {
-                    text: `*📝 ${t('p.setbio.previewTitle')}*\n\n${randomQuote}\n\n💎 MEGA-MD\n\n_${t('p.setbio.previewHint')}_`
+                    text: `*📝 ${t('p.setbio.previewTitle')}*\n\n${randomQuote}\n\n💎 ${config.botName}\n\n_${t('p.setbio.previewHint')}_`
                 }, { quoted: message });
             }
             if (action === 'on') {
@@ -189,7 +190,7 @@ export default {
                     await updateAutoBio(sock);
                 }
                 return await sock.sendMessage(chatId, {
-                    text: `✅ *${t('p.setbio.resetSuccess')}*\n\n*${t('p.setbio.defaultBioLabel')}:*\n{quote}\n💎 MEGA-MD`
+                    text: `✅ *${t('p.setbio.resetSuccess')}*\n\n*${t('p.setbio.defaultBioLabel')}:*\n{quote}\n💎 ${config.botName}`
                 }, { quoted: message });
             }
             return await sock.sendMessage(chatId, {

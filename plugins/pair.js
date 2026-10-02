@@ -1,10 +1,11 @@
 import axios from 'axios';
+import config from '../config.js';
 import { channelInfo } from '../lib/messageConfig.js';
 export default {
     command: 'pair',
     aliases: ['paircode', 'session', 'getsession', 'sessionid'],
     category: 'general',
-    description: 'Get session id for MEGA-MD',
+    description: `Get session id for ${config.botName}`,
     usage: '.pair 92305395XXXX',
     async handler(sock, message, args, context) {
         const { chatId, t } = context;

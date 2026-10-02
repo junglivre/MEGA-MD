@@ -157,8 +157,8 @@ Run `vincular` and `desvincular` inside each group that should use the bank. The
 | ![ffmpeg](https://img.shields.io/badge/ffmpeg-latest-007808?logo=ffmpeg&logoColor=white) | Latest | Media processing |
 | ![libvips](https://img.shields.io/badge/libvips-latest-blueviolet) | Latest | Image processing |
 | ![libwebp](https://img.shields.io/badge/libwebp-latest-blue) | Latest | Sticker creation |
-| ![yt-dlp](https://img.shields.io/badge/yt--dlp-latest-FF0000?logo=youtube&logoColor=white) | Latest | `.play`/`.song`/`.video` YouTube downloads; install via `pip install -U yt-dlp` and keep it updated |
-| ![Deno](https://img.shields.io/badge/Deno-latest-000000?logo=deno&logoColor=white) | Latest | Required by `yt-dlp` to solve YouTube's JS signature challenge — see [YouTube Downloads](#-youtube-downloads-play--song--video) |
+| ![yt-dlp](https://img.shields.io/badge/yt--dlp-latest-FF0000?logo=youtube&logoColor=white) | Latest | `.play`/`.song`/`.video`/`.spotify`/`.tiktok`/`.twitter` downloads; install via `pip install -U "yt-dlp[default]"` and keep it updated |
+| ![Deno](https://img.shields.io/badge/Deno-latest-000000?logo=deno&logoColor=white) | Latest | Required by `yt-dlp` to solve YouTube's JS signature challenge — see [Downloads](#-youtube--tiktok--twitter-downloads-playsongvideospotify-tiktok-twitter) |
 
 > [!WARNING]
 > **Never use your personal WhatsApp number for the bot.** Always use a dedicated number.
@@ -664,40 +664,49 @@ DB_URL=./data/baileys.db
 | `BACKUP_INTERVAL` | ❌ | `86400000` | Backup interval (ms) |
 | `BACKUP_RETENTION` | ❌ | `7` | Number of ZIP backups to keep |
 | `BACKUP_DIR` | ❌ | `backups` | Backup output directory |
-| `YOUTUBE_COOKIES_FILE` | ❌ | — | Fallback Netscape `cookies.txt` path for `.play`/`.song`/`.video`; prefer `.ytcookies set` in WhatsApp instead |
+| `YOUTUBE_COOKIES_FILE` / `TIKTOK_COOKIES_FILE` / `TWITTER_COOKIES_FILE` | ❌ | — | Fallback Netscape `cookies.txt` path per site; prefer `.dlcookies <site> set` in WhatsApp instead |
 
 ---
 
-## 🎬 YouTube Downloads (`.play` / `.song` / `.video`)
+## 🎬 YouTube / TikTok / Twitter Downloads (`.play`/`.song`/`.video`/`.spotify`, `.tiktok`, `.twitter`)
 
 These commands run [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) locally (no third-party download API) and need on the host:
 
-- `yt-dlp` + `ffmpeg` — see [Requirements](#-requirements). Keep `yt-dlp` updated (`pip install -U yt-dlp`); YouTube changes frequently enough that an outdated extractor breaks downloads.
+- `yt-dlp` + `ffmpeg` — see [Requirements](#-requirements). Install with `pip install -U "yt-dlp[default]"` (the `[default]` extra pulls in `yt-dlp-ejs`, needed to solve YouTube's signature challenge) and keep it updated; YouTube changes frequently enough that an outdated extractor breaks downloads.
 - A JS runtime in `PATH` — **[Deno](https://deno.com)** is what yt-dlp looks for by default. Without one, yt-dlp can't solve YouTube's signature/n-param challenge and every client falls back to a broken response.
   ```bash
   curl -fsSL https://deno.land/install.sh | sh -s -- -y
   ln -sf "$HOME/.deno/bin/deno" /usr/local/bin/deno  # so PM2/system services find it too
   ```
 
-YouTube throttles anonymous requests with "Sign in to confirm you're not a bot" / `LOGIN_REQUIRED`. Two layers help, and on datacenter/VPS IPs (Oracle Cloud, Hetzner, AWS, etc.) **cookies are not optional — every client gets blocked without them**, PO Token or not:
+`.spotify` doesn't pull audio from Spotify directly (DRM) — it reads public track metadata from Spotify's embed page and downloads the matching YouTube video through the same pipeline as `.song`. `.twitter` only downloads video; image-only tweets aren't supported. `.instagram`/`.igs`/`.igsc` use a separate scraper (`ruhend-scraper`), not yt-dlp — unaffected by anything below. `.terabox` is discontinued (no yt-dlp extractor, and every community resolver needs its own fragile scraping plus a separate Terabox account cookie).
+
+YouTube throttles anonymous requests with "Sign in to confirm you're not a bot" / `LOGIN_REQUIRED`. Two layers help, and on datacenter/VPS IPs (Oracle Cloud, Hetzner, AWS, etc.) **cookies are not optional for YouTube — every client gets blocked without them**, PO Token or not:
 
 1. **PO Token provider (still worth running, reduces blocks on non-flagged IPs):** [`bgutil-ytdlp-pot-provider`](https://github.com/Brainicism/bgutil-ytdlp-pot-provider) — yt-dlp picks it up automatically.
    ```bash
    docker run --name bgutil-provider -d --init --restart unless-stopped \
      -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider
-   pip install -U yt-dlp bgutil-ytdlp-pot-provider
+   pip install -U "yt-dlp[default]" bgutil-ytdlp-pot-provider
    ```
-2. **YouTube cookies (required on most cloud VPS hosts):** export cookies from a browser logged into YouTube and give them to the bot. Two ways to load them, DB takes priority:
-   - `.ytcookies set` (owner-only, in WhatsApp) — reply to a `.txt` file or paste the content. Stored in the database, so it survives redeploys even without persistent disk.
-   - `YOUTUBE_COOKIES_FILE=/path/to/cookies.txt` — static fallback used only when nothing was saved via WhatsApp yet.
+2. **Cookies (required on most cloud VPS hosts for YouTube; optional but helpful for TikTok/Twitter age/region-gated content):** one unified owner command handles all three sites, with multiple labeled accounts rotated round-robin per download:
+   ```
+   .dlcookies youtube set            (reply to a cookies.txt file)
+   .dlcookies tiktok set account1
+   .dlcookies twitter status
+   .dlcookies youtube remove account1
+   .dlcookies tiktok clear
+   ```
+   DB-stored cookies (via WhatsApp) take priority; `YOUTUBE_COOKIES_FILE` / `TIKTOK_COOKIES_FILE` / `TWITTER_COOKIES_FILE` are static fallbacks used only when nothing was saved via WhatsApp yet.
 
    **How to export cookies.txt:**
-   - Easiest: install the [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) extension, log into YouTube, and export in Netscape format.
-   - No extension: `yt-dlp --cookies-from-browser chrome --cookies cookies.txt` on a machine with Chrome/Firefox logged into YouTube.
+   - Easiest: install the [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) extension, log into the site, and export in Netscape format.
+   - No extension: `yt-dlp --cookies-from-browser chrome --cookies cookies.txt` on a machine with Chrome/Firefox logged into the site.
 
-   The file is small (a few KB) either way — `YOUTUBE_COOKIES_FILE` just points at it on disk instead of inlining it in `.env`.
+   If yt-dlp reports a cookie as rotated/expired, the bot automatically messages `OWNER_NUMBER` on WhatsApp naming the site and label (at most once every 6 hours per profile). YouTube detects this precisely; TikTok/Twitter use a best-effort generic signal and can occasionally misfire on an unrelated error — `.dlcookies <site> set <label>` again clears the flag.
 
-   Other `.ytcookies` subcommands: `status` (shows the active source and last invalid-cookie alert) and `clear` (removes the WhatsApp-saved cookie). If yt-dlp reports the cookies were rotated/expired, the bot automatically messages `OWNER_NUMBER` on WhatsApp (at most once every 6 hours) so you know to refresh them.
+> [!NOTE]
+> Known open yt-dlp bug ([#17389](https://github.com/yt-dlp/yt-dlp/issues/17389)): with cookies attached, the default `tv_downgraded` client returns `UNPLAYABLE` for every format (`ERROR: The page needs to be reloaded.`) because `yt-dlp-ejs` can't yet solve that client's signature. This project already works around it (`--extractor-args youtube:player_client=default,web_embedded` in `lib/ytdlp.js`); no action needed on your end, but it's why that specific error shouldn't happen here.
 
 ---
 
