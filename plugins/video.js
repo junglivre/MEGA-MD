@@ -1,18 +1,24 @@
 import yts from 'yt-search';
 import fs from 'fs';
-import { downloadVideo, getVideoMetadata } from '../lib/ytdlp.js';
+import { downloadVideo, getVideoMetadata, VIDEO_QUALITY_TIERS } from '../lib/ytdlp.js';
 import { formatYtDlpError } from '../lib/ytdlpCore.js';
+
+const QUALITY_RE = new RegExp(`^(${VIDEO_QUALITY_TIERS.join('|')})p?$`, 'i');
 
 export default {
     command: 'video',
     aliases: ['ytmp4', 'ytvideo', 'ytdl'],
     category: 'download',
     description: 'Download YouTube videos by link or search',
-    usage: '.video <youtube link | search query>',
+    usage: '.video <youtube link | search query> [quality: 1080|720|480|360|240|144]',
     async handler(sock, message, args, context) {
         const { t } = context;
         const chatId = context.chatId || message.key.remoteJid;
-        const query = args.join(' ').trim();
+        const argsList = [...args];
+        let maxHeight;
+        if (argsList.length > 1 && QUALITY_RE.test(argsList[argsList.length - 1]))
+            maxHeight = Number(argsList.pop().replace(/p$/i, ''));
+        const query = argsList.join(' ').trim();
         if (!query)
             return sock.sendMessage(chatId, { text: `🎥 ${t('p.video.askQuery')}` }, { quoted: message });
         let result;
@@ -48,7 +54,7 @@ export default {
                 image: { url: thumb },
                 caption: infoLines.join('\n')
             }, { quoted: message });
-            result = await downloadVideo(videoUrl, { sock, maxHeight: 360 });
+            result = await downloadVideo(videoUrl, { sock, ...(maxHeight ? { maxHeight } : {}) });
             const videoBuffer = await fs.promises.readFile(result.filePath);
             const finalTitle = result.title || title;
             const finalCaptionLines = [`🎬 *${finalTitle}*`];

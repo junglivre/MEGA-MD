@@ -46,6 +46,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.video` e `.song` passaram a mostrar título, canal e data de publicação (e o link, sem embed) antes/depois do download, buscados via `yt-dlp --skip-download`; antes `.video` mostrava a própria URL como "título" quando o link era colado direto (sem passar pela busca).
 - Mensagens de erro de download (`play`/`song`/`video`/`spotify`/`tiktok`/`twitter`) passaram a ser sanitizadas e traduzidas em vez de mostrar o texto cru do yt-dlp (links de wiki, flags de CLI em inglês); ver `sanitizeYtDlpError`/`formatYtDlpError` em `lib/ytdlpCore.js`.
 - `play`/`song`/`video`/`spotify`/`tiktok` passaram a apagar pra todos a mensagem de status ("buscando"/"baixando"/"encontrado") assim que a mídia final é entregue com sucesso, deixando o chat limpo.
+- `.video` passou a forçar `avc1`/`mp4a` (H.264 + AAC) no seletor de formato do yt-dlp em vez de deixar escolher "o melhor" bitrate — isso vinha saindo como AV1/Opus em muitos vídeos, que toca no PC/VLC mas não no player mobile do WhatsApp. Teto de 1080p/150MB por padrão, descendo qualidade automaticamente (`VIDEO_QUALITY_TIERS`) se o arquivo real passar do limite. Aceita qualidade manual: `.video <link|busca> 720`.
 
 ### Fixed
 
