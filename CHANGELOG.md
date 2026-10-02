@@ -49,6 +49,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.video` passou a forçar `avc1`/`mp4a` (H.264 + AAC) no seletor de formato do yt-dlp em vez de deixar escolher "o melhor" bitrate — isso vinha saindo como AV1/Opus em muitos vídeos, que toca no PC/VLC mas não no player mobile do WhatsApp. Teto de 1080p/150MB por padrão, descendo qualidade automaticamente (`VIDEO_QUALITY_TIERS`) se o arquivo real passar do limite. Aceita qualidade manual: `.video <link|busca> 720`.
 - `.video -custom <link>` pergunta a qualidade numa mensagem separada antes de baixar, listando as alturas `avc1` realmente disponíveis naquele vídeo (não um tier estático); responde com o número da opção ou a altura. Timeout de 3 minutos.
 - `.song` ganhou o alias `musica`.
+- `.play`/`.song`/`.video`: texto de status deixou de prometer "até 30s" (tempo real varia com duração do vídeo, cookie e rede) e virou "pode demorar um pouco".
 
 ### Fixed
 
