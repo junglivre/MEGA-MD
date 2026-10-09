@@ -60,6 +60,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.video`/`.song`: título do YouTube às vezes vinha traduzido pro inglês em canais com metadata multilíngue, porque o yt-dlp manda `hl=en` por padrão quando nenhum `lang` é definido. Forçado `lang=pt` junto do `player_client`.
 - `.play`/`.song`/`.video`/`.spotify`/`.tiktok`/`.twitter`: YouTube ocasionalmente rejeita um request com "Sign in to confirm you're not a bot" mesmo com cookie válido e não expirado (confirmado na produção: o mesmo vídeo que falhou funcionou de cara no retry manual segundos depois — bloqueio anti-bot transiente do lado do YouTube, não um problema de cookie ou de código). `runYtDlpWithRetry()` (`lib/ytdlpCore.js`) agora tenta de novo uma vez (2,5s de espera) quando o erro bate com esse padrão (ou o bug do "page needs to be reloaded") em en/pt/es, antes de reportar falha pro usuário.
 - Modelo padrão do `/vision` (`GROQ_VISION_MODEL`) estava desatualizado como `qwen/qwen3.6-27b`; Groq descontinuou esse ID e passou a servir `qwen/qwen3.8-27b`. Corrigido em `config.js`, `.env.example` e `README.md`.
+- Detecção de cookie do YouTube morto só reconhecia a string exata em inglês ("account cookies are no longer valid"), nunca a família "Sign in to confirm you're not a bot"/"Faça login..." em pt/es — resultado: um cookie que expirou de verdade (confirmado em produção) ficava "válido" pro bot pra sempre, falhando em 100% dos vídeos sem nunca avisar o owner. `COOKIE_INVALID_RE` (`lib/ytdlp.js`) ampliado pra cobrir essa família também.
 
 ## [2026-08-23]
 
