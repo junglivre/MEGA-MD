@@ -647,7 +647,7 @@ DB_URL=./data/baileys.db
 | `STORE_WRITE_INTERVAL` | ❌ | `10000` | Store write interval (ms) |
 | `GROQ_API_KEY` | ❌ | — | Groq API key for chatbot and audio transcription |
 | `GROQ_CHAT_MODEL` | ❌ | `openai/gpt-oss-120b` | Groq chat model |
-| `GROQ_VISION_MODEL` | ❌ | `qwen/qwen3.6-27b` | Groq multimodal model used by `/vision` |
+| `GROQ_VISION_MODEL` | ❌ | `qwen/qwen3.8-27b` | Groq multimodal model used by `/vision` |
 | `GROQ_VISION_REASONING` | ❌ | `medium` | Vision response size: `small`, `medium` or `big` |
 | `GROQ_VISION_MAX_TOKENS` | ❌ | size-based | Optional hard limit for Vision output tokens |
 | `GROQ_VISION_MAX_CHARS` | ❌ | size-based | Optional hard limit for Vision output characters |

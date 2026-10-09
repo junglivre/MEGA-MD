@@ -52,7 +52,7 @@ const config = {
     backupRetention: Number(process.env.BACKUP_RETENTION) || 7,
     backupDirectory: process.env.BACKUP_DIR || 'backups',
     groqChatModel: process.env.GROQ_CHAT_MODEL || 'openai/gpt-oss-120b',
-    groqVisionModel: process.env.GROQ_VISION_MODEL || 'qwen/qwen3.6-27b',
+    groqVisionModel: process.env.GROQ_VISION_MODEL || 'qwen/qwen3.8-27b',
     groqVisionResponseSize,
     groqVisionMaxTokens: Math.max(100, Number(process.env.GROQ_VISION_MAX_TOKENS) || defaultVisionTokens[groqVisionResponseSize]),
     groqVisionMaxChars: Math.max(400, Number(process.env.GROQ_VISION_MAX_CHARS) || defaultVisionChars[groqVisionResponseSize]),
