@@ -53,6 +53,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 
 ### Fixed
 
+- Alerta de cookie expirado agora verifica se o `OWNER_NUMBER` corresponde a uma conta do WhatsApp e só inicia o cooldown após o envio ser aceito; falhas de destino/envio continuam elegíveis para nova tentativa.
 - A sessão Baileys deixa de remover chaves Signal em uso, preservando a capacidade de decifrar mensagens após reinícios.
 - Plugin `chatbot` deixa de usar atribuição lógica incompatível com o verificador de sintaxe carregado na inicialização.
 - `.play`, `.song` e `.video` (download de áudio/vídeo do YouTube): a API de terceiros usada passou a redirecionar todo `downloadUrl` pra uma rede de anúncios em vez de servir o arquivo, quebrando os três comandos. Substituída por `yt-dlp` local (ver `lib/ytdlp.js`), com suporte opcional a cookies e Proof-of-Origin Token provider pra reduzir bloqueios do YouTube.
