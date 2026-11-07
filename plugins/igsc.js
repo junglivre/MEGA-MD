@@ -1,6 +1,5 @@
 import config from '../config.js';
-import { igdl } from 'ruhend-scraper';
-import axios from 'axios';
+import { normalizeInstagramUrl, withInstagramMedia } from '../lib/instagramDownload.js';
 import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -65,24 +64,6 @@ async function _convertBufferToStickerWebp(inputBuffer, isAnimated, cropSquare) 
     img.exif = exif;
     return await img.save(null);
 }
-async function fetchBufferFromUrl(url) {
-    try {
-        const res = await axios.get(url, {
-            responseType: 'arraybuffer',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': '*/*'
-            },
-            timeout: 30000,
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity
-        });
-        return Buffer.from(res.data);
-    }
-    catch (e) {
-        throw e;
-    }
-}
 export default {
     command: 'igsc',
     aliases: ['igstickercrop', 'instacrop'],
@@ -101,56 +82,50 @@ export default {
                 }, { quoted: message });
                 return;
             }
+            let instagramUrl;
+            try {
+                instagramUrl = normalizeInstagramUrl(urlMatch[0]);
+            }
+            catch {
+                await sock.sendMessage(chatId, {
+                    text: t('p.igsc.usage'),
+                    ...channelInfo
+                }, { quoted: message });
+                return;
+            }
             await sock.sendMessage(chatId, { react: { text: '🔄', key: message.key } });
-            const downloadData = await igdl(urlMatch[0]).catch(() => null);
-            if (!downloadData || !downloadData.data) {
+            try {
+                await withInstagramMedia(instagramUrl, { maxItems: 10 }, async (mediaList) => {
+                    const seenHashes = new Set();
+                    for (let i = 0; i < mediaList.length; i++) {
+                        try {
+                            const media = mediaList[i];
+                            const buffer = await fs.promises.readFile(media.path);
+                            const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+                            if (seenHashes.has(hash))
+                                continue;
+                            seenHashes.add(hash);
+                            const stickerBuffer = await stickercropFromBuffer(buffer, media.type === 'video');
+                            await sock.sendMessage(chatId, {
+                                sticker: stickerBuffer,
+                                ...channelInfo
+                            }, { quoted: message });
+                            if (i < mediaList.length - 1) {
+                                await new Promise(r => setTimeout(r, 800));
+                            }
+                        }
+                        catch (perItemErr) {
+                            console.error('IGSC item error:', perItemErr);
+                        }
+                    }
+                });
+            }
+            catch (fetchErr) {
+                console.error('IGSC fetch error:', fetchErr.message);
                 await sock.sendMessage(chatId, {
                     text: `❌ ${t('p.igsc.fetchFailed')}`,
                     ...channelInfo
                 }, { quoted: message });
-                return;
-            }
-            const rawItems = (downloadData?.data || []).filter((m) => m && m.url);
-            const seenUrls = new Set();
-            const items = [];
-            for (const m of rawItems) {
-                if (!seenUrls.has(m.url)) {
-                    seenUrls.add(m.url);
-                    items.push(m);
-                }
-            }
-            if (items.length === 0) {
-                await sock.sendMessage(chatId, {
-                    text: `❌ ${t('p.igsc.noMedia')}`,
-                    ...channelInfo
-                }, { quoted: message });
-                return;
-            }
-            const maxItems = Math.min(items.length, 10);
-            const seenHashes = new Set();
-            for (let i = 0; i < maxItems; i++) {
-                try {
-                    const media = items[i];
-                    const mediaUrl = media.url;
-                    const isVideo = (media?.type === 'video') || /\.(mp4|mov|avi|mkv|webm)$/i.test(mediaUrl);
-                    const buffer = await fetchBufferFromUrl(mediaUrl);
-                    const { createHash } = await import('crypto');
-                    const hash = createHash('sha1').update(buffer).digest('hex');
-                    if (seenHashes.has(hash))
-                        continue;
-                    seenHashes.add(hash);
-                    const stickerBuffer = await stickercropFromBuffer(buffer, isVideo);
-                    await sock.sendMessage(chatId, {
-                        sticker: stickerBuffer,
-                        ...channelInfo
-                    }, { quoted: message });
-                    if (i < maxItems - 1) {
-                        await new Promise(r => setTimeout(r, 800));
-                    }
-                }
-                catch (perItemErr) {
-                    console.error('IGSC item error:', perItemErr);
-                }
             }
         }
         catch (err) {

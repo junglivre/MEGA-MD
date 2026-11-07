@@ -1,14 +1,6 @@
-import { igdl } from 'ruhend-scraper';
+import fs from 'fs';
+import { normalizeInstagramUrl, withInstagramMedia } from '../lib/instagramDownload.js';
 const processedMessages = new Set();
-function extractUniqueMedia(mediaData = []) {
-    const seen = new Set();
-    return mediaData.filter((m) => {
-        if (!m?.url || seen.has(m.url))
-            return false;
-        seen.add(m.url);
-        return true;
-    });
-}
 export default {
     command: 'instagram',
     aliases: ['ig', 'igdl', 'insta'],
@@ -29,45 +21,39 @@ export default {
             if (!text) {
                 return await sock.sendMessage(chatId, { text: `📸 *${t('p.instagram.title')}*\n\n${t('p.instagram.usage')}` }, { quoted: message });
             }
-            const igRegex = /https?:\/\/(www\.)?(instagram\.com|instagr\.am)\/(p|reel|tv)\//i;
-            if (!igRegex.test(text)) {
+            const linkMatch = text.match(/https?:\/\/\S+/);
+            let instagramUrl;
+            try {
+                instagramUrl = normalizeInstagramUrl(linkMatch?.[0]);
+            }
+            catch {
                 return await sock.sendMessage(chatId, { text: `❌ ${t('p.instagram.invalidLink')}` }, { quoted: message });
             }
             await sock.sendMessage(chatId, {
                 react: { text: '🔄', key: message.key }
             });
-            const res = await igdl(text);
-            if (!res?.data?.length) {
-                return await sock.sendMessage(chatId, { text: `❌ ${t('p.instagram.noMedia')}` }, { quoted: message });
-            }
-            const mediaList = extractUniqueMedia(res.data).slice(0, 20);
-            if (!mediaList.length) {
-                return await sock.sendMessage(chatId, { text: `❌ ${t('p.instagram.noDownloadable')}` }, { quoted: message });
-            }
-            for (let i = 0; i < mediaList.length; i++) {
-                const media = mediaList[i];
-                const url = media.url;
-                const isVideo = media.type === 'video' ||
-                    /\.(mp4|mov|webm|mkv)$/i.test(url) ||
-                    text.includes('/reel/') ||
-                    text.includes('/tv/');
-                if (isVideo) {
-                    await sock.sendMessage(chatId, {
-                        video: { url },
-                        mimetype: 'video/mp4',
-                        caption: `📥 *${t('p.instagram.downloadedBy')}*`
-                    }, { quoted: message });
+            await withInstagramMedia(instagramUrl, { maxItems: 20 }, async (mediaList) => {
+                for (let i = 0; i < mediaList.length; i++) {
+                    const media = mediaList[i];
+                    const buffer = await fs.promises.readFile(media.path);
+                    if (media.type === 'video') {
+                        await sock.sendMessage(chatId, {
+                            video: buffer,
+                            mimetype: media.mimetype,
+                            caption: `📥 *${t('p.instagram.downloadedBy')}*`
+                        }, { quoted: message });
+                    }
+                    else {
+                        await sock.sendMessage(chatId, {
+                            image: buffer,
+                            caption: `📥 *${t('p.instagram.downloadedBy')}*`
+                        }, { quoted: message });
+                    }
+                    if (i < mediaList.length - 1) {
+                        await new Promise(r => setTimeout(r, 1000));
+                    }
                 }
-                else {
-                    await sock.sendMessage(chatId, {
-                        image: { url },
-                        caption: `📥 *${t('p.instagram.downloadedBy')}*`
-                    }, { quoted: message });
-                }
-                if (i < mediaList.length - 1) {
-                    await new Promise(r => setTimeout(r, 1000));
-                }
-            }
+            });
         }
         catch (err) {
             console.error('Instagram plugin error:', err);

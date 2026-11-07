@@ -50,7 +50,7 @@ Variáveis importantes incluem:
 - Persistência: `DB_URL`, `MONGO_URL`, `POSTGRES_URL`, `MYSQL_URL`, `MAX_STORE_MESSAGES`, `STORE_WRITE_INTERVAL`.
 - Serviços: `LASTFM_API_KEY`, `QUOTE_API_URL`, `REMOVEBG_KEY`, `GIPHY_API_KEY`.
 - Operação: `PORT`, `BACKUP_ENABLED`, `BACKUP_INTERVAL`, `BACKUP_RETENTION`, `BACKUP_DIR`, `CLEANUP_INTERVAL`.
-- Downloads via yt-dlp: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE`, `TWITTER_COOKIES_FILE` (fallback estático; prefira `.dlcookies <site> set` no WhatsApp, que persiste via `lightweight_store`).
+- Downloads via yt-dlp: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE`, `TWITTER_COOKIES_FILE` (fallback estático; prefira `.dlcookies <site> set` no WhatsApp, que persiste via `lightweight_store`). Instagram: `INSTAGRAM_COOKIES_FILE` (opcional, só arquivo; sem suporte no `.dlcookies`).
 
 Nunca imprima o conteúdo do `.env` real, sessão Baileys, banco ou tokens. Para auditoria, liste somente nomes de variáveis ou o estado `configurada/não configurada`. O `.env.md` pode ser lido como documentação, mas deve permanecer sanitizado.
 
@@ -156,12 +156,12 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 
 - `.spotify` não baixa o áudio do Spotify (DRM) — pega metadata da página de embed pública do Spotify (`open.spotify.com/embed/track/<id>`, sem API key) e baixa o equivalente do YouTube pelo mesmo pipeline do `.song`.
 - `.twitter` via yt-dlp só pega vídeo; tweets só-com-imagem não são suportados (diferença da API antiga).
-- `.instagram`/`igs`/`igsc` usam `ruhend-scraper` (não yt-dlp, não é a API quebrada) — confirmados funcionando, sem mudança.
+- `.instagram`/`igs`/`igsc` usam `lib/instagramDownload.js` (o `ruhend-scraper` morreu: `api.videodropper.app` sem DNS desde 2026-11). `gallery-dl` baixa o post inteiro (fotos, vídeos, carrossel misto) na mesma máquina, na ordem do post; se não vier nenhuma mídia (normalmente redirect pra login), cai pro `yt-dlp`, aceitando só vídeo único confirmado. Nunca envie subconjunto de carrossel nem thumbnail de vídeo como foto. Em 2026-11-07 o IP do `bixos2` recebia redirect de login do Instagram (gallery-dl e yt-dlp); em IP residencial o reel de teste baixou sem cookie. Fotos/carrosséis em IP bloqueado exigem `INSTAGRAM_COOKIES_FILE` ou a futura saída por proxy residencial.
 - `.terabox` **descontinuado**: sem extractor no yt-dlp; todo resolver da comunidade exige cookie `ndus` separado de uma conta Terabox + scraping frágil (ou depende de um Cloudflare Worker de terceiros). Virou stub com `hidden: true` (fora do `.menu`), responde "descontinuado" se chamado direto.
 
 Requisitos no host de produção (já aplicados em `bixos2`, 2026-10-01):
 
-- `yt-dlp` e `ffmpeg` instalados e atualizáveis via `pip install --break-system-packages -U "yt-dlp[default]"` (o extrator do YouTube quebra com frequência; `[default]` traz o `yt-dlp-ejs` necessário pra resolver assinatura).
+- `yt-dlp`, `gallery-dl` e `ffmpeg` instalados e atualizáveis via `pip install --break-system-packages -U "yt-dlp[default]" gallery-dl` (o extrator do YouTube quebra com frequência; `[default]` traz o `yt-dlp-ejs` necessário pra resolver assinatura). Atualizados em 2026-11-07: yt-dlp 2026.10.26, yt-dlp-ejs 0.8.0, gallery-dl 1.32.19.
 - `deno` no PATH do processo (symlink em `/usr/local/bin/deno`) — sem runtime JS o yt-dlp cai pro cliente `visionos`/`web` sem resolver assinatura e YouTube retorna `LOGIN_REQUIRED` em qualquer cliente.
 - `bgutil-ytdlp-pot-provider`: container Docker em `127.0.0.1:4416` (`docker run --name bgutil-provider -d --init --restart unless-stopped -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider`) + plugin pip (`bgutil-ytdlp-pot-provider`).
 
@@ -179,7 +179,7 @@ Mensagens de erro de download são sanitizadas: `sanitizeYtDlpError()`/`formatYt
 
 **Erro transiente "Sign in to confirm you're not a bot" com cookie válido:** confirmado em produção (2026-10-05) que isso acontece esporadicamente mesmo com cookie não expirado e não marcado como inválido — o MESMO vídeo que falhava passava a funcionar segundos depois com o retry manual idêntico. É bloqueio anti-bot transiente do lado do YouTube, não cookie ruim nem bug de código; ~0,6% das tentativas no período observado (7 erros em 1087 downloads bem-sucedidos). `runYtDlpWithRetry()` (`lib/ytdlpCore.js`, usado por `createDownloader`/`createMetadataFetcher`/`createFormatLister`) tenta de novo uma vez (2,5s de espera) quando o `stderr` bate com `TRANSIENT_ERROR_RE` (variantes en/pt/es de "not a bot" + "page needs to be reloaded"), antes de desistir e reportar falha.
 
-**Cookie realmente morto, não transiente (2026-10-09):** um cookie `default` com uma semana de uso (configurado 2026-10-02) passou a falhar em 100% dos vídeos com "Faça login para confirmar que você não é um bot" — inclusive vídeos que funcionavam minutos antes na mesma sessão. Confirmado por eliminação: mesmo request COM e SEM o cookie deu erro idêntico (cookie não autenticava mais nada) e trocar de player client (`android`/`ios`/`mweb`/`tv`/`web`/`web_embedded`) não mudou nada. Expiração silenciosa de sessão do lado do Google, não bug local. `COOKIE_INVALID_RE` em `lib/ytdlp.js` nunca pegou esse caso (só reconhecia a string exata em inglês "account cookies are no longer valid"), então o owner nunca foi alertado — corrigido ampliando o regex pra cobrir a família "not a bot"/"login required" também (en/pt/es), já que `checkInvalid()` só roda quando um cookie foi de fato anexado ao request. Ação quando isso acontecer: `.dlcookies youtube set` de novo com um cookies.txt fresco exportado de um navegador logado.
+**Validade do cookie do YouTube:** só marque um perfil como inválido quando o yt-dlp informar explicitamente `YouTube account cookies are no longer valid`. Uma resposta anti-bot ou `LOGIN_REQUIRED`, mesmo repetida com cookies anexados, não prova expiração: o IP ou a sessão podem sofrer bloqueio. Esses erros continuam elegíveis ao retry existente, mas não alteram `invalid`, `invalidAt` ou `lastAlertAt` nem disparam alerta ao owner. Não revalide automaticamente perfis antigos; o owner pode substituir um cookie expirado com `.dlcookies youtube set`.
 
 Cookies (comando unificado `.dlcookies <site> <ação>`, não um comando por site):
 
@@ -187,7 +187,7 @@ Cookies (comando unificado `.dlcookies <site> <ação>`, não um comando por sit
 - `.dlcookies <site> status` / `list` — mostra perfis e estado (válido/inválido desde quando).
 - `.dlcookies <site> remove <rótulo>` / `clear` (todos).
 - Fallback estático por env var: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE`, `TWITTER_COOKIES_FILE` (usado só se não houver perfil salvo via WhatsApp).
-- YouTube reconhece cookie inválido pela string exata do yt-dlp ("account cookies are no longer valid") OU pela família "not a bot"/"login required" em en/pt/es (ver nota acima, 2026-10-09). TikTok/Twitter usam heurística genérica (hint de login/auth do yt-dlp) — menos precisa, pode ocasionalmente marcar um perfil bom como inválido num erro não relacionado; `.dlcookies <site> set <rótulo>` de novo limpa a flag.
+- YouTube reconhece cookie inválido apenas pela mensagem explícita do yt-dlp (`YouTube account cookies are no longer valid`); anti-bot, login requerido, reload e HTTP 403 não invalidam perfis. TikTok/Twitter mantêm sua heurística genérica de login/auth; `.dlcookies <site> set <rótulo>` de novo limpa a flag.
 - Alerta automático ao owner (`OWNER_NUMBER`) no WhatsApp quando um perfil fica inválido, mencionando o site e o rótulo, cooldown de 6h por perfil.
 
 ## Persistência e arquivos de runtime

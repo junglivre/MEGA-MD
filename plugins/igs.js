@@ -1,6 +1,5 @@
 import config from '../config.js';
-import { igdl } from 'ruhend-scraper';
-import axios from 'axios';
+import { normalizeInstagramUrl, withInstagramMedia } from '../lib/instagramDownload.js';
 import { exec } from 'child_process';
 import fs from 'fs';
 import path from 'path';
@@ -123,51 +122,6 @@ async function convertBufferToStickerWebp(inputBuffer, isAnimated, cropSquare) {
     scheduleDelete(tempInput);
     return finalBuffer;
 }
-async function fetchBufferFromUrl(url) {
-    try {
-        const res = await axios.get(url, {
-            responseType: 'arraybuffer',
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                'Accept': '*/*',
-                'Accept-Encoding': 'identity'
-            },
-            timeout: 30000,
-            maxContentLength: Infinity,
-            maxBodyLength: Infinity,
-            decompress: true,
-            validateStatus: s => s >= 200 && s < 400
-        });
-        return Buffer.from(res.data);
-    }
-    catch (e1) {
-        try {
-            const res = await axios.get(url, {
-                responseType: 'stream',
-                headers: {
-                    'User-Agent': 'Mozilla/5.0 (Windows NT 10.0; Win64; x64) AppleWebKit/537.36',
-                    'Accept': '*/*',
-                    'Accept-Encoding': 'identity'
-                },
-                timeout: 40000,
-                maxContentLength: Infinity,
-                maxBodyLength: Infinity,
-                validateStatus: s => s >= 200 && s < 400
-            });
-            const chunks = [];
-            await new Promise((resolve, reject) => {
-                res.data.on('data', (c) => chunks.push(c));
-                res.data.on('end', resolve);
-                res.data.on('error', reject);
-            });
-            return Buffer.concat(chunks);
-        }
-        catch (e2) {
-            console.error('Both axios download attempts failed:', e1?.message || e1, e2?.message || e2);
-            throw e2;
-        }
-    }
-}
 async function forceMiniSticker(inputBuffer, isVideo, cropSquare) {
     const tmpDir = path.join(process.cwd(), 'temp');
     if (!fs.existsSync(tmpDir))
@@ -231,59 +185,53 @@ export default {
                 }, { quoted: message });
                 return;
             }
+            let instagramUrl;
+            try {
+                instagramUrl = normalizeInstagramUrl(urlMatch[0]);
+            }
+            catch {
+                await sock.sendMessage(chatId, {
+                    text: t('p.igs.usage'),
+                    ...channelInfo
+                }, { quoted: message });
+                return;
+            }
             await sock.sendMessage(chatId, { react: { text: '🔄', key: message.key } });
-            const downloadData = await igdl(urlMatch[0]).catch(() => null);
-            if (!downloadData || !downloadData.data) {
+            try {
+                await withInstagramMedia(instagramUrl, { maxItems: 10 }, async (mediaList) => {
+                    const seenHashes = new Set();
+                    for (let i = 0; i < mediaList.length; i++) {
+                        try {
+                            const media = mediaList[i];
+                            const isVideo = media.type === 'video';
+                            const buffer = await fs.promises.readFile(media.path);
+                            const hash = crypto.createHash('sha1').update(buffer).digest('hex');
+                            if (seenHashes.has(hash))
+                                continue;
+                            seenHashes.add(hash);
+                            let finalSticker = await forceMiniSticker(buffer, isVideo, false);
+                            if (!finalSticker)
+                                finalSticker = await convertBufferToStickerWebp(buffer, isVideo, false);
+                            await sock.sendMessage(chatId, {
+                                sticker: finalSticker,
+                                ...channelInfo
+                            }, { quoted: message });
+                            if (i < mediaList.length - 1) {
+                                await new Promise(r => setTimeout(r, 800));
+                            }
+                        }
+                        catch (perItemErr) {
+                            console.error('IGS item error:', perItemErr);
+                        }
+                    }
+                });
+            }
+            catch (fetchErr) {
+                console.error('IGS fetch error:', fetchErr.message);
                 await sock.sendMessage(chatId, {
                     text: `❌ ${t('p.igs.fetchFailed')}`,
                     ...channelInfo
                 }, { quoted: message });
-                return;
-            }
-            const rawItems = (downloadData?.data || []).filter((m) => m && m.url);
-            const seenUrls = new Set();
-            const items = [];
-            for (const m of rawItems) {
-                if (!seenUrls.has(m.url)) {
-                    seenUrls.add(m.url);
-                    items.push(m);
-                }
-            }
-            if (items.length === 0) {
-                await sock.sendMessage(chatId, {
-                    text: `❌ ${t('p.igs.noMedia')}`,
-                    ...channelInfo
-                }, { quoted: message });
-                return;
-            }
-            const maxItems = Math.min(items.length, 10);
-            const seenHashes = new Set();
-            for (let i = 0; i < maxItems; i++) {
-                try {
-                    const media = items[i];
-                    const mediaUrl = media.url;
-                    const isVideo = (media?.type === 'video') || /\.(mp4|mov|avi|mkv|webm)$/i.test(mediaUrl);
-                    const buffer = await fetchBufferFromUrl(mediaUrl);
-                    const { createHash } = await import('crypto');
-                    const hash = createHash('sha1').update(buffer).digest('hex');
-                    if (seenHashes.has(hash)) {
-                        continue;
-                    }
-                    seenHashes.add(hash);
-                    let finalSticker = await forceMiniSticker(buffer, isVideo, false);
-                    if (!finalSticker)
-                        finalSticker = await convertBufferToStickerWebp(buffer, isVideo, false);
-                    await sock.sendMessage(chatId, {
-                        sticker: finalSticker,
-                        ...channelInfo
-                    }, { quoted: message });
-                    if (i < maxItems - 1) {
-                        await new Promise(r => setTimeout(r, 800));
-                    }
-                }
-                catch (perItemErr) {
-                    console.error('IGS item error:', perItemErr);
-                }
             }
         }
         catch (err) {

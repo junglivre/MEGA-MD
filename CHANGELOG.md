@@ -50,6 +50,8 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.video -custom <link>` pergunta a qualidade numa mensagem separada antes de baixar, listando as alturas `avc1` realmente disponíveis naquele vídeo (não um tier estático); responde com o número da opção ou a altura. Timeout de 3 minutos.
 - `.song` ganhou o alias `musica`.
 - `.play`/`.song`/`.video`: texto de status deixou de prometer "até 30s" (tempo real varia com duração do vídeo, cookie e rede) e virou "pode demorar um pouco".
+- `.instagram`, `.igs` e `.igsc` deixaram o `ruhend-scraper` (dependência removida; a API dele, `api.videodropper.app`, deixou de existir) e passaram a usar `lib/instagramDownload.js`: `gallery-dl` baixa fotos, vídeos e carrosséis na mesma máquina, com fallback de vídeo único via `yt-dlp`. Links `/reels/` e `/<usuário>/p/` passaram a ser aceitos. Cookie opcional em `INSTAGRAM_COOKIES_FILE`.
+- `yt-dlp` atualizado para 2026.10.26 (com `yt-dlp-ejs` 0.8.0) e `gallery-dl` 1.32.19 instalado na produção.
 
 ### Fixed
 
@@ -61,7 +63,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.video`/`.song`: título do YouTube às vezes vinha traduzido pro inglês em canais com metadata multilíngue, porque o yt-dlp manda `hl=en` por padrão quando nenhum `lang` é definido. Forçado `lang=pt` junto do `player_client`.
 - `.play`/`.song`/`.video`/`.spotify`/`.tiktok`/`.twitter`: YouTube ocasionalmente rejeita um request com "Sign in to confirm you're not a bot" mesmo com cookie válido e não expirado (confirmado na produção: o mesmo vídeo que falhou funcionou de cara no retry manual segundos depois — bloqueio anti-bot transiente do lado do YouTube, não um problema de cookie ou de código). `runYtDlpWithRetry()` (`lib/ytdlpCore.js`) agora tenta de novo uma vez (2,5s de espera) quando o erro bate com esse padrão (ou o bug do "page needs to be reloaded") em en/pt/es, antes de reportar falha pro usuário.
 - Modelo padrão do `/vision` (`GROQ_VISION_MODEL`) estava desatualizado como `qwen/qwen3.6-27b`; Groq descontinuou esse ID e passou a servir `qwen/qwen3.8-27b`. Corrigido em `config.js`, `.env.example` e `README.md`.
-- Detecção de cookie do YouTube morto só reconhecia a string exata em inglês ("account cookies are no longer valid"), nunca a família "Sign in to confirm you're not a bot"/"Faça login..." em pt/es — resultado: um cookie que expirou de verdade (confirmado em produção) ficava "válido" pro bot pra sempre, falhando em 100% dos vídeos sem nunca avisar o owner. `COOKIE_INVALID_RE` (`lib/ytdlp.js`) ampliado pra cobrir essa família também.
+- Cookies do YouTube só ficam inválidos quando o yt-dlp informa expiração/rotação de forma explícita; bloqueios anti-bot, login requerido, reload e HTTP 403 deixam de disparar falsos alertas ou alterar a validade do perfil.
 
 ## [2026-08-23]
 

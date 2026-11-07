@@ -158,6 +158,7 @@ Run `vincular` and `desvincular` inside each group that should use the bank. The
 | ![libvips](https://img.shields.io/badge/libvips-latest-blueviolet) | Latest | Image processing |
 | ![libwebp](https://img.shields.io/badge/libwebp-latest-blue) | Latest | Sticker creation |
 | ![yt-dlp](https://img.shields.io/badge/yt--dlp-latest-FF0000?logo=youtube&logoColor=white) | Latest | `.play`/`.song`/`.video`/`.spotify`/`.tiktok`/`.twitter` downloads; install via `pip install -U "yt-dlp[default]"` and keep it updated |
+| ![gallery-dl](https://img.shields.io/badge/gallery--dl-latest-E1306C?logo=instagram&logoColor=white) | Latest | `.instagram`/`.igs`/`.igsc` photos, videos and carousels; install via `pip install -U gallery-dl` |
 | ![Deno](https://img.shields.io/badge/Deno-latest-000000?logo=deno&logoColor=white) | Latest | Required by `yt-dlp` to solve YouTube's JS signature challenge — see [Downloads](#-youtube--tiktok--twitter-downloads-playsongvideospotify-tiktok-twitter) |
 
 > [!WARNING]
@@ -665,6 +666,7 @@ DB_URL=./data/baileys.db
 | `BACKUP_RETENTION` | ❌ | `7` | Number of ZIP backups to keep |
 | `BACKUP_DIR` | ❌ | `backups` | Backup output directory |
 | `YOUTUBE_COOKIES_FILE` / `TIKTOK_COOKIES_FILE` / `TWITTER_COOKIES_FILE` | ❌ | — | Fallback Netscape `cookies.txt` path per site; prefer `.dlcookies <site> set` in WhatsApp instead |
+| `INSTAGRAM_COOKIES_FILE` | ❌ | — | Netscape `cookies.txt` with an Instagram `sessionid`; required for photos/carousels on IPs that Instagram redirects to login |
 
 ---
 
@@ -679,7 +681,9 @@ These commands run [`yt-dlp`](https://github.com/yt-dlp/yt-dlp) locally (no thir
   ln -sf "$HOME/.deno/bin/deno" /usr/local/bin/deno  # so PM2/system services find it too
   ```
 
-`.spotify` doesn't pull audio from Spotify directly (DRM) — it reads public track metadata from Spotify's embed page and downloads the matching YouTube video through the same pipeline as `.song`. `.twitter` only downloads video; image-only tweets aren't supported. `.instagram`/`.igs`/`.igsc` use a separate scraper (`ruhend-scraper`), not yt-dlp — unaffected by anything below. `.terabox` is discontinued (no yt-dlp extractor, and every community resolver needs its own fragile scraping plus a separate Terabox account cookie).
+`.spotify` doesn't pull audio from Spotify directly (DRM) — it reads public track metadata from Spotify's embed page and downloads the matching YouTube video through the same pipeline as `.song`. `.twitter` only downloads video; image-only tweets aren't supported. `.terabox` is discontinued (no yt-dlp extractor, and every community resolver needs its own fragile scraping plus a separate Terabox account cookie).
+
+`.instagram`/`.igs`/`.igsc` share `lib/instagramDownload.js`: [`gallery-dl`](https://github.com/mikf/gallery-dl) extracts and downloads the whole post (photos, videos, mixed carousels) in post order on the same host, then the bot sends the local files. When gallery-dl returns nothing (usually a login redirect), the helper retries with yt-dlp, but accepts only a confirmed single video: it fails instead of sending a carousel's video subset or a video thumbnail as a photo. Anonymous access depends on the host IP; set `INSTAGRAM_COOKIES_FILE` to a logged-in `cookies.txt` for photos/carousels on blocked IPs.
 
 `.video` caps at 1080p and 150MB by default, always forcing `avc1` (H.264) video + `mp4a` (AAC) audio — yt-dlp's default "best" selector picks whatever has the best bitrate at a given height, which on current YouTube is often AV1/Opus; that plays fine in VLC/desktop browsers but not in WhatsApp's mobile player, so the file "works on PC, not on phone". If the H.264/AAC file at the requested height would exceed 150MB, `downloadVideo()` (`lib/ytdlp.js`) steps down through `VIDEO_QUALITY_TIERS` (1080 → 720 → 480 → 360 → 240 → 144) and re-downloads until it fits, checking the real file size each time. Users can request a specific tier directly: `.video <link|query> 720`, or `.video -custom <link>` to get asked interactively — the bot replies with the real avc1 heights available for that video (`getAvailableQualities()`, `lib/ytdlp.js`, `yt-dlp -j --skip-download`), waits for a reply with the option number or the height itself (3-minute timeout, state kept in `plugins/video.js`'s `pendingCustom` map per chat+sender), then downloads at that tier.
 
@@ -705,7 +709,7 @@ YouTube throttles anonymous requests with "Sign in to confirm you're not a bot" 
    - Easiest: install the [Get cookies.txt LOCALLY](https://chromewebstore.google.com/detail/get-cookiestxt-locally/cclelndahbckbenkjhflpdbgdldlbecc) extension, log into the site, and export in Netscape format.
    - No extension: `yt-dlp --cookies-from-browser chrome --cookies cookies.txt` on a machine with Chrome/Firefox logged into the site.
 
-   If yt-dlp reports a cookie as rotated/expired, the bot automatically messages `OWNER_NUMBER` on WhatsApp naming the site and label (at most once every 6 hours per profile). YouTube detects this precisely; TikTok/Twitter use a best-effort generic signal and can occasionally misfire on an unrelated error — `.dlcookies <site> set <label>` again clears the flag.
+   If yt-dlp explicitly reports expired/rotated YouTube account cookies, the bot messages `OWNER_NUMBER` on WhatsApp naming the site and label (at most once every 6 hours per profile). Anti-bot/login challenges, reload errors and HTTP 403 do not mark YouTube cookies invalid or trigger expiration alerts. TikTok/Twitter retain best-effort generic detection; `.dlcookies <site> set <label>` again clears an invalid flag.
 
 > [!NOTE]
 > Known open yt-dlp bug ([#17389](https://github.com/yt-dlp/yt-dlp/issues/17389)): with cookies attached, the default `tv_downgraded` client returns `UNPLAYABLE` for every format (`ERROR: The page needs to be reloaded.`) because `yt-dlp-ejs` can't yet solve that client's signature. This project already works around it (`--extractor-args youtube:player_client=default,web_embedded` in `lib/ytdlp.js`); no action needed on your end, but it's why that specific error shouldn't happen here.
