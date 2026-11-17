@@ -131,7 +131,7 @@ function hasValidSession() {
                 printLog('warning', 'creds.json is missing required fields');
                 return false;
             }
-            if (creds.registered === false) {
+            if (creds.registered === false && !creds.me) {
                 printLog('warning', 'Session not registered. Clearing for fresh pairing...');
                 try {
                     rmSync(path.join(__dirname, 'session'), { recursive: true, force: true });
@@ -345,7 +345,7 @@ async function startQasimDev() {
         };
         QasimDev.public = true;
         QasimDev.serializeM = (m) => smsg(QasimDev, m, store);
-        const isRegistered = state.creds?.registered === true;
+        const isRegistered = state.creds?.registered === true || !!state.creds?.me;
         if (pairingCode && !isRegistered) {
             if (useMobile)
                 throw new Error('Cannot use pairing code with mobile api');
