@@ -2,7 +2,7 @@ import { describe, it, expect, vi, beforeAll, beforeEach } from 'vitest';
 import { createMockSock, createMockMessage } from '../mocks/baileys.js';
 
 vi.mock('../../lib/print.js', () => ({ printMessage: vi.fn(async () => {}), printLog: vi.fn(() => {}) }));
-vi.mock('../../lib/lightweight_store.js', () => ({ default: { getSetting: vi.fn(async () => null), saveSetting: vi.fn(async () => {}), getBotMode: vi.fn(async () => 'public'), incrementMessageCount: vi.fn(async () => {}), messages: {} } }));
+vi.mock('../../lib/lightweight_store.js', () => ({ default: { getSetting: vi.fn(async () => null), getUserSetting: vi.fn(async () => null), saveSetting: vi.fn(async () => {}), getBotMode: vi.fn(async () => 'public'), incrementMessageCount: vi.fn(async () => {}), messages: {} } }));
 vi.mock('../../lib/logger.js', () => ({ writeErrorLog: vi.fn(() => {}) }));
 vi.mock('../../lib/reactions.js', () => ({ addCommandReaction: vi.fn(async () => {}) }));
 vi.mock('../../plugins/autoread.js', () => ({ handleAutoread: vi.fn(async () => {}) }));
