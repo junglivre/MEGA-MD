@@ -80,7 +80,7 @@ catch {
 }
 global.botname = config.botName || "MEGA-MD";
 global.themeemoji = "•";
-const pairingCode = !process.argv.includes("--qr-code");
+const pairingCode = !process.argv.includes("--qr-code") && config.authMethod !== 'qr';
 const useMobile = process.argv.includes("--mobile");
 let rl = null;
 let rlClosed = false;

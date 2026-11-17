@@ -626,6 +626,7 @@ DB_URL=./data/baileys.db
 |---|---|---|---|
 | `SESSION_ID` | ✅ *one of* | — | From mega-pairing.onrender.com |
 | `PAIRING_NUMBER` | ✅ *one of* | — | Phone number for terminal pairing |
+| `AUTH_METHOD` | ❌ | `code` | `code` = pairing code, `qr` = QR in the logs (same as `--qr-code`) |
 | `OWNER_NUMBER` | ✅ | `923051391007` | Your number, no `+` |
 | `OWNER_LID` | ❌ | — | Optional WhatsApp LID for owner checks when group metadata omits the PN |
 | `BOT_NAME` | ❌ | `MEGA-MD` | Bot display name |

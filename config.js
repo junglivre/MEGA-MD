@@ -42,6 +42,8 @@ const config = {
     // Session
     sessionId: process.env.SESSION_ID || '',
     pairingNumber: process.env.PAIRING_NUMBER || '',
+    // 'code' (default) = pairing code, 'qr' = QR in terminal/logs. The --qr-code flag also forces QR.
+    authMethod: String(process.env.AUTH_METHOD || 'code').trim().toLowerCase() === 'qr' ? 'qr' : 'code',
     // Performance
     port: Number(process.env.PORT) || 5000,
     maxStoreMessages: Number(process.env.MAX_STORE_MESSAGES) || 100,
