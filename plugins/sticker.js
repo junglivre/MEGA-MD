@@ -205,11 +205,23 @@ export default {
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t } = context;
         const { targetMessage, mediaMessage } = resolveTarget(message, chatId);
+        const tm = targetMessage.message || {};
+        const viewOnceWrapped = !!(tm.viewOnceMessage || tm.viewOnceMessageV2 || tm.viewOnceMessageV2Extension);
+        if (!mediaMessage && viewOnceWrapped) {
+            await sock.sendMessage(chatId, { text: t('p.sticker.viewOnce'), ...channelInfo }, { quoted: message });
+            return;
+        }
         if (!mediaMessage) {
             await sock.sendMessage(chatId, {
                 text: t('p.sticker.needMedia'),
                 ...channelInfo
             }, { quoted: message });
+            return;
+        }
+        // View-once media is stripped by WhatsApp for linked devices: the quoted copy
+        // carries viewOnce:true but no mediaKey/directPath, so it can never be downloaded.
+        if (mediaMessage.viewOnce && (!mediaMessage.mediaKey || !mediaMessage.directPath)) {
+            await sock.sendMessage(chatId, { text: t('p.sticker.viewOnce'), ...channelInfo }, { quoted: message });
             return;
         }
         const { shape, customAuthor, customPack, emojiTokens, bareText } = parseStickerArgs(args);
