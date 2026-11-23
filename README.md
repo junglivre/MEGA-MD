@@ -626,6 +626,8 @@ DB_URL=./data/baileys.db
 | `SESSION_ID` | ✅ *one of* | — | From mega-pairing.onrender.com |
 | `PAIRING_NUMBER` | ✅ *one of* | — | Phone number for terminal pairing |
 | `AUTH_METHOD` | ❌ | `code` | `code` = pairing code, `qr` = QR in the logs (same as `--qr-code`) |
+| `DEVICE_TYPE` | ❌ | `desktop` | `desktop` = WhatsApp Web companion; `mobile` = Android companion phone, required to receive view-once media. Changing it needs a fresh pairing |
+| `WHATSAPP_TYPE` | ❌ | `normal` | App on the primary phone for `DEVICE_TYPE=mobile`: `normal` or `business`. A Business account only links a Business companion |
 | `OWNER_NUMBER` | ✅ | `923051391007` | Your number, no `+` |
 | `OWNER_LID` | ❌ | — | Optional WhatsApp LID for owner checks when group metadata omits the PN |
 | `BOT_NAME` | ❌ | `MEGA-MD` | Bot display name |

@@ -44,7 +44,7 @@ O servidor carrega `/root/MEGA-MD/.env`. `.env.example` é apenas o modelo segur
 
 Variáveis importantes incluem:
 
-- Identidade e acesso: `BOT_NAME`, `BOT_OWNER`, `OWNER`, `OWNER_NUMBER`, `OWNER_LID`, `PAIRING_NUMBER`, `SESSION_ID`.
+- Identidade e acesso: `BOT_NAME`, `BOT_OWNER`, `OWNER`, `OWNER_NUMBER`, `OWNER_LID`, `PAIRING_NUMBER`, `SESSION_ID`, `AUTH_METHOD`, `DEVICE_TYPE`, `WHATSAPP_TYPE`.
 - Comandos: `PREFIXES`, `COMMAND_MODE`, `DEFAULT_LANGUAGE`, `TIMEZONE`.
 - IA: `GROQ_API_KEY`, `GROQ_CHAT_MODEL`, `GROQ_CHAT_RESPONSE_SIZE`, `GROQ_CHAT_MAX_TOKENS`, `GROQ_CHAT_TEMPERATURE`, `GROQ_CHAT_HISTORY_LIMIT`, `GROQ_CHAT_INSTRUCTIONS`, `GROQ_VISION_MODEL`, `GROQ_VISION_REASONING`, `GROQ_VISION_MAX_TOKENS`, `GROQ_VISION_MAX_CHARS`, `GROQ_TRANSCRIPTION_MODEL`.
 - Persistência: `DB_URL`, `MONGO_URL`, `POSTGRES_URL`, `MYSQL_URL`, `MAX_STORE_MESSAGES`, `STORE_WRITE_INTERVAL`.
@@ -149,6 +149,21 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 - `.s2img` converte figurinha em imagem; aliases: `simage`, `stoimg`, `toimg`.
 - `.s2vid` converte figurinha animada em vídeo; aliases: `svideo`, `stovid`, `tovid`.
 - `tagall` também possui aliases `everyone`, `all`, `everson`, `everton`.
+
+## Tipo de dispositivo e visualização única
+
+`DEVICE_TYPE` define como o bot se registra ao ser vinculado (`lib/deviceProfile.js`, aplicado no início do `index.js`):
+
+- `desktop` (padrão): companion WhatsApp Web (`Browsers.macOS('Chrome')`). O WhatsApp não entrega mídia de visualização única a ele: chega stub ("Message absent from node") ou cópia sem `mediaKey`/`directPath`. `.vo` fica oculto do menu e responde que só funciona como celular; `.sticker` em mídia de visualização única explica o mesmo.
+- `mobile`: companion Android (`Browsers.android('Android')`, `DeviceProps.platformType = ANDROID_PHONE`). Recebe a mídia de visualização única completa, com chave. Confirmado em produção em 2026-11-23: foto de 2160×3840 baixada com tamanho idêntico ao declarado.
+- `WHATSAPP_TYPE` precisa casar com o app do celular principal. Conta Business recusa companion Android comum ("You can only link to another WhatsApp Business app"). O Baileys só anuncia `UserAgent.Platform.ANDROID`; para `business`, `applyDeviceProfile()` aponta essa entrada do enum para `SMB_ANDROID` antes de conectar e confere o payload real de `generateLoginNode()`. Se um upgrade do Baileys mudar esse caminho, o bot falha na inicialização em vez de parear com o app errado. Não substitua isso por patch em `node_modules` (some no próximo `npm install`).
+- Trocar `DEVICE_TYPE` ou `WHATSAPP_TYPE` exige parear de novo: pare o bot, mova `session/` para backup e escaneie o QR. Pareamento como `mobile` foi testado só por QR (`AUTH_METHOD=qr`); por código de pareamento o Baileys envia `companion_platform_id` de Chrome, não testado.
+- Produção (`bixos2`): `DEVICE_TYPE=mobile`, `WHATSAPP_TYPE=business` desde 2026-11-23.
+
+Mesmo como celular, a cópia citada numa resposta traz só `viewOnce: true`, sem chave. `lib/viewOnce.js` (`resolveQuotedViewOnce`) busca o original no `lightweight_store` pelo `stanzaId` da citação e converte de volta os Buffers serializados em JSON. Só funciona para mídia recebida depois que o bot conectou e que ainda está no histórico (70 mensagens por chat no SQLite).
+
+- `.viewonce` / `.vo` / `.obtainvo` / `.visunica` / `.visuunica` (e os antigos `.viewmedia`, `.vv`): reenvia foto, vídeo ou áudio de visualização única como mídia normal, com os bytes originais (sem recompressão); áudio mantém o `ptt` de nota de voz.
+- `.sticker` respondendo mídia de visualização única usa o mesmo original. Áudio não vira figurinha.
 
 ## Downloads (play/song/video, spotify, tiktok via yt-dlp; instagram e twitter via resolvedores públicos)
 

@@ -24,9 +24,13 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - Comando `.s2vid` para converter figurinhas animadas em vídeo; aliases: `svideo`, `stovid`, `tovid`.
 - Comando unificado `dlcookies` (owner) pra gerenciar cookies de download via WhatsApp — `.dlcookies <youtube|tiktok|twitter> set [rótulo]/status/remove <rótulo>/clear`. Múltiplos perfis rotulados por site, revezados (round-robin) a cada download.
 - Alerta automático ao owner no WhatsApp quando um cookie (YouTube/TikTok/Twitter) expira/é revogado, mencionando site e rótulo, com cooldown de 6h por perfil.
+- `DEVICE_TYPE` (`desktop`/`mobile`) e `WHATSAPP_TYPE` (`normal`/`business`) definem como o bot se vincula. Como celular Android (`mobile`), o bot recebe mídia de visualização única com a chave de download; contas Business vinculam como Android Business.
+- `.viewonce` ganhou os aliases `.vo`, `.obtainvo`, `.visunica` e `.visuunica` e passou a reenviar foto, vídeo ou áudio de visualização única como mídia normal, nos bytes originais. Disponível só com `DEVICE_TYPE=mobile`.
+- `.sticker` voltou a criar figurinha de mídia de visualização única com `DEVICE_TYPE=mobile`, usando a mensagem original guardada no histórico.
 
 ### Changed
 
+- Removida a flag `--mobile` do `index.js`; ela só abortava o pareamento por código, porque a API mobile do Baileys não existe mais.
 - Comando `invert` passou a processar fotos e figurinhas estáticas localmente com Sharp, sem arquivos temporários nem API externa.
 - Comando `tobecontinued` passou a usar o overlay transparente fornecido para o meme, mantendo o processamento sépia local.
 - Overlay do `tobecontinued` reduzido e aproximado do canto inferior direito.

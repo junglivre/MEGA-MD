@@ -12,7 +12,7 @@ const __filename = fileURLToPath(import.meta.url);
 const __dirname = dirname(__filename);
 import { smsg } from './lib/myfunc.js';
 import { compileAll } from './lib/compile.js';
-import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, Browsers, jidDecode, jidNormalizedUser, makeCacheableSignalKeyStore, delay } from '@whiskeysockets/baileys';
+import makeWASocket, { useMultiFileAuthState, DisconnectReason, fetchLatestBaileysVersion, jidDecode, jidNormalizedUser, makeCacheableSignalKeyStore, delay } from '@whiskeysockets/baileys';
 import NodeCache from 'node-cache';
 import pino from 'pino';
 import config from './config.js';
@@ -26,6 +26,8 @@ import { channelInfo } from './lib/messageConfig.js';
 import { rememberLidMapping } from './lib/jid.js';
 import commandHandler from './lib/commandHandler.js';
 import { startBackupScheduler } from './lib/backup.js';
+import { applyDeviceProfile } from './lib/deviceProfile.js';
+const deviceProfile = applyDeviceProfile(config);
 store.readFromFile();
 setInterval(() => store.writeToFile(), config.storeWriteInterval || 10000);
 startBackupScheduler();
@@ -81,7 +83,6 @@ catch {
 global.botname = config.botName || "MEGA-MD";
 global.themeemoji = "•";
 const pairingCode = !process.argv.includes("--qr-code") && config.authMethod !== 'qr';
-const useMobile = process.argv.includes("--mobile");
 let rl = null;
 let rlClosed = false;
 if (process.stdin.isTTY && !config.pairingNumber) {
@@ -201,7 +202,7 @@ async function startQasimDev() {
         const QasimDev = makeWASocket({
             version,
             logger: pino({ level: 'silent' }),
-            browser: Browsers.macOS('Chrome'),
+            browser: deviceProfile.browser,
             auth: {
                 creds: state.creds,
                 keys: makeCacheableSignalKeyStore(state.keys, pino({ level: "fatal" }).child({ level: "fatal" })),
@@ -347,8 +348,6 @@ async function startQasimDev() {
         QasimDev.serializeM = (m) => smsg(QasimDev, m, store);
         const isRegistered = state.creds?.registered === true || !!state.creds?.me;
         if (pairingCode && !isRegistered) {
-            if (useMobile)
-                throw new Error('Cannot use pairing code with mobile api');
             let phoneNumberInput;
             if (config.pairingNumber) {
                 phoneNumberInput = config.pairingNumber;
@@ -460,6 +459,7 @@ async function startQasimDev() {
                 printLog('success', `Bot Connected Successfully!`);
                 printLog('info', `Plugins   : ${commandHandler.commands.size}`);
                 printLog('info', `Prefixes   : ${config.prefixes.join(', ')}`);
+                printLog('info', `Device     : ${deviceProfile.label}`);
                 printLog('store', `Backend    : ${store.getStats().backend}`);
                 console.log();
             }

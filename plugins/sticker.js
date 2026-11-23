@@ -5,6 +5,8 @@ import path from 'path';
 import crypto from 'crypto';
 import webp from 'node-webpmux';
 import { getStickerAuthor, getStickerPackName } from '../lib/stickerMetadata.js';
+import config from '../config.js';
+import { resolveQuotedViewOnce } from '../lib/viewOnce.js';
 
 // Matches a single (possibly ZWJ-joined, variation-selector-terminated) emoji,
 // and nothing else in the token.
@@ -204,24 +206,27 @@ export default {
     usage: '.sticker [emoji] [-crop|-full|-rounded|-circle] [-custom author|pack] (reply to image/video/gif/document/sticker)',
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t } = context;
-        const { targetMessage, mediaMessage } = resolveTarget(message, chatId);
-        const tm = targetMessage.message || {};
-        const viewOnceWrapped = !!(tm.viewOnceMessage || tm.viewOnceMessageV2 || tm.viewOnceMessageV2Extension);
-        if (!mediaMessage && viewOnceWrapped) {
-            await sock.sendMessage(chatId, { text: t('p.sticker.viewOnce'), ...channelInfo }, { quoted: message });
-            return;
+        let { targetMessage, mediaMessage } = resolveTarget(message, chatId);
+        // The quoted copy of a view-once media never carries its download key;
+        // on a mobile companion the stored original does (see lib/viewOnce.js).
+        const viewOnce = await resolveQuotedViewOnce(sock, message, chatId);
+        if (viewOnce.status !== 'none') {
+            if (config.deviceType !== 'mobile') {
+                await sock.sendMessage(chatId, { text: t('p.sticker.viewOnce'), ...channelInfo }, { quoted: message });
+                return;
+            }
+            if (viewOnce.status !== 'ok') {
+                await sock.sendMessage(chatId, { text: t(`p.viewonce.${viewOnce.status}`), ...channelInfo }, { quoted: message });
+                return;
+            }
+            targetMessage = { key: viewOnce.key, message: { [viewOnce.kind]: viewOnce.media } };
+            mediaMessage = viewOnce.type === 'audio' ? null : viewOnce.media;
         }
         if (!mediaMessage) {
             await sock.sendMessage(chatId, {
                 text: t('p.sticker.needMedia'),
                 ...channelInfo
             }, { quoted: message });
-            return;
-        }
-        // View-once media is stripped by WhatsApp for linked devices: the quoted copy
-        // carries viewOnce:true but no mediaKey/directPath, so it can never be downloaded.
-        if (mediaMessage.viewOnce && (!mediaMessage.mediaKey || !mediaMessage.directPath)) {
-            await sock.sendMessage(chatId, { text: t('p.sticker.viewOnce'), ...channelInfo }, { quoted: message });
             return;
         }
         const { shape, customAuthor, customPack, emojiTokens, bareText } = parseStickerArgs(args);

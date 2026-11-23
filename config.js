@@ -10,6 +10,14 @@ const visionResponseSizes = new Set(['small', 'medium', 'big']);
 const configuredVisionSize = String(process.env.GROQ_VISION_REASONING || process.env.GROQ_VISION_RESPONSE_SIZE || 'medium').trim().toLowerCase();
 const groqVisionResponseSize = visionResponseSizes.has(configuredVisionSize) ? configuredVisionSize : 'medium';
 const defaultVisionTokens = { small: 300, medium: 600, big: 1000 };
+// A typo here would silently fall back to the default device and break pairing, so say it out loud.
+function parseChoice(name, allowed) {
+    const raw = String(process.env[name] || allowed[0]).trim().toLowerCase();
+    if (allowed.includes(raw))
+        return raw;
+    console.warn(`[config] ${name}="${process.env[name]}" is invalid (use ${allowed.join(' or ')}); using ${allowed[0]}`);
+    return allowed[0];
+}
 const defaultVisionChars = { small: 1200, medium: 2400, big: 4800 };
 const configuredChatTemperature = Number(process.env.GROQ_CHAT_TEMPERATURE);
 const configuredPackName = process.env.PACK_OWNER || process.env.PACKNAME || 'MEGA-MD';
@@ -44,6 +52,13 @@ const config = {
     pairingNumber: process.env.PAIRING_NUMBER || '',
     // 'code' (default) = pairing code, 'qr' = QR in terminal/logs. The --qr-code flag also forces QR.
     authMethod: String(process.env.AUTH_METHOD || 'code').trim().toLowerCase() === 'qr' ? 'qr' : 'code',
+    // Device the bot registers as when it is linked. Changing either value needs a fresh pairing (delete session/).
+    // 'desktop' (default) = WhatsApp Web companion: WhatsApp withholds view-once media from it.
+    // 'mobile' = Android companion phone: receives view-once media with its download key.
+    deviceType: parseChoice('DEVICE_TYPE', ['desktop', 'mobile']),
+    // App on the account's primary phone; only used by 'mobile'. A Business account only accepts a
+    // Business companion phone ("You can only link to another WhatsApp Business app").
+    whatsappType: parseChoice('WHATSAPP_TYPE', ['normal', 'business']),
     // Performance
     port: Number(process.env.PORT) || 5000,
     maxStoreMessages: Number(process.env.MAX_STORE_MESSAGES) || 100,
