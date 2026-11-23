@@ -18,13 +18,15 @@ function isEmojiToken(tok) {
 
 const SILENT_LOGGER = { trace() {}, debug() {}, info() {}, warn() {}, error() {}, child() { return SILENT_LOGGER; } };
 
-const STRETCH_FLAGS = new Set(['-s', '-stretch', '-esticado', '-full']);
-const CIRCLE_FLAGS = new Set(['-rounded', '-circle']);
+const STRETCH_FLAGS = new Set(['-s', '-stretch', '-esticado', '-full', '-f']);
+const CROP_FLAGS = new Set(['-crop', '-c']);
+const CIRCLE_FLAGS = new Set(['-rounded', '-circle', '-r']);
+const CUSTOM_FLAGS = new Set(['-custom', '-p']);
 
-// Recognizes the shape flags (-s/-stretch/-esticado/-full, -rounded/-circle) and
-// -custom <author>|<pack> (branding). Anything else is left over as plain text:
-// emoji tokens become the sticker's categories, remaining text becomes the pack
-// name when renaming an existing sticker.
+// Recognizes the shape flags (-s/-stretch/-esticado/-full/-f, -crop/-c,
+// -rounded/-circle/-r) and -custom/-p <author>|<pack> (branding). Anything else
+// is left over as plain text: emoji tokens become the sticker's categories,
+// remaining text becomes the pack name when renaming an existing sticker.
 export function parseStickerArgs(args) {
     let shape = null;
     let customValue = null;
@@ -35,11 +37,15 @@ export function parseStickerArgs(args) {
             shape = 'stretch';
             continue;
         }
+        if (CROP_FLAGS.has(low)) {
+            shape = 'crop';
+            continue;
+        }
         if (CIRCLE_FLAGS.has(low)) {
             shape = 'circle';
             continue;
         }
-        if (low === '-custom') {
+        if (CUSTOM_FLAGS.has(low)) {
             const parts = [];
             let j = i + 1;
             while (j < args.length && !args[j].startsWith('-')) {
@@ -87,7 +93,7 @@ function buildFilter(shape, animated) {
             // Exactly 512x512: no crop, no border, the image is stretched to fill.
             return `scale=512:512${fps},format=rgba`;
         case 'crop':
-            // Center-crop to a square (used by .igsc through stickercropFromBuffer).
+            // Center-crop to a square, nothing stretched (-crop/-c; also .igsc).
             return `crop=min(iw\\,ih):min(iw\\,ih),scale=512:512${fps},format=rgba`;
         case 'circle':
             // Square crop, then a geq alpha mask carves out a real circle
@@ -202,7 +208,7 @@ export default {
     aliases: ['stik', 's', 'fig', 'figurinha', 'stiker', 'f', 'st'],
     category: 'stickers',
     description: 'Create or edit a sticker from an image, video, GIF or another sticker',
-    usage: '.sticker [emoji] [-s|-stretch|-esticado|-full] [-rounded|-circle] [-custom author|pack] (reply to image/video/gif/document/sticker)',
+    usage: '.sticker [emoji] [-s|-f|-stretch|-esticado|-full] [-c|-crop] [-r|-rounded|-circle] [-p|-custom author|pack] (reply to image/video/gif/document/sticker)',
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t } = context;
         let { targetMessage, mediaMessage } = resolveTarget(message, chatId);

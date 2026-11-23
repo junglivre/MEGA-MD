@@ -32,7 +32,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 ### Changed
 
 - Removida a flag `--mobile` do `index.js`; ela só abortava o pareamento por código, porque a API mobile do Baileys não existe mais.
-- `.sticker`: `-s`, `-stretch`, `-esticado` e `-full` esticam para 512×512 sem cortar (imagem, vídeo e GIF); sem flag a figurinha mantém a proporção original. `-crop` foi removido. `-custom pacote` (sem `|`) troca o pacote e remove o autor. Removidos os aliases `crop`, `stickercrop`, `scrop`, `sticker2`, `stik2`, `s2`, `wm`, `rename`, `renomear`, `take` e `steal`.
+- `.sticker`: `-s`, `-f`, `-stretch`, `-esticado` e `-full` esticam para 512×512 sem cortar (imagem, vídeo e GIF); sem flag a figurinha mantém a proporção original. Novos atalhos de argumento: `-c` (`-crop`), `-r` (`-rounded`/`-circle`) e `-p` (`-custom`). `-custom pacote` (sem `|`) troca o pacote e remove o autor. Removidos os aliases de comando `crop`, `stickercrop`, `scrop`, `sticker2`, `stik2`, `s2`, `wm`, `rename`, `renomear`, `take` e `steal`.
 - Comando `invert` passou a processar fotos e figurinhas estáticas localmente com Sharp, sem arquivos temporários nem API externa.
 - Comando `tobecontinued` passou a usar o overlay transparente fornecido para o meme, mantendo o processamento sépia local.
 - Overlay do `tobecontinued` reduzido e aproximado do canto inferior direito.

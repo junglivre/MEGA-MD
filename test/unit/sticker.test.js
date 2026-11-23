@@ -15,14 +15,16 @@ describe('sticker default shape', () => {
 });
 
 describe('parseStickerArgs', () => {
-    it.each(['-s', '-stretch', '-esticado', '-full', '-FULL'])('%s stretches to 512x512', (flag) => {
+    it.each(['-s', '-f', '-stretch', '-esticado', '-full', '-FULL'])('%s stretches to 512x512', (flag) => {
         expect(parseStickerArgs([flag]).shape).toBe('stretch');
     });
 
-    it('no longer treats -crop as a shape', () => {
-        const parsed = parseStickerArgs(['-crop']);
-        expect(parsed.shape).toBeNull();
-        expect(parsed.bareText).toBe('-crop');
+    it.each([['-crop', 'crop'], ['-c', 'crop'], ['-rounded', 'circle'], ['-circle', 'circle'], ['-r', 'circle']])('%s selects %s', (flag, shape) => {
+        expect(parseStickerArgs([flag]).shape).toBe(shape);
+    });
+
+    it('-p is a short form of -custom', () => {
+        expect(parseStickerArgs(['-p', 'Jung|Memes', '-c'])).toMatchObject({ customAuthor: 'Jung', customPack: 'Memes', shape: 'crop' });
     });
 
     it('-custom without a pipe sets only the pack and removes the author', () => {
