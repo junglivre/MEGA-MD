@@ -1,5 +1,5 @@
 import config from '../config.js';
-import { downloadViewOnce, resolveQuotedViewOnce } from '../lib/viewOnce.js';
+import { downloadViewOnce, resolveQuotedViewOnce, ViewOnceExpiredError } from '../lib/viewOnce.js';
 
 // Only a mobile companion (DEVICE_TYPE=mobile) receives view-once media at all;
 // on desktop WhatsApp withholds it, so the command stays out of the menu there.
@@ -22,10 +22,11 @@ export default {
             const found = await resolveQuotedViewOnce(sock, message, chatId);
             if (found.status !== 'ok') {
                 const key = found.status === 'none' ? 'noMedia' : found.status;
-                return sock.sendMessage(chatId, { text: `⚠️ ${t(`p.viewonce.${key}`)}` }, { quoted: message });
+                const prefix = found.status === 'expired' ? '⌛' : '⚠️';
+                return sock.sendMessage(chatId, { text: `${prefix} ${t(`p.viewonce.${key}`)}` }, { quoted: message });
             }
             // Original bytes, re-sent untouched: the highest quality WhatsApp delivered.
-            const buffer = await downloadViewOnce(found);
+            const buffer = await downloadViewOnce(sock, found);
             const { media } = found;
             if (found.type === 'image') {
                 await sock.sendMessage(chatId, { image: buffer, mimetype: media.mimetype, caption: media.caption || undefined }, { quoted: message });
@@ -43,6 +44,9 @@ export default {
             }
         }
         catch (error) {
+            if (error instanceof ViewOnceExpiredError) {
+                return sock.sendMessage(chatId, { text: `⌛ ${t('p.viewonce.expired')}` }, { quoted: message });
+            }
             console.error('Error in viewonce command:', error.message);
             await sock.sendMessage(chatId, { text: `❌ ${t('p.viewonce.failed')}` }, { quoted: message });
         }

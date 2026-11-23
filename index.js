@@ -26,6 +26,7 @@ import { channelInfo } from './lib/messageConfig.js';
 import { rememberLidMapping } from './lib/jid.js';
 import commandHandler from './lib/commandHandler.js';
 import { startBackupScheduler } from './lib/backup.js';
+import { rememberViewOnce } from './lib/viewOnce.js';
 import { applyDeviceProfile } from './lib/deviceProfile.js';
 const deviceProfile = applyDeviceProfile(config);
 store.readFromFile();
@@ -268,6 +269,11 @@ async function startQasimDev() {
                 rememberLidMapping(update.lidPnMappings);
         });
         store.bind(QasimDev.ev);
+        // Keep view-once download keys for a week (lib/viewOnce.js); the general
+        // store only holds the last 70 messages per chat.
+        QasimDev.ev.on('messages.upsert', ({ messages }) => {
+            rememberViewOnce(messages).catch((error) => printLog('error', `View-once vault: ${error.message}`));
+        });
         QasimDev.ev.on('messages.upsert', async (chatUpdate) => {
             try {
                 const mek = chatUpdate.messages[0];

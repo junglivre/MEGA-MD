@@ -6,7 +6,7 @@ import crypto from 'crypto';
 import webp from 'node-webpmux';
 import { getStickerAuthor, getStickerPackName } from '../lib/stickerMetadata.js';
 import config from '../config.js';
-import { resolveQuotedViewOnce } from '../lib/viewOnce.js';
+import { downloadViewOnce, resolveQuotedViewOnce, ViewOnceExpiredError } from '../lib/viewOnce.js';
 
 // Matches a single (possibly ZWJ-joined, variation-selector-terminated) emoji,
 // and nothing else in the token.
@@ -15,6 +15,8 @@ const EMOJI_RE = /^\p{Extended_Pictographic}(?:\u200d\p{Extended_Pictographic})*
 function isEmojiToken(tok) {
     return EMOJI_RE.test(tok.trim());
 }
+
+const SILENT_LOGGER = { trace() {}, debug() {}, info() {}, warn() {}, error() {}, child() { return SILENT_LOGGER; } };
 
 // Recognizes -crop / -full / -rounded / -circle (shape) and -custom <author>|<pack>
 // (branding). Anything else is left over as plain text: emoji tokens become the
@@ -216,7 +218,8 @@ export default {
                 return;
             }
             if (viewOnce.status !== 'ok') {
-                await sock.sendMessage(chatId, { text: t(`p.viewonce.${viewOnce.status}`), ...channelInfo }, { quoted: message });
+                const prefix = viewOnce.status === 'expired' ? '⌛ ' : '⚠️ ';
+                await sock.sendMessage(chatId, { text: prefix + t(`p.viewonce.${viewOnce.status}`), ...channelInfo }, { quoted: message });
                 return;
             }
             targetMessage = { key: viewOnce.key, message: { [viewOnce.kind]: viewOnce.media } };
@@ -238,10 +241,13 @@ export default {
         const tempInput = path.join(tmpDir, `sticker_in_${stamp}`);
         const tempOutput = path.join(tmpDir, `sticker_out_${stamp}.webp`);
         try {
-            const mediaBuffer = await downloadMediaMessage(targetMessage, 'buffer', {}, {
-                logger: undefined,
-                reuploadRequest: sock.updateMediaMessage
-            });
+            const mediaBuffer = viewOnce.status === 'ok'
+                ? await downloadViewOnce(sock, viewOnce)
+                : await downloadMediaMessage(targetMessage, 'buffer', {}, {
+                    // Baileys logs through ctx.logger before re-uploading expired media.
+                    logger: SILENT_LOGGER,
+                    reuploadRequest: sock.updateMediaMessage
+                });
             if (!mediaBuffer) {
                 await sock.sendMessage(chatId, { text: t('p.sticker.downloadFailed'), ...channelInfo }, { quoted: message });
                 return;
@@ -272,6 +278,10 @@ export default {
             await sock.sendMessage(chatId, { sticker: finalBuffer, ...channelInfo }, { quoted: message });
         }
         catch (error) {
+            if (error instanceof ViewOnceExpiredError) {
+                await sock.sendMessage(chatId, { text: `⌛ ${t('p.viewonce.expired')}`, ...channelInfo }, { quoted: message });
+                return;
+            }
             console.error('Sticker command error:', error);
             await sock.sendMessage(chatId, { text: t('p.sticker.createFailed'), ...channelInfo }, { quoted: message });
         }
