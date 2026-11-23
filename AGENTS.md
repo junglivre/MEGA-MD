@@ -149,6 +149,7 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 - `.s2img` converte figurinha em imagem; aliases: `simage`, `stoimg`, `toimg`.
 - `.s2vid` converte figurinha animada em vídeo; aliases: `svideo`, `stovid`, `tovid`.
 - `tagall` também possui aliases `everyone`, `all`, `everson`, `everton`.
+- `.sticker` (aliases `s`, `f`, `st`, `fig`, `figurinha`, `stik`, `stiker`): sem flag mantém a proporção original (estática só reduz até caber em 512; animada ganha borda transparente até 512×512, porque algumas GIFs falhavam como figurinha animada não quadrada). `-s`/`-stretch`/`-esticado`/`-full` estica para 512×512 sem cortar, inclusive vídeo/GIF. `-rounded`/`-circle` recorta em círculo. Não existe mais `-crop`. `-custom pacote` troca só o pacote e remove o autor; `-custom autor|pacote` define os dois. Emojis viram as categorias da figurinha. Respondendo a uma figurinha sem flag de formato, só reescreve os metadados.
 
 ## Tipo de dispositivo e visualização única
 

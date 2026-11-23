@@ -18,25 +18,24 @@ function isEmojiToken(tok) {
 
 const SILENT_LOGGER = { trace() {}, debug() {}, info() {}, warn() {}, error() {}, child() { return SILENT_LOGGER; } };
 
-// Recognizes -crop / -full / -rounded / -circle (shape) and -custom <author>|<pack>
-// (branding). Anything else is left over as plain text: emoji tokens become the
-// sticker's category, remaining text becomes the legacy ".take <packname>" style
-// bare pack name when replying to an existing sticker.
-function parseStickerArgs(args) {
+const STRETCH_FLAGS = new Set(['-s', '-stretch', '-esticado', '-full']);
+const CIRCLE_FLAGS = new Set(['-rounded', '-circle']);
+
+// Recognizes the shape flags (-s/-stretch/-esticado/-full, -rounded/-circle) and
+// -custom <author>|<pack> (branding). Anything else is left over as plain text:
+// emoji tokens become the sticker's categories, remaining text becomes the pack
+// name when renaming an existing sticker.
+export function parseStickerArgs(args) {
     let shape = null;
     let customValue = null;
     const rest = [];
     for (let i = 0; i < args.length; i++) {
         const low = args[i].toLowerCase();
-        if (low === '-crop') {
-            shape = 'crop';
+        if (STRETCH_FLAGS.has(low)) {
+            shape = 'stretch';
             continue;
         }
-        if (low === '-full') {
-            shape = 'full';
-            continue;
-        }
-        if (low === '-rounded' || low === '-circle') {
+        if (CIRCLE_FLAGS.has(low)) {
             shape = 'circle';
             continue;
         }
@@ -53,17 +52,18 @@ function parseStickerArgs(args) {
         }
         rest.push(args[i]);
     }
+    // customAuthor: null = use the default author; '' = no author at all.
     let customAuthor = null;
     let customPack = null;
     if (customValue) {
         const idx = customValue.indexOf('|');
         if (idx === -1) {
-            // No "author|pack" separator given: a lone -custom value sets the pack
-            // name only (the part people actually see in WhatsApp's sticker tray).
+            // "-custom Pack" sets the pack and drops the author line.
             customPack = customValue.trim() || null;
+            customAuthor = '';
         }
         else {
-            customAuthor = customValue.slice(0, idx).trim() || null;
+            customAuthor = customValue.slice(0, idx).trim();
             customPack = customValue.slice(idx + 1).trim() || null;
         }
     }
@@ -78,33 +78,35 @@ function runFfmpeg(cmd) {
     });
 }
 
-// Builds the -vf filter chain for a given shape. All of them land on a 512x512
-// canvas with a transparent (rgba) background, matching what every other sticker
-// plugin in this bot already outputs.
+// Builds the -vf filter chain for a given shape. Every result fits in 512x512
+// with a transparent (rgba) background.
 function buildFilter(shape, animated) {
     const fps = animated ? ',fps=15' : '';
     switch (shape) {
-        case 'full':
-            // Preserve the original aspect ratio, no crop and no padding - just
-            // scaled down to fit. No distortion, but the result may not be square.
-            return `scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease${fps},format=rgba`;
+        case 'stretch':
+            // Exactly 512x512: no crop, no border, the image is stretched to fill.
+            return `scale=512:512${fps},format=rgba`;
         case 'crop':
-            // Center-crop to a square first, so nothing gets stretched.
+            // Center-crop to a square (used by .igsc through stickercropFromBuffer).
             return `crop=min(iw\\,ih):min(iw\\,ih),scale=512:512${fps},format=rgba`;
         case 'circle':
-            // Same square crop, then a geq alpha mask carves out a real circle
+            // Square crop, then a geq alpha mask carves out a real circle
             // (transparent corners), instead of just a square thumbnail.
             return `crop=min(iw\\,ih):min(iw\\,ih),scale=512:512${fps},format=rgba,geq=r='r(X,Y)':g='g(X,Y)':b='b(X,Y)':a='if(lte(pow(X-256\\,2)+pow(Y-256\\,2)\\,65536)\\,255\\,0)'`;
-        default:
-            // "pad": scale down preserving aspect ratio, then pad with a
-            // transparent border up to 512x512. The safe default - never
-            // stretches and never crops anything out.
+        case 'padded':
+            // Original proportions on a transparent 512x512 canvas. Used for
+            // animated "original": some GIFs fail as non-square animated stickers.
             return `scale=512:512:force_original_aspect_ratio=decrease${fps},format=rgba,pad=512:512:(ow-iw)/2:(oh-ih)/2:color=#00000000`;
+        default:
+            // "original": original proportions, only scaled down to fit 512.
+            return `scale='min(512,iw)':'min(512,ih)':force_original_aspect_ratio=decrease${fps},format=rgba`;
     }
 }
 
+// No shape flag keeps the original proportions (no crop, no stretch); animated
+// media gets an invisible transparent border instead of a non-square canvas.
 export function getStickerShape(shape, animated) {
-    return shape || (animated ? 'normal' : 'full');
+    return shape || (animated ? 'padded' : 'original');
 }
 
 async function convertToSticker(inputPath, outputPath, shape, animated) {
@@ -197,15 +199,10 @@ function resolveTarget(message, chatId) {
 
 export default {
     command: 'sticker',
-    aliases: [
-        // legacy commands this one replaces - kept working exactly as before
-        'stik', 's', 'sticker2', 's2', 'stik2', 'crop', 'stickercrop', 'scrop', 'take', 'steal', 'wm',
-        // extra friendly aliases
-        'fig', 'figurinha', 'stiker', 'f', 'st', 'rename', 'renomear'
-    ],
+    aliases: ['stik', 's', 'fig', 'figurinha', 'stiker', 'f', 'st'],
     category: 'stickers',
     description: 'Create or edit a sticker from an image, video, GIF or another sticker',
-    usage: '.sticker [emoji] [-crop|-full|-rounded|-circle] [-custom author|pack] (reply to image/video/gif/document/sticker)',
+    usage: '.sticker [emoji] [-s|-stretch|-esticado|-full] [-rounded|-circle] [-custom author|pack] (reply to image/video/gif/document/sticker)',
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t } = context;
         let { targetMessage, mediaMessage } = resolveTarget(message, chatId);
@@ -252,7 +249,7 @@ export default {
                 await sock.sendMessage(chatId, { text: t('p.sticker.downloadFailed'), ...channelInfo }, { quoted: message });
                 return;
             }
-            const author = getStickerAuthor(customAuthor);
+            const author = customAuthor === null ? getStickerAuthor() : customAuthor;
             let finalBuffer;
             if (isExistingSticker && !shape) {
                 // Rename-only mode (what .take used to do): rewrite the EXIF pack/author
