@@ -52,6 +52,8 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.play`/`.song`/`.video`: texto de status deixou de prometer "até 30s" (tempo real varia com duração do vídeo, cookie e rede) e virou "pode demorar um pouco".
 - `.instagram`, `.igs` e `.igsc` deixaram o `ruhend-scraper` (dependência removida; a API dele, `api.videodropper.app`, deixou de existir) e passaram a usar `lib/instagramDownload.js`: `gallery-dl` baixa fotos, vídeos e carrosséis na mesma máquina, com fallback de vídeo único via `yt-dlp`. Links `/reels/` e `/<usuário>/p/` passaram a ser aceitos. Cookie opcional em `INSTAGRAM_COOKIES_FILE`.
 - `yt-dlp` atualizado para 2026.10.26 (com `yt-dlp-ejs` 0.8.0) e `gallery-dl` 1.32.19 instalado na produção.
+- `.instagram`, `.igs` e `.igsc` passaram a resolver posts pelo serviço público OGInstagram (`oginstagram.com`) em vez de `gallery-dl`/`yt-dlp`, que caíam no login do Instagram a partir do IP do servidor. Fotos, vídeos e carrosséis mistos voltam a funcionar sem cookies; `INSTAGRAM_COOKIES_FILE` foi removido.
+- `.twitter` passou a usar a API pública do FxTwitter (`api.fxtwitter.com`) em vez do `yt-dlp` e agora baixa fotos e GIFs além de vídeo, escolhendo o maior MP4 que cabe em ~100 MB. Links `fixupx.com`/`fxtwitter.com`/`vxtwitter.com` também são aceitos. Twitter saiu do `.dlcookies` e `TWITTER_COOKIES_FILE` foi removido.
 
 ### Fixed
 

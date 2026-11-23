@@ -50,7 +50,7 @@ Variáveis importantes incluem:
 - Persistência: `DB_URL`, `MONGO_URL`, `POSTGRES_URL`, `MYSQL_URL`, `MAX_STORE_MESSAGES`, `STORE_WRITE_INTERVAL`.
 - Serviços: `LASTFM_API_KEY`, `QUOTE_API_URL`, `REMOVEBG_KEY`, `GIPHY_API_KEY`.
 - Operação: `PORT`, `BACKUP_ENABLED`, `BACKUP_INTERVAL`, `BACKUP_RETENTION`, `BACKUP_DIR`, `CLEANUP_INTERVAL`.
-- Downloads via yt-dlp: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE`, `TWITTER_COOKIES_FILE` (fallback estático; prefira `.dlcookies <site> set` no WhatsApp, que persiste via `lightweight_store`). Instagram: `INSTAGRAM_COOKIES_FILE` (opcional, só arquivo; sem suporte no `.dlcookies`).
+- Downloads via yt-dlp: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE` (fallback estático; prefira `.dlcookies <site> set` no WhatsApp, que persiste via `lightweight_store`). Instagram e Twitter/X não usam cookies.
 
 Nunca imprima o conteúdo do `.env` real, sessão Baileys, banco ou tokens. Para auditoria, liste somente nomes de variáveis ou o estado `configurada/não configurada`. O `.env.md` pode ser lido como documentação, mas deve permanecer sanitizado.
 
@@ -150,18 +150,19 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 - `.s2vid` converte figurinha animada em vídeo; aliases: `svideo`, `stovid`, `tovid`.
 - `tagall` também possui aliases `everyone`, `all`, `everson`, `everton`.
 
-## Downloads via yt-dlp (play/song/video, spotify, tiktok, twitter)
+## Downloads (play/song/video, spotify, tiktok via yt-dlp; instagram e twitter via resolvedores públicos)
 
-`.play`, `.song`, `.video`, `.spotify`, `.tiktok` e `.twitter` chamavam APIs HTTP de terceiros (`api.qasimdev.dpdns.org`, `discardapi.*`) que foram quebrando (redirect pra anúncios, ou simplesmente instáveis). Todos migrados pra `yt-dlp` local: motor compartilhado em `lib/ytdlpCore.js`, especializado por site em `lib/ytdlp.js` (YouTube), `lib/tiktokDownload.js` e `lib/twitterDownload.js`. Grava em `temp/`, envia o buffer direto pelo Baileys, apaga o arquivo depois.
+`.play`, `.song`, `.video`, `.spotify` e `.tiktok` chamavam APIs HTTP de terceiros (`api.qasimdev.dpdns.org`, `discardapi.*`) que foram quebrando (redirect pra anúncios, ou simplesmente instáveis). Migrados pra `yt-dlp` local: motor compartilhado em `lib/ytdlpCore.js`, especializado por site em `lib/ytdlp.js` (YouTube) e `lib/tiktokDownload.js`. Grava em `temp/`, envia o buffer direto pelo Baileys, apaga o arquivo depois.
 
 - `.spotify` não baixa o áudio do Spotify (DRM) — pega metadata da página de embed pública do Spotify (`open.spotify.com/embed/track/<id>`, sem API key) e baixa o equivalente do YouTube pelo mesmo pipeline do `.song`.
-- `.twitter` via yt-dlp só pega vídeo; tweets só-com-imagem não são suportados (diferença da API antiga).
-- `.instagram`/`igs`/`igsc` usam `lib/instagramDownload.js` (o `ruhend-scraper` morreu: `api.videodropper.app` sem DNS desde 2026-11). `gallery-dl` baixa o post inteiro (fotos, vídeos, carrossel misto) na mesma máquina, na ordem do post; se não vier nenhuma mídia (normalmente redirect pra login), cai pro `yt-dlp`, aceitando só vídeo único confirmado. Nunca envie subconjunto de carrossel nem thumbnail de vídeo como foto. Em 2026-11-07 o IP do `bixos2` recebia redirect de login do Instagram (gallery-dl e yt-dlp); em IP residencial o reel de teste baixou sem cookie. Fotos/carrosséis em IP bloqueado exigem `INSTAGRAM_COOKIES_FILE` ou a futura saída por proxy residencial.
+- `.twitter` usa a API pública do FxTwitter (`api.fxtwitter.com/2/status/<id>`, projeto FxEmbed) em `lib/twitterDownload.js`: fotos (`?name=orig`), vídeos (MP4 H.264 de maior bitrate cujo tamanho estimado cabe em 100 MB) e GIFs, na ordem do post. Aceita links de `x.com`, `twitter.com`, `mobile.`, `fixupx.com`, `fxtwitter.com`, `vxtwitter.com`/`fixvx.com`. Sem cookies e sem yt-dlp; limite de 1000 req/min por IP.
+- `.instagram`/`igs`/`igsc` usam o serviço público OGInstagram (`oginstagram.com`) em `lib/instagramDownload.js`. O IP do `bixos2` cai no login do Instagram (gallery-dl/yt-dlp, confirmado em 2026-11-07); o OGInstagram busca pelo próprio pool de saída. Fluxo: `GET oginstagram.com/{p|reel}/<código>/50` com `Accept: application/activity+json` devolve o último item, e o índice no `id` (o serviço limita ao tamanho do post) revela o total; os demais itens vêm de `/<código>/<n>`. Cada anexo aponta pra `oginstagram.com/offload/...`, que redireciona pro CDN público do Instagram, de onde o bot baixa. Não use o ActivityPub sem índice: ele devolve só o 1º vídeo ou até 4 fotos de um carrossel. Fotos vêm no tamanho de visitante (ex.: 584×584). Posts privados/restritos não são suportados.
+- `lib/remoteMedia.js` baixa as URLs resolvidas de Instagram/Twitter: exige host final no CDN (`cdninstagram.com`/`fbcdn.net`/`oginstagram.com` ou `twimg.com`), limite de 150 MiB por lote, confere os bytes reais (JPEG/PNG/WebP/MP4) e rejeita imagem em slot de vídeo (thumbnail). Arquivos só existem dentro do callback `consume` e são apagados depois.
 - `.terabox` **descontinuado**: sem extractor no yt-dlp; todo resolver da comunidade exige cookie `ndus` separado de uma conta Terabox + scraping frágil (ou depende de um Cloudflare Worker de terceiros). Virou stub com `hidden: true` (fora do `.menu`), responde "descontinuado" se chamado direto.
 
 Requisitos no host de produção (já aplicados em `bixos2`, 2026-10-01):
 
-- `yt-dlp`, `gallery-dl` e `ffmpeg` instalados e atualizáveis via `pip install --break-system-packages -U "yt-dlp[default]" gallery-dl` (o extrator do YouTube quebra com frequência; `[default]` traz o `yt-dlp-ejs` necessário pra resolver assinatura). Atualizados em 2026-11-07: yt-dlp 2026.10.26, yt-dlp-ejs 0.8.0, gallery-dl 1.32.19.
+- `yt-dlp` e `ffmpeg` instalados e atualizáveis via `pip install --break-system-packages -U "yt-dlp[default]"` (o extrator do YouTube quebra com frequência; `[default]` traz o `yt-dlp-ejs` necessário pra resolver assinatura). Atualizados em 2026-11-07: yt-dlp 2026.10.26, yt-dlp-ejs 0.8.0.
 - `deno` no PATH do processo (symlink em `/usr/local/bin/deno`) — sem runtime JS o yt-dlp cai pro cliente `visionos`/`web` sem resolver assinatura e YouTube retorna `LOGIN_REQUIRED` em qualquer cliente.
 - `bgutil-ytdlp-pot-provider`: container Docker em `127.0.0.1:4416` (`docker run --name bgutil-provider -d --init --restart unless-stopped -p 127.0.0.1:4416:4416 brainicism/bgutil-ytdlp-pot-provider`) + plugin pip (`bgutil-ytdlp-pot-provider`).
 
@@ -183,11 +184,11 @@ Mensagens de erro de download são sanitizadas: `sanitizeYtDlpError()`/`formatYt
 
 Cookies (comando unificado `.dlcookies <site> <ação>`, não um comando por site):
 
-- `.dlcookies youtube|tiktok|twitter set [rótulo]` (`strictOwnerOnly: true` — só o owner principal, nem sudo pode; checado via `isOwnerOnlyInContext`) — responda a um `.txt` ou cole o conteúdo. Perfis rotulados, revezados (round-robin) a cada download pra espalhar carga entre contas. Configuração é **global** (`SETTINGS_SCOPE = 'global'` em `lib/ytdlpCore.js`, nunca por `chatId`) — o cookie vale pra `.play`/`.song`/`.video`/`.spotify`/`.tiktok`/`.twitter` em qualquer grupo ou PV, não só no chat onde foi configurado.
+- `.dlcookies youtube|tiktok set [rótulo]` (`strictOwnerOnly: true` — só o owner principal, nem sudo pode; checado via `isOwnerOnlyInContext`) — responda a um `.txt` ou cole o conteúdo. Perfis rotulados, revezados (round-robin) a cada download pra espalhar carga entre contas. Configuração é **global** (`SETTINGS_SCOPE = 'global'` em `lib/ytdlpCore.js`, nunca por `chatId`) — o cookie vale pra `.play`/`.song`/`.video`/`.spotify`/`.tiktok` em qualquer grupo ou PV, não só no chat onde foi configurado.
 - `.dlcookies <site> status` / `list` — mostra perfis e estado (válido/inválido desde quando).
 - `.dlcookies <site> remove <rótulo>` / `clear` (todos).
-- Fallback estático por env var: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE`, `TWITTER_COOKIES_FILE` (usado só se não houver perfil salvo via WhatsApp).
-- YouTube reconhece cookie inválido apenas pela mensagem explícita do yt-dlp (`YouTube account cookies are no longer valid`); anti-bot, login requerido, reload e HTTP 403 não invalidam perfis. TikTok/Twitter mantêm sua heurística genérica de login/auth; `.dlcookies <site> set <rótulo>` de novo limpa a flag.
+- Fallback estático por env var: `YOUTUBE_COOKIES_FILE`, `TIKTOK_COOKIES_FILE` (usado só se não houver perfil salvo via WhatsApp).
+- YouTube reconhece cookie inválido apenas pela mensagem explícita do yt-dlp (`YouTube account cookies are no longer valid`); anti-bot, login requerido, reload e HTTP 403 não invalidam perfis. TikTok mantém sua heurística genérica de login/auth; `.dlcookies <site> set <rótulo>` de novo limpa a flag.
 - Alerta automático ao owner (`OWNER_NUMBER`) no WhatsApp quando um perfil fica inválido, mencionando o site e o rótulo, cooldown de 6h por perfil.
 
 ## Persistência e arquivos de runtime
