@@ -160,10 +160,13 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 - Trocar `DEVICE_TYPE` ou `WHATSAPP_TYPE` exige parear de novo: pare o bot, mova `session/` para backup e escaneie o QR. Pareamento como `mobile` foi testado só por QR (`AUTH_METHOD=qr`); por código de pareamento o Baileys envia `companion_platform_id` de Chrome, não testado.
 - Produção (`bixos2`): `DEVICE_TYPE=mobile`, `WHATSAPP_TYPE=business` desde 2026-11-23.
 
-Mesmo como celular, a cópia citada numa resposta traz só `viewOnce: true`, sem chave. `lib/viewOnce.js` (`resolveQuotedViewOnce`) busca o original no `lightweight_store` pelo `stanzaId` da citação e converte de volta os Buffers serializados em JSON. Só funciona para mídia recebida depois que o bot conectou e que ainda está no histórico (70 mensagens por chat no SQLite).
+Mesmo como celular, a cópia citada numa resposta traz só `viewOnce: true`, sem chave. Por isso `lib/viewOnce.js` guarda a chave de toda mídia de visualização única recebida (`rememberViewOnce`, ligado em `messages.upsert` no `index.js`) num cofre por tempo, não por quantidade: setting global `viewOnceVault` do `lightweight_store`, chaveado pelo id da mensagem, só com os campos necessários para baixar e reenviar (sem thumbnail). Após 7 dias (`RETENTION_MS`) a chave é apagada e fica uma lápide; o comando responde "expirou". Lápides somem após 30 dias. `resolveQuotedViewOnce` consulta o cofre pelo `stanzaId` da citação e, para mídias anteriores ao cofre, cai no store geral (70 mensagens por chat). Se o CDN responder 404/410, `downloadViewOnce` pede re-upload ao celular uma vez; se falhar, também responde "expirou".
+
+Mídia de visualização única de antes do vínculo não é recuperável. Em 2026-11-23: o histórico sincronizado no pareamento trouxe 75 mensagens de visualização única, todas sem chave; e `requestPlaceholderResend` para as 3 mais recentes (do mesmo dia) foi enviado ao celular, que não respondeu em 30 s.
 
 - `.viewonce` / `.vo` / `.obtainvo` / `.visunica` / `.visuunica` (e os antigos `.viewmedia`, `.vv`): reenvia foto, vídeo ou áudio de visualização única como mídia normal, com os bytes originais (sem recompressão); áudio mantém o `ptt` de nota de voz.
 - `.sticker` respondendo mídia de visualização única usa o mesmo original. Áudio não vira figurinha.
+- `.sticker` passa `ctx.logger` ao `downloadMediaMessage`; sem logger, o Baileys quebrava ao pedir re-upload de mídia expirada e a figurinha falhava.
 
 ## Downloads (play/song/video, spotify, tiktok via yt-dlp; instagram e twitter via resolvedores públicos)
 

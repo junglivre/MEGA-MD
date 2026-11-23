@@ -27,6 +27,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `DEVICE_TYPE` (`desktop`/`mobile`) e `WHATSAPP_TYPE` (`normal`/`business`) definem como o bot se vincula. Como celular Android (`mobile`), o bot recebe mídia de visualização única com a chave de download; contas Business vinculam como Android Business.
 - `.viewonce` ganhou os aliases `.vo`, `.obtainvo`, `.visunica` e `.visuunica` e passou a reenviar foto, vídeo ou áudio de visualização única como mídia normal, nos bytes originais. Disponível só com `DEVICE_TYPE=mobile`.
 - `.sticker` voltou a criar figurinha de mídia de visualização única com `DEVICE_TYPE=mobile`, usando a mensagem original guardada no histórico.
+- Mídias de visualização única recebidas ficam guardadas por 7 dias (só a chave de download), independente do limite de 70 mensagens por chat. Depois disso `.vo` e `.sticker` respondem que a mídia expirou.
 
 ### Changed
 
@@ -61,6 +62,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 
 ### Fixed
 
+- `.sticker` falhava ao baixar mídia antiga que o WhatsApp precisava reenviar: o Baileys chamava `ctx.logger`, que vinha `undefined`.
 - Alerta de cookie expirado agora verifica se o `OWNER_NUMBER` corresponde a uma conta do WhatsApp e só inicia o cooldown após o envio ser aceito; falhas de destino/envio continuam elegíveis para nova tentativa.
 - A sessão Baileys deixa de remover chaves Signal em uso, preservando a capacidade de decifrar mensagens após reinícios.
 - Plugin `chatbot` deixa de usar atribuição lógica incompatível com o verificador de sintaxe carregado na inicialização.
