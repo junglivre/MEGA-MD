@@ -29,6 +29,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.sticker` voltou a criar figurinha de mídia de visualização única com `DEVICE_TYPE=mobile`, usando a mensagem original guardada no histórico.
 - Mídias de visualização única recebidas ficam guardadas por 7 dias (só a chave de download), independente do limite de 70 mensagens por chat. Depois disso `.vo` e `.sticker` respondem que a mídia expirou.
 - Figurinhas com som: `.sticker` em vídeo com áudio gera figurinha com som (áudio Opus dos mesmos 6 s da animação); respondendo a uma figurinha com som, mantém o áudio. `-sa`, `-semaudio`, `-na` e `-noaudio` geram sem som. O bot também passou a receber figurinhas com som em vez de mensagem vazia (`lib/protoExtensions.js` ensina ao Baileys os campos novos do protocolo).
+- Comando `.som` (aliases `.figsom`, `.addsom`): adiciona áudio a imagem, figurinha, GIF ou vídeo em dois passos (responde a mídia com `.som` e manda o áudio, ou o contrário). `.som 5` começa o áudio no segundo 5. Até 60 s de áudio.
 
 ### Changed
 
@@ -64,6 +65,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 
 ### Fixed
 
+- Figurinhas com som eram gravadas vazias no histórico de mensagens: a conversão para JSON do Baileys não conhecia o campo do áudio.
 - `.sticker` falhava ao baixar mídia antiga que o WhatsApp precisava reenviar: o Baileys chamava `ctx.logger`, que vinha `undefined`.
 - Alerta de cookie expirado agora verifica se o `OWNER_NUMBER` corresponde a uma conta do WhatsApp e só inicia o cooldown após o envio ser aceito; falhas de destino/envio continuam elegíveis para nova tentativa.
 - A sessão Baileys deixa de remover chaves Signal em uso, preservando a capacidade de decifrar mensagens após reinícios.

@@ -38,6 +38,13 @@ describe('sound sticker protobuf', () => {
         expect(unwrapSoundSticker(reply.extendedTextMessage.contextInfo.quotedMessage)?.audio?.seconds).toBe(4);
     });
 
+    it('keeps the clip when the message store saves it as JSON and reloads it', () => {
+        // lightweight_store persists messages with JSON.stringify (proto toJSON).
+        const received = proto.Message.decode(proto.Message.encode(captured).finish());
+        const reloaded = proto.Message.fromObject(JSON.parse(JSON.stringify(received)));
+        expect(unwrapSoundSticker(reloaded)?.audio).toMatchObject({ mimetype: 'audio/ogg; codecs=opus', seconds: 4 });
+    });
+
     it('does not treat a regular sticker as a sound sticker', () => {
         expect(unwrapSoundSticker({ stickerMessage: { mimetype: 'image/webp' } })).toBeNull();
     });
