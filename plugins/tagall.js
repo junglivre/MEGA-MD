@@ -6,6 +6,8 @@ export default {
     usage: '.tagall',
     groupOnly: true,
     adminOnly: true,
+    // Mentions work without admin rights; the owner may tag everyone even when the bot isn't admin.
+    ownerBypassesBotAdmin: true,
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t } = context;
         try {

@@ -101,6 +101,43 @@ describe('handleMessages', () => {
     it('does not crash on malformed message structure', async () => {
         await expect(handleMessages(sock, { messages: [{ key: {} }], type: 'notify' })).resolves.not.toThrow();
     });
+
+    describe('adminOnly commands when the bot is not a group admin', () => {
+        // In the mock group the bot (923000000000) is not a participant, so it is not admin.
+        const OWNER = '923001234567@s.whatsapp.net';
+        const GROUP_ADMIN = '923009999999@s.whatsapp.net';
+        let ran;
+
+        beforeAll(async () => {
+            const { default: handler } = await import('../../lib/commandHandler.js');
+            for (const [command, ownerBypassesBotAdmin] of [['waivedtag', true], ['strictadmin', false]]) {
+                handler.registerCommand({
+                    command, aliases: [], category: 'test', description: 'test',
+                    groupOnly: true, adminOnly: true, ownerBypassesBotAdmin,
+                    async handler() { ran.push(command); }
+                });
+            }
+        });
+        beforeEach(() => { ran = []; });
+
+        const send = (text, senderId) => handleMessages(sock, { messages: [createMockMessage({ text, isGroup: true, senderId })], type: 'notify' });
+
+        it('lets the owner run a command that waives the bot-admin requirement', async () => {
+            await send('.waivedtag', OWNER);
+            expect(ran).toEqual(['waivedtag']);
+        });
+
+        it('still requires bot admin for a group admin who is not the owner', async () => {
+            await send('.waivedtag', GROUP_ADMIN);
+            expect(ran).toEqual([]);
+            expect(sock._lastMessage()?.content?.text).toBeTruthy();
+        });
+
+        it('still requires bot admin from the owner on commands without the waiver', async () => {
+            await send('.strictadmin', OWNER);
+            expect(ran).toEqual([]);
+        });
+    });
 });
 
 describe('handleGroupParticipantUpdate', () => {
