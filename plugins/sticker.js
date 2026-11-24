@@ -7,6 +7,7 @@ import webp from 'node-webpmux';
 import { getStickerAuthor, getStickerPackName } from '../lib/stickerMetadata.js';
 import config from '../config.js';
 import { downloadViewOnce, resolveQuotedViewOnce, ViewOnceExpiredError } from '../lib/viewOnce.js';
+import { downloadStickerAudio, extractStickerAudio, sendSoundSticker, unwrapSoundSticker } from '../lib/soundSticker.js';
 
 // Matches a single (possibly ZWJ-joined, variation-selector-terminated) emoji,
 // and nothing else in the token.
@@ -22,19 +23,26 @@ const STRETCH_FLAGS = new Set(['-s', '-stretch', '-esticado', '-full', '-f']);
 const CROP_FLAGS = new Set(['-crop', '-c']);
 const CIRCLE_FLAGS = new Set(['-rounded', '-circle', '-r']);
 const CUSTOM_FLAGS = new Set(['-custom', '-p']);
+const NO_AUDIO_FLAGS = new Set(['-sa', '-semaudio', '-na', '-noaudio']);
 
 // Recognizes the shape flags (-s/-stretch/-esticado/-full/-f, -crop/-c,
-// -rounded/-circle/-r) and -custom/-p <author>|<pack> (branding). Anything else
-// is left over as plain text: emoji tokens become the sticker's categories,
-// remaining text becomes the pack name when renaming an existing sticker.
+// -rounded/-circle/-r), -sa/-semaudio/-na/-noaudio (no sound) and
+// -custom/-p <author>|<pack> (branding). Anything else is left over as plain
+// text: emoji tokens become the sticker's categories, remaining text becomes
+// the pack name when renaming an existing sticker.
 export function parseStickerArgs(args) {
     let shape = null;
+    let noAudio = false;
     let customValue = null;
     const rest = [];
     for (let i = 0; i < args.length; i++) {
         const low = args[i].toLowerCase();
         if (STRETCH_FLAGS.has(low)) {
             shape = 'stretch';
+            continue;
+        }
+        if (NO_AUDIO_FLAGS.has(low)) {
+            noAudio = true;
             continue;
         }
         if (CROP_FLAGS.has(low)) {
@@ -75,7 +83,7 @@ export function parseStickerArgs(args) {
     }
     const emojiTokens = rest.filter(isEmojiToken);
     const bareText = rest.filter((t) => !isEmojiToken(t)).join(' ').trim();
-    return { shape, customAuthor, customPack, emojiTokens, bareText };
+    return { shape, noAudio, customAuthor, customPack, emojiTokens, bareText };
 }
 
 function runFfmpeg(cmd) {
@@ -115,11 +123,13 @@ export function getStickerShape(shape, animated) {
     return shape || (animated ? 'padded' : 'original');
 }
 
+// Returns how many seconds of an animated input the sticker covers (6, or 3
+// after the size fallback), so a sound sticker's clip can match it.
 async function convertToSticker(inputPath, outputPath, shape, animated) {
     const filter = buildFilter(shape, animated);
     if (!animated) {
         await runFfmpeg(`ffmpeg -y -i "${inputPath}" -vf "${filter}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 75 -compression_level 6 "${outputPath}"`);
-        return;
+        return null;
     }
     await runFfmpeg(`ffmpeg -y -i "${inputPath}" -t 6 -vf "${filter}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 65 -compression_level 6 "${outputPath}"`);
     // WhatsApp rejects animated stickers over ~1MB - shrink harder if we went over.
@@ -130,12 +140,14 @@ async function convertToSticker(inputPath, outputPath, shape, animated) {
             await runFfmpeg(`ffmpeg -y -i "${inputPath}" -t 3 -vf "${filter.replace('fps=15', 'fps=10')}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 40 -compression_level 6 -b:v 120k "${fallback}"`);
             if (fs.existsSync(fallback) && fs.statSync(fallback).size > 0) {
                 fs.renameSync(fallback, outputPath);
+                return 3;
             }
         }
         catch {
             // Keep the first (larger) result if the shrink pass itself fails.
         }
     }
+    return 6;
 }
 
 async function addExifToBuffer(buffer, packname, author, emojis) {
@@ -196,11 +208,15 @@ function resolveTarget(message, chatId) {
             message: quotedInfo.quotedMessage
         };
     }
+    // A sound sticker wraps a regular sticker; work on that sticker and keep its clip.
+    const sound = unwrapSoundSticker(targetMessage.message);
+    if (sound)
+        targetMessage = { key: targetMessage.key, message: { stickerMessage: sound.sticker } };
     const mediaMessage = targetMessage.message?.imageMessage
         || targetMessage.message?.videoMessage
         || targetMessage.message?.documentMessage
         || targetMessage.message?.stickerMessage;
-    return { targetMessage, mediaMessage };
+    return { targetMessage, mediaMessage, soundAudio: sound?.audio || null };
 }
 
 export default {
@@ -208,10 +224,12 @@ export default {
     aliases: ['stik', 's', 'fig', 'figurinha', 'stiker', 'f', 'st'],
     category: 'stickers',
     description: 'Create or edit a sticker from an image, video, GIF or another sticker',
-    usage: '.sticker [emoji] [-s|-f|-stretch|-esticado|-full] [-c|-crop] [-r|-rounded|-circle] [-p|-custom author|pack] (reply to image/video/gif/document/sticker)',
+    usage: '.sticker [emoji] [-s|-f|-stretch|-esticado|-full] [-c|-crop] [-r|-rounded|-circle] [-sa|-semaudio|-na|-noaudio] [-p|-custom author|pack] (reply to image/video/gif/document/sticker)',
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t } = context;
-        let { targetMessage, mediaMessage } = resolveTarget(message, chatId);
+        const resolved = resolveTarget(message, chatId);
+        const { soundAudio } = resolved;
+        let { targetMessage, mediaMessage } = resolved;
         // The quoted copy of a view-once media never carries its download key;
         // on a mobile companion the stored original does (see lib/viewOnce.js).
         const viewOnce = await resolveQuotedViewOnce(sock, message, chatId);
@@ -235,14 +253,17 @@ export default {
             }, { quoted: message });
             return;
         }
-        const { shape, customAuthor, customPack, emojiTokens, bareText } = parseStickerArgs(args);
+        const { shape, noAudio, customAuthor, customPack, emojiTokens, bareText } = parseStickerArgs(args);
         const isExistingSticker = !!targetMessage.message?.stickerMessage;
+        let animated = !!targetMessage.message?.stickerMessage?.isAnimated;
+        let clipSeconds = null;
         const tmpDir = path.join(process.cwd(), 'temp');
         if (!fs.existsSync(tmpDir))
             fs.mkdirSync(tmpDir, { recursive: true });
         const stamp = Date.now();
         const tempInput = path.join(tmpDir, `sticker_in_${stamp}`);
         const tempOutput = path.join(tmpDir, `sticker_out_${stamp}.webp`);
+        const tempAudio = path.join(tmpDir, `sticker_audio_${stamp}.ogg`);
         try {
             const mediaBuffer = viewOnce.status === 'ok'
                 ? await downloadViewOnce(sock, viewOnce)
@@ -270,15 +291,39 @@ export default {
                     || mediaMessage.mimetype?.includes('video')
                     || (mediaMessage.mimetype === 'image/webp' && targetMessage.message?.stickerMessage?.isAnimated)
                     || mediaMessage.seconds > 0;
+                animated = !!isAnimated;
                 fs.writeFileSync(tempInput, mediaBuffer);
-                await convertToSticker(tempInput, tempOutput, getStickerShape(shape, isAnimated), isAnimated);
+                clipSeconds = await convertToSticker(tempInput, tempOutput, getStickerShape(shape, isAnimated), isAnimated);
                 if (!fs.existsSync(tempOutput) || fs.statSync(tempOutput).size === 0) {
                     throw new Error('ffmpeg produced no output');
                 }
                 const pack = getStickerPackName(customPack);
                 finalBuffer = await addExifToBuffer(fs.readFileSync(tempOutput), pack, author, emojiTokens);
             }
-            await sock.sendMessage(chatId, { sticker: finalBuffer, ...channelInfo }, { quoted: message });
+            // Sound: keep a sound sticker's own clip, or take it from a video
+            // (not from GIFs, which WhatsApp sends as silent videos).
+            let audio = null;
+            if (!noAudio && soundAudio) {
+                audio = { buffer: await downloadStickerAudio(soundAudio), seconds: Number(soundAudio.seconds) || 1 };
+            }
+            else if (!noAudio && clipSeconds && mediaMessage.mimetype?.startsWith('video/') && !mediaMessage.gifPlayback) {
+                const clip = await extractStickerAudio(tempInput, tempAudio, clipSeconds);
+                if (clip)
+                    audio = { buffer: fs.readFileSync(clip.path), seconds: clip.seconds };
+            }
+            if (audio) {
+                await sendSoundSticker(sock, chatId, {
+                    sticker: finalBuffer,
+                    audio: audio.buffer,
+                    seconds: audio.seconds,
+                    animated,
+                    contextInfo: channelInfo?.contextInfo,
+                    quoted: message
+                });
+            }
+            else {
+                await sock.sendMessage(chatId, { sticker: finalBuffer, ...channelInfo }, { quoted: message });
+            }
         }
         catch (error) {
             if (error instanceof ViewOnceExpiredError) {
@@ -289,7 +334,7 @@ export default {
             await sock.sendMessage(chatId, { text: t('p.sticker.createFailed'), ...channelInfo }, { quoted: message });
         }
         finally {
-            for (const f of [tempInput, tempOutput, `${tempOutput}.small.webp`]) {
+            for (const f of [tempInput, tempOutput, `${tempOutput}.small.webp`, tempAudio]) {
                 try {
                     if (fs.existsSync(f))
                         fs.unlinkSync(f);

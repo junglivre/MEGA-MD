@@ -28,7 +28,10 @@ import commandHandler from './lib/commandHandler.js';
 import { startBackupScheduler } from './lib/backup.js';
 import { rememberViewOnce } from './lib/viewOnce.js';
 import { applyDeviceProfile } from './lib/deviceProfile.js';
+import { applyProtoExtensions } from './lib/protoExtensions.js';
 const deviceProfile = applyDeviceProfile(config);
+// Before connecting: received sound stickers must decode with their audio.
+applyProtoExtensions();
 store.readFromFile();
 setInterval(() => store.writeToFile(), config.storeWriteInterval || 10000);
 startBackupScheduler();

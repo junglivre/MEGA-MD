@@ -28,6 +28,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 - `.viewonce` ganhou os aliases `.vo`, `.obtainvo`, `.visunica` e `.visuunica` e passou a reenviar foto, vídeo ou áudio de visualização única como mídia normal, nos bytes originais. Disponível só com `DEVICE_TYPE=mobile`.
 - `.sticker` voltou a criar figurinha de mídia de visualização única com `DEVICE_TYPE=mobile`, usando a mensagem original guardada no histórico.
 - Mídias de visualização única recebidas ficam guardadas por 7 dias (só a chave de download), independente do limite de 70 mensagens por chat. Depois disso `.vo` e `.sticker` respondem que a mídia expirou.
+- Figurinhas com som: `.sticker` em vídeo com áudio gera figurinha com som (áudio Opus dos mesmos 6 s da animação); respondendo a uma figurinha com som, mantém o áudio. `-sa`, `-semaudio`, `-na` e `-noaudio` geram sem som. O bot também passou a receber figurinhas com som em vez de mensagem vazia (`lib/protoExtensions.js` ensina ao Baileys os campos novos do protocolo).
 
 ### Changed
 

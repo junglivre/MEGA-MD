@@ -27,6 +27,11 @@ describe('parseStickerArgs', () => {
         expect(parseStickerArgs(['-p', 'Jung|Memes', '-c'])).toMatchObject({ customAuthor: 'Jung', customPack: 'Memes', shape: 'crop' });
     });
 
+    it.each(['-sa', '-semaudio', '-na', '-noaudio'])('%s turns the sound off without changing the shape', (flag) => {
+        expect(parseStickerArgs([flag, '-s'])).toMatchObject({ noAudio: true, shape: 'stretch' });
+        expect(parseStickerArgs(['-s']).noAudio).toBe(false);
+    });
+
     it('-custom without a pipe sets only the pack and removes the author', () => {
         expect(parseStickerArgs(['-custom', 'Memes', 'do', 'Grupo'])).toMatchObject({
             customPack: 'Memes do Grupo',

@@ -151,6 +151,14 @@ O prompt deve usar a piada como padrão de humor, sem mencionar banco, tag ou in
 - `tagall` também possui aliases `everyone`, `all`, `everson`, `everton`.
 - `.sticker` (aliases `s`, `f`, `st`, `fig`, `figurinha`, `stik`, `stiker`): sem flag mantém a proporção original (estática só reduz até caber em 512; animada ganha borda transparente até 512×512, porque algumas GIFs falhavam como figurinha animada não quadrada). `-s`/`-f`/`-stretch`/`-esticado`/`-full` estica para 512×512 sem cortar, inclusive vídeo/GIF. `-c`/`-crop` corta o centro em quadrado. `-r`/`-rounded`/`-circle` recorta em círculo. `-p`/`-custom pacote` troca só o pacote e remove o autor; `-p autor|pacote` define os dois. Emojis viram as categorias da figurinha. Respondendo a uma figurinha sem flag de formato, só reescreve os metadados.
 
+## Figurinhas com som
+
+Formato capturado de uma figurinha com som real em 2026-11-24 (bate com o proto do whatsmeow, WhatsApp v1047451014+): `Message.audioStickerMessage` (campo 134, `FutureProofMessage`) → `.message.stickerMessage`, uma figurinha WebP animada comum, com `premium` (24), `emojis` (25) e `audioMessage` (26): um **upload separado**, `audio/ogg; codecs=opus`, mono 48 kHz, sem `ptt` nem waveform. O WebP não tem áudio. Quem não tem o recurso vê a figurinha sem som.
+
+- O Baileys `7.0.0-rc14` (último publicado) não conhece esses campos e os descarta: a figurinha com som chegava como mensagem vazia (`[messageContextInfo]`). `lib/protoExtensions.js` envolve o `encode`/`decode` gerados de `Message` e `StickerMessage` para ler e escrever os campos 24, 25, 26 e 134, sem editar `node_modules`. É aplicado no início do `index.js` e confere ida e volta; se um upgrade do Baileys quebrar isso, o bot não sobe. Campo que o Baileys passar a conhecer nativamente não é envolvido.
+- `lib/soundSticker.js`: `extractStickerAudio` (ffmpeg → Opus mono 48 kHz 64 kbps, mesmo trecho da figurinha: 6 s, ou 3 s no fallback de tamanho), `sendSoundSticker` (sobe figurinha e áudio separados, monta o reply com `generateWAMessageFromContent` como figurinha comum, depois embrulha no campo 134 e envia com `relayMessage`) e `unwrapSoundSticker`.
+- `.sticker` em vídeo com faixa de áudio gera figurinha com som automaticamente; GIF (`gifPlayback`) e vídeo sem áudio geram figurinha comum. Respondendo a uma figurinha com som (renomear ou mudar formato), mantém o áudio original. `-sa`/`-semaudio`/`-na`/`-noaudio` desligam o som.
+
 ## Tipo de dispositivo e visualização única
 
 `DEVICE_TYPE` define como o bot se registra ao ser vinculado (`lib/deviceProfile.js`, aplicado no início do `index.js`):
