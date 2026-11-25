@@ -66,6 +66,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 
 ### Fixed
 
+- `.sticker` com flag de formato (`-s`, `-c`, `-r`) respondendo figurinha animada falhava (o ffmpeg não decodifica WebP animado) ou virava estática quando a figurinha citada vinha sem `isAnimated`. Agora os quadros são extraídos com o sharp.
 - Figurinhas com som eram gravadas vazias no histórico de mensagens: a conversão para JSON do Baileys não conhecia o campo do áudio.
 - `.sticker` falhava ao baixar mídia antiga que o WhatsApp precisava reenviar: o Baileys chamava `ctx.logger`, que vinha `undefined`.
 - Alerta de cookie expirado agora verifica se o `OWNER_NUMBER` corresponde a uma conta do WhatsApp e só inicia o cooldown após o envio ser aceito; falhas de destino/envio continuam elegíveis para nova tentativa.

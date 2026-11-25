@@ -4,6 +4,7 @@ import fs from 'fs';
 import path from 'path';
 import crypto from 'crypto';
 import webp from 'node-webpmux';
+import sharp from 'sharp';
 import { getStickerAuthor, getStickerPackName } from '../lib/stickerMetadata.js';
 import config from '../config.js';
 import { downloadViewOnce, resolveQuotedViewOnce, ViewOnceExpiredError } from '../lib/viewOnce.js';
@@ -123,6 +124,39 @@ export function getStickerShape(shape, animated) {
     return shape || (animated ? 'padded' : 'original');
 }
 
+// RIFF....WEBP with a VP8X header whose animation flag (0x02) is set. The
+// quoted sticker's isAnimated is not always present, so the bytes decide.
+export function isAnimatedWebp(buffer) {
+    return buffer.length > 20
+        && buffer.toString('latin1', 0, 4) === 'RIFF'
+        && buffer.toString('latin1', 8, 16) === 'WEBPVP8X'
+        && (buffer[20] & 0x02) !== 0;
+}
+
+// ffmpeg (6.1 on prod) cannot decode animated WebP. libvips (sharp) can, and
+// composites each frame; the frames go to ffmpeg as PNGs through a concat list
+// that keeps every frame's delay. Returns the ffmpeg input arguments.
+async function explodeAnimatedWebp(inputPath, framesDir) {
+    const { data, info } = await sharp(inputPath, { animated: true }).ensureAlpha().raw().toBuffer({ resolveWithObject: true });
+    const { delay = [] } = await sharp(inputPath, { animated: true }).metadata();
+    const { width, pageHeight = info.height, channels } = info;
+    const frameBytes = width * pageHeight * channels;
+    const frames = Math.floor(data.length / frameBytes);
+    fs.mkdirSync(framesDir, { recursive: true });
+    const list = ['ffconcat version 1.0'];
+    for (let i = 0; i < frames; i++) {
+        const file = path.join(framesDir, `${String(i).padStart(5, '0')}.png`);
+        await sharp(data.subarray(i * frameBytes, (i + 1) * frameBytes), { raw: { width, height: pageHeight, channels } }).png({ compressionLevel: 0 }).toFile(file);
+        // A 0 ms delay means "as fast as possible"; players show ~100 ms.
+        list.push(`file '${file}'`, `duration ${(delay[i] > 0 ? delay[i] : 100) / 1000}`);
+    }
+    // concat ignores the last duration unless the last file is listed again.
+    list.push(list[list.length - 2]);
+    const listPath = path.join(framesDir, 'frames.ffconcat');
+    fs.writeFileSync(listPath, `${list.join('\n')}\n`);
+    return `-f concat -safe 0 -i "${listPath}"`;
+}
+
 // Returns how many seconds of an animated input the sticker covers (6, or 3
 // after the size fallback), so a sound sticker's clip can match it.
 async function convertToSticker(inputPath, outputPath, shape, animated) {
@@ -131,13 +165,26 @@ async function convertToSticker(inputPath, outputPath, shape, animated) {
         await runFfmpeg(`ffmpeg -y -i "${inputPath}" -vf "${filter}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 75 -compression_level 6 "${outputPath}"`);
         return null;
     }
-    await runFfmpeg(`ffmpeg -y -i "${inputPath}" -t 6 -vf "${filter}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 65 -compression_level 6 "${outputPath}"`);
+    const framesDir = `${outputPath}.frames`;
+    try {
+        const input = isAnimatedWebp(fs.readFileSync(inputPath))
+            ? await explodeAnimatedWebp(inputPath, framesDir)
+            : `-i "${inputPath}"`;
+        return await encodeAnimatedSticker(input, outputPath, filter);
+    }
+    finally {
+        fs.rmSync(framesDir, { recursive: true, force: true });
+    }
+}
+
+async function encodeAnimatedSticker(input, outputPath, filter) {
+    await runFfmpeg(`ffmpeg -y ${input} -t 6 -vf "${filter}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 65 -compression_level 6 "${outputPath}"`);
     // WhatsApp rejects animated stickers over ~1MB - shrink harder if we went over.
     const stat = fs.existsSync(outputPath) ? fs.statSync(outputPath) : null;
     if (stat && stat.size > 900 * 1024) {
         const fallback = `${outputPath}.small.webp`;
         try {
-            await runFfmpeg(`ffmpeg -y -i "${inputPath}" -t 3 -vf "${filter.replace('fps=15', 'fps=10')}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 40 -compression_level 6 -b:v 120k "${fallback}"`);
+            await runFfmpeg(`ffmpeg -y ${input} -t 3 -vf "${filter.replace('fps=15', 'fps=10')}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 40 -compression_level 6 -b:v 120k "${fallback}"`);
             if (fs.existsSync(fallback) && fs.statSync(fallback).size > 0) {
                 fs.renameSync(fallback, outputPath);
                 return 3;
@@ -243,7 +290,7 @@ export async function renderSticker({ mediaBuffer, mediaMessage, isExistingStick
     }
     const animated = !!(mediaMessage.mimetype?.includes('gif')
         || mediaMessage.mimetype?.includes('video')
-        || (mediaMessage.mimetype === 'image/webp' && mediaMessage.isAnimated)
+        || (mediaMessage.mimetype === 'image/webp' && (mediaMessage.isAnimated || isAnimatedWebp(mediaBuffer)))
         || mediaMessage.seconds > 0);
     fs.writeFileSync(tempInput, mediaBuffer);
     const clipSeconds = await convertToSticker(tempInput, tempOutput, getStickerShape(shape, animated), animated);
