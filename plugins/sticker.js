@@ -157,8 +157,9 @@ async function explodeAnimatedWebp(inputPath, framesDir) {
     return `-f concat -safe 0 -i "${listPath}"`;
 }
 
-// Returns how many seconds of an animated input the sticker covers (6, or 3
-// after the size fallback), so a sound sticker's clip can match it.
+// Returns how many seconds of an animated input the sticker covers: always 6,
+// shrunk by compressing harder (lower fps/quality/bitrate) instead of cutting
+// the clip, so a sound sticker's audio always matches the visible loop.
 async function convertToSticker(inputPath, outputPath, shape, animated) {
     const filter = buildFilter(shape, animated);
     if (!animated) {
@@ -177,22 +178,24 @@ async function convertToSticker(inputPath, outputPath, shape, animated) {
     }
 }
 
+// WhatsApp rejects animated stickers over ~1MB. Each step keeps the full 6s
+// but encodes harder; the last step is kept even if still over the limit.
+const COMPRESSION_STEPS = [
+    { fps: 15, quality: 65 },
+    { fps: 15, quality: 50, bitrate: '250k' },
+    { fps: 12, quality: 40, bitrate: '150k' },
+    { fps: 10, quality: 28, bitrate: '100k' },
+    { fps: 8, quality: 20, bitrate: '70k' }
+];
+
 async function encodeAnimatedSticker(input, outputPath, filter) {
-    await runFfmpeg(`ffmpeg -y ${input} -t 6 -vf "${filter}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 65 -compression_level 6 "${outputPath}"`);
-    // WhatsApp rejects animated stickers over ~1MB - shrink harder if we went over.
-    const stat = fs.existsSync(outputPath) ? fs.statSync(outputPath) : null;
-    if (stat && stat.size > 900 * 1024) {
-        const fallback = `${outputPath}.small.webp`;
-        try {
-            await runFfmpeg(`ffmpeg -y ${input} -t 3 -vf "${filter.replace('fps=15', 'fps=10')}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality 40 -compression_level 6 -b:v 120k "${fallback}"`);
-            if (fs.existsSync(fallback) && fs.statSync(fallback).size > 0) {
-                fs.renameSync(fallback, outputPath);
-                return 3;
-            }
-        }
-        catch {
-            // Keep the first (larger) result if the shrink pass itself fails.
-        }
+    for (const { fps, quality, bitrate } of COMPRESSION_STEPS) {
+        const stepFilter = filter.replace(/fps=\d+/, `fps=${fps}`);
+        const bv = bitrate ? ` -b:v ${bitrate}` : '';
+        await runFfmpeg(`ffmpeg -y ${input} -t 6 -vf "${stepFilter}" -c:v libwebp -preset default -loop 0 -vsync 0 -pix_fmt yuva420p -quality ${quality} -compression_level 6${bv} "${outputPath}"`);
+        const stat = fs.existsSync(outputPath) ? fs.statSync(outputPath) : null;
+        if (stat && stat.size <= 900 * 1024)
+            break;
     }
     return 6;
 }
