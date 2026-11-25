@@ -4,7 +4,7 @@ import fs from 'fs';
 import os from 'os';
 import path from 'path';
 import { proto } from '@whiskeysockets/baileys';
-import { extractStickerAudio, sendSoundSticker, unwrapSoundSticker, SOUND_STICKER_MIMETYPE } from '../../lib/soundSticker.js';
+import { extractStickerAudio, loadQuotedSoundSticker, sendSoundSticker, unwrapSoundSticker, SOUND_STICKER_MIMETYPE } from '../../lib/soundSticker.js';
 
 const dir = fs.mkdtempSync(path.join(os.tmpdir(), 'sound-sticker-'));
 afterAll(() => fs.rmSync(dir, { recursive: true, force: true }));
@@ -97,5 +97,29 @@ describe('sendSoundSticker', () => {
         expect(sticker.contextInfo).toMatchObject({ stanzaId: 'CMD1', forwardingScore: 1 });
         expect(audio).toMatchObject({ mimetype: SOUND_STICKER_MIMETYPE, seconds: 6, directPath: '/v/audio' });
         expect(audio.mediaKey).not.toEqual(sticker.mediaKey);
+    });
+
+    it('stores the sent sticker so a reply, whose quote has no clip, still finds it', async () => {
+        const upserts = [];
+        const sock = {
+            user: { id: '5511999999999:7@s.whatsapp.net' },
+            waUploadToServer: vi.fn(async (_path, { mediaType }) => ({ mediaUrl: `https://mmg.whatsapp.net/${mediaType}`, directPath: `/v/${mediaType}` })),
+            relayMessage: vi.fn(),
+            ev: { emit: (event, data) => upserts.push({ event, data }) }
+        };
+        const sent = await sendSoundSticker(sock, 'chat@g.us', { sticker: Buffer.from('RIFF0000WEBPVP8 '), audio: Buffer.from('OggS fake clip'), seconds: 6, animated: true });
+
+        expect(upserts).toEqual([{ event: 'messages.upsert', data: { messages: [sent], type: 'append' } }]);
+        // lightweight_store keeps { key, message } through JSON.stringify.
+        const stored = JSON.parse(JSON.stringify({ key: sent.key, message: sent.message }));
+        sock.store = { loadMessage: vi.fn(async (jid, id) => (jid === 'chat@g.us' && id === sent.key.id ? stored : null)) };
+        // What WhatsApp delivers when someone replies to it: a bare sticker, no clip.
+        const reply = {
+            message: { extendedTextMessage: { text: '/s -s', contextInfo: { stanzaId: sent.key.id, quotedMessage: { stickerMessage: { mimetype: 'image/webp', isAnimated: true } } } } }
+        };
+
+        const found = await loadQuotedSoundSticker(sock, reply, 'chat@g.us');
+        expect(found.audio).toMatchObject({ mimetype: SOUND_STICKER_MIMETYPE, seconds: 6, directPath: '/v/audio' });
+        expect(Buffer.isBuffer(found.audio.mediaKey) || found.audio.mediaKey instanceof Uint8Array).toBe(true);
     });
 });

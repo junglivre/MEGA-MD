@@ -8,7 +8,7 @@ import sharp from 'sharp';
 import { getStickerAuthor, getStickerPackName } from '../lib/stickerMetadata.js';
 import config from '../config.js';
 import { downloadViewOnce, resolveQuotedViewOnce, ViewOnceExpiredError } from '../lib/viewOnce.js';
-import { downloadStickerAudio, extractStickerAudio, sendSoundSticker, unwrapSoundSticker } from '../lib/soundSticker.js';
+import { downloadStickerAudio, extractStickerAudio, loadQuotedSoundSticker, sendSoundSticker, unwrapSoundSticker } from '../lib/soundSticker.js';
 
 // Matches a single (possibly ZWJ-joined, variation-selector-terminated) emoji,
 // and nothing else in the token.
@@ -310,8 +310,10 @@ export default {
     async handler(sock, message, args, context) {
         const { chatId, channelInfo, t } = context;
         const resolved = resolveStickerTarget(message, chatId);
-        const { soundAudio } = resolved;
-        let { targetMessage, mediaMessage } = resolved;
+        let { targetMessage, mediaMessage, soundAudio } = resolved;
+        // The quoted copy of a sound sticker comes without its clip; the stored original has it.
+        if (!soundAudio && targetMessage.message?.stickerMessage)
+            soundAudio = (await loadQuotedSoundSticker(sock, message, chatId))?.audio || null;
         // The quoted copy of a view-once media never carries its download key;
         // on a mobile companion the stored original does (see lib/viewOnce.js).
         const viewOnce = await resolveQuotedViewOnce(sock, message, chatId);

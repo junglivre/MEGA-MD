@@ -66,6 +66,7 @@ Todas as mudanças relevantes do MEGA-MD são registradas neste arquivo. O forma
 
 ### Fixed
 
+- `.sticker` respondendo figurinha com som (ex.: `/s -s`) perdia o áudio: a citação do WhatsApp não traz o som. Agora o original é lido do histórico, e as figurinhas com som enviadas pelo bot também passam a ser gravadas nele.
 - `.sticker` com flag de formato (`-s`, `-c`, `-r`) respondendo figurinha animada falhava (o ffmpeg não decodifica WebP animado) ou virava estática quando a figurinha citada vinha sem `isAnimated`. Agora os quadros são extraídos com o sharp.
 - Figurinhas com som eram gravadas vazias no histórico de mensagens: a conversão para JSON do Baileys não conhecia o campo do áudio.
 - `.sticker` falhava ao baixar mídia antiga que o WhatsApp precisava reenviar: o Baileys chamava `ctx.logger`, que vinha `undefined`.
