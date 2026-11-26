@@ -1,6 +1,7 @@
 import fs from 'fs';
 import path from 'path';
 import store from '../lib/lightweight_store.js';
+import { isBotJid } from '../lib/jid.js';
 const MONGO_URL = process.env.MONGO_URL;
 const POSTGRES_URL = process.env.POSTGRES_URL;
 const MYSQL_URL = process.env.MYSQL_URL;
@@ -63,6 +64,13 @@ export default {
             if (!userToWarn) {
                 await sock.sendMessage(chatId, {
                     text: `❌ ${t('p.warn.noTarget')}`,
+                    ...channelInfo
+                }, { quoted: message });
+                return;
+            }
+            if (isBotJid(sock, userToWarn)) {
+                await sock.sendMessage(chatId, {
+                    text: `❌ ${t('p.warn.cantWarnBot')}`,
                     ...channelInfo
                 }, { quoted: message });
                 return;

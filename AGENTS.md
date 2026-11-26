@@ -164,6 +164,10 @@ Formato capturado de uma figurinha com som real em 2026-11-24 (bate com o proto 
 - Limites testados em 2026-11-24: figurinha estática com som toca normalmente, e áudio de 60 s toca inteiro (`MAX_SOUND_SECONDS`).
 - `.som` (aliases `figsom`, `addsom`, `plugins/som.js`): fluxo em dois passos. Responde uma imagem/figurinha/vídeo/GIF (ou um áudio) com `.som`; o próximo áudio (ou imagem) **do mesmo remetente naquele chat** completa. Pedido pendente por `chatId:senderId`, expira em 2 min, interceptado em `lib/messageHandler.js` por `handleSoundStickerReply()` antes dos jogos. `.som 5` ou `.som 1:30` começa o áudio nesse ponto; aceita as flags do `.sticker` (`-s`, `-c`, `-r`, `-p`, emojis). Figurinha existente sem flag de formato mantém os pixels; se já tinha som, o som é trocado. Visualização única não é aceita no `.som`.
 
+## Moderação
+
+- `.warn` (`adminOnly`): recusa advertir o próprio bot (`isBotJid`, `lib/jid.js`, compara `sock.user.id`/`sock.user.lid` normalizados contra o alvo). Antes disso, qualquer um conseguia advertir o bot e, na 3ª vez, ele tentava se remover do grupo via `groupParticipantsUpdate`.
+
 ## Tipo de dispositivo e visualização única
 
 `DEVICE_TYPE` define como o bot se registra ao ser vinculado (`lib/deviceProfile.js`, aplicado no início do `index.js`):
